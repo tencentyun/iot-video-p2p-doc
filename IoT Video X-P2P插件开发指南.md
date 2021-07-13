@@ -8,7 +8,7 @@
 
 ## 介绍
 
-传统的多人观看场景，观看端向云端发送HTTP请求获取数据。在腾讯云IoT Video 1V多 P2P服务中，观看端和云端建立一个共享P2P网络，本插件就是这个P2P网络的一个小程序Peer，客户小程序利用 [P2P-Player插件(链接待补充)](https://fuwu.weixin.qq.com/search?tab=3&type=&page=1&serviceType=3&industry=100001) 将live-player的请求发送至本插件，本插件从云端或其他P2P节点获取数据并持续返回，客户小程序再将数据持续推送至 *P2P-Player插件*，就能实现P2P直播功能。通过P2P，客户可以互相分享数据，从而大幅降低云端流量，节省相关成本。
+传统的多人观看场景，观看端向云端发送HTTP请求获取数据。在腾讯云IoT Video 1V多 P2P服务中，观看端和云端建立一个共享P2P网络，本插件就是这个P2P网络的一个小程序Peer，客户小程序利用 [P2P-Player插件](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md) 将live-player的请求发送至本插件，本插件从云端或其他P2P节点获取数据并持续返回，客户小程序再将数据持续推送至 P2P-Player插件，就能实现P2P直播功能。通过P2P，客户可以互相分享数据，从而大幅降低云端流量，节省相关成本。
 
 支持的流媒体：http-flv。
 
@@ -25,7 +25,7 @@
 
 ## 使用方法
 
-本插件需配合 [P2P-Player插件(链接待补充)](https://fuwu.weixin.qq.com/search?tab=3&type=&page=1&serviceType=3&industry=100001) 使用，请先引用 *P2P-Player插件*
+本插件需配合 [P2P-Player插件](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md) 使用，请先引用 *P2P-Player插件*
 
 ### 1. 申请使用插件
 
