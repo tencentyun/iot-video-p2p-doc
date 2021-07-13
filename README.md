@@ -4,11 +4,11 @@
 
 腾讯云1V多 P2P分享可实现从云端获取的原始http-flv视频流在客户端和客户端、客户端和小程序、小程序和小程序之间分享，可提供海康萤石server SDK在萤石云环境部署，整体架构图如下：
 
-![image-20210629204514803](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/%E6%80%BB%E6%9E%B6%E6%9E%84.png)
+![image-20210629204514803](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/%E6%80%BB%E6%9E%B6%E6%9E%84.png)
 
 为实现上述架构，需实现萤石云server端的对接，应用端app和小程序的对接，接入总体流程如下：
 
-![image-20210628111403102](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/%E6%8E%A5%E5%85%A5%E6%80%BB%E6%B5%81%E7%A8%8B.png)
+![image-20210628111403102](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/server%20sdk%E6%9E%B6%E6%9E%84.png)
 
 
 
@@ -37,9 +37,9 @@ Server SDK分为两部分，一部分是受限于微信不支持https chunk方�
 
 ## 四、APP SDK接入
 
-APP SDK入参是腾讯云IoT Video提供的APP ID、APP Key和APP Secret、海康萤石部署的接入层域名，详情参考文档《腾讯云IoT Video 1V多P2P 客户端（iOS）接入手册》和《腾讯云IoT Video 1V多P2P 客户端（Andriod）接入手册》。
+APP SDK入参是腾讯云IoT Video提供的APP ID、APP Key和APP Secret、海康萤石部署的接入层域名，详情参考文档[腾讯云IoT Video 1V多P2P 客户端（iOS）接入手册](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%201V%E5%A4%9AP2P%20%E5%AE%A2%E6%88%B7%E7%AB%AFSDK%EF%BC%88iOS%EF%BC%89%20%E6%8E%A5%E5%85%A5%E6%89%8B%E5%86%8C.md)和[腾讯云IoT Video 1V多P2P 客户端（Andriod）接入手册](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20%20Video%201V%E5%A4%9AP2P%20%E5%AE%A2%E6%88%B7%E7%AB%AFSDK%EF%BC%88Android%EF%BC%89%E6%8E%A5%E5%85%A5%E6%89%8B%E5%86%8C.md)。
 
 ## 五、小程序插件接入
 
-小程序插件入参是腾讯云IoT Video提供的APP ID、APP Key和APP Secret、海康萤石部署的接入层域名，详情参考文档《腾讯云IoT Video 小程序P2P 接入手册》。
+小程序插件入参是腾讯云IoT Video提供的APP ID、APP Key和APP Secret、海康萤石部署的接入层域名，详情参考文档[腾讯云IoT Video 小程序P2P 接入手册](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20%E5%B0%8F%E7%A8%8B%E5%BA%8FP2P%E6%8E%A5%E5%85%A5%E6%8C%87%E5%8D%97.md)。
 
