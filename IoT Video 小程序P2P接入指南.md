@@ -9,13 +9,13 @@
 - 申请腾讯云 IoT Video P2P 服务，获取访问密钥
 - 有使用 live-player 的权限，详见[官方文档](https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html)
 - 微信 8.0.7以上 基础库 2.18.0以上
-- 向腾讯云IoT Video团队申请IoT Video P2P插件和IoT Video P2P-Player插件
+- 向腾讯云IoT Video团队申请[IoT Video P2P插件](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20X-P2P%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)和[IoT Video P2P-Player插件](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
 
 ## 接入指引
 
-#### 接入流程图
+### 接入流程图
 
-![](/Users/judytong/Library/Application Support/typora-user-images/image-20210713155722814.png)
+![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/%E5%B0%8F%E7%A8%8B%E5%BA%8FP2P%E6%9E%B6%E6%9E%84%E5%9B%BE.png)
 
 **1、初始化阶段：**
 
@@ -37,4 +37,4 @@
 
 6-2：小程序Demo或自有小程序操作live-player的context，停止播放
 
-#### 小程序Demo和代码示例
+### 小程序Demo和代码示例
