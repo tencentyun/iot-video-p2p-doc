@@ -29,7 +29,7 @@ Server SDK分为两部分，一部分是受限于微信不支持https chunk方�
 
 ### 2、1V多 P2P 模块
 
-该模块用于拉取原始http-flv流，对分享节点进行管理，将视频流分片用于观看端间共享。目前该模块以二进制形式提供，入参是拉流源域名。海康萤石需部署接入层，保证在对某路视频流的取流过程中，请求会hash至同一服务节点。具体使用参考[腾讯云IoT Video 1V多 P2P Server端接口文档](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/%E8%85%BE%E8%AE%AF%E4%BA%91%20IoT%20Video%201V%E5%A4%9AP2P%20Server%E7%AB%AF%E6%8E%A5%E5%8F%A3%E6%96%87%E6%A1%A3.md)。
+该模块用于拉取原始http-flv流，对分享节点进行管理，将视频流分片用于观看端间共享。目前该模块以二进制形式提供，入参是拉流源域名。海康萤石需部署接入层，保证在对某路视频流的取流过程中，请求会hash至同一服务节点。具体使用参考[腾讯云IoT Video 1V多 P2P Server端接口文档](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%201V%E5%A4%9AP2P%20Server%E7%AB%AF%E6%8E%A5%E5%8F%A3%E6%96%87%E6%A1%A3.md)。
 
 ### 3、服务端部署
 
