@@ -8,7 +8,7 @@
 
 为实现上述架构，需实现萤石云server端的对接，应用端app和小程序的对接，接入总体流程如下：
 
-![image-20210628111403102](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/server%20sdk%E6%9E%B6%E6%9E%84.png)
+![image-20210628111403102](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/%E6%8E%A5%E5%85%A5%E6%80%BB%E6%B5%81%E7%A8%8B.png)
 
 
 
@@ -20,7 +20,7 @@ SDK具体可参考线下邮件发布的SDK文件包，SDK分为服务端SDK、�
 
 Server SDK分为两部分，一部分是受限于微信不支持https chunk方案，我们将提供密钥生成SDK，生成的密钥用于服务端视频数据加解密；另一部分是1V多 P2P SDK，该SDK用于拉取海康萤石原始视频流，添加SEI帧和分片，用于P2P共享。架构图如下：
 
-![image-20210628204633406](/Users/judytong/Library/Application Support/typora-user-images/image-20210628204633406.png)
+![image-20210628204633406](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/server%20sdk%E6%9E%B6%E6%9E%84.png)
 
 ### 1、密钥生成模块
 
