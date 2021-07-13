@@ -17,24 +17,23 @@
 
 ![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/%E5%B0%8F%E7%A8%8B%E5%BA%8FP2P%E6%9E%B6%E6%9E%84%E5%9B%BE.png)
 
-**1、初始化阶段：**
+1、初始化阶段：
 
-1-1：小程序Demo或自有小程序引用IoT Video P2P-Player，返回`livePlayerContext`， 可以直接对`live-player`的context进行操作
+  1-1：小程序Demo或自有小程序引用IoT Video P2P-Player，返回`livePlayerContext`， 可以直接对`live-player`的context进行操作
 
-1-2：小程序Demo或自有小程序调用IoT Video P2P插件的初始化接口，初始化入参填写腾讯云IoT Video分配的appKey和appKeySecret等信息
+  1-2：小程序Demo或自有小程序调用IoT Video P2P插件的初始化接口，初始化入参填写腾讯云IoT Video分配的appKey和appKeySecret等信息
 
-**2、小程序用户选择某个摄像头进行播放**
+2、小程序用户选择某个摄像头进行播放
 
-**3、小程序Demo调用P2P插件的startP2PService接口，传入需要播放的摄像头ID或播放URL，并设置消息接收和数据接收回调**
+3、小程序Demo调用P2P插件的startP2PService接口，传入需要播放的摄像头ID或播放URL，并设置消息接收和数据接收回调
+4、数据流会通过第3步设置的数据接收回调，传递给P2P-Player插件播放
 
-**4、数据流会通过第3步设置的数据接收回调，传递给P2P-Player插件播放**
+5、小程序用户停止播放
 
-**5、小程序用户停止播放**
+6、插件终止播放：
 
-**6、插件终止播放：**
+  6-1：小程序Demo或自有小程序调用P2P插件的stopServiceById终止传输数据
 
-6-1：小程序Demo或自有小程序调用P2P插件的stopServiceById终止传输数据
-
-6-2：小程序Demo或自有小程序操作live-player的context，停止播放
+  6-2：小程序Demo或自有小程序操作live-player的context，停止播放
 
 ### 小程序Demo和代码示例
