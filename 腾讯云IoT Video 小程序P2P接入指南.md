@@ -2,7 +2,7 @@
 
 ## 介绍
 
-通过腾讯云IoT Video小程序P2P服务，引入IoT Video P2P插件和P2P-Player插件，可实现摄像头和小程序直接打洞传输视频流；配合云端的server sdk，可实现小程序和小程序，小程序和AOO的
+通过腾讯云IoT Video小程序P2P服务，引入IoT Video P2P插件和P2P-Player插件，可实现摄像头和小程序直接打洞传输视频流；配合云端的server sdk，可实现小程序和小程序，小程序和APP之间的数据共享。
 
 ## 前提条件
 
