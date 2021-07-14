@@ -44,7 +44,7 @@
 ### 小程序Demo和代码示例
 
 
-- 1. player插件事件回调
+- 1、player插件事件回调
 
 ``` javascript
   onPlayerReady({ detail }) {
@@ -69,7 +69,7 @@
   },
 ```
 
-- 2. 初始化xp2p插件HttpModule模块
+- 2、初始化xp2p插件HttpModule模块
 
 ``` javascript
   initModule() {
@@ -111,7 +111,7 @@
   },
 ```
 
-- 3. xp2p插件开始拉流
+- 3、xp2p插件开始拉流
 
 ``` javascript
   startStream() {
