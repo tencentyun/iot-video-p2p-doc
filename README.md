@@ -24,7 +24,8 @@ Server SDK分为两部分，一部分是受限于微信不支持https chunk方�
 
 ### 1、密钥生成模块
 
-密钥生成SDK依赖于存储资源，海康萤石部署该服务时，会有自己熟悉的http server架构和存储资源，为了方便海康萤石对接，腾讯云将密钥生成模块以微服务形式提供demo示例，参考https://git.woa.com/sigmawu/xp2p-key
+密钥生成SDK依赖于存储资源，海康萤石部署该服务时，会有自己熟悉的http server架构和存储资源，为了方便海康萤石对接，腾讯云将密钥生成模块以微服务形式提供demo示例，参考
+https://github.com/tencentyun/iot-video-p2p-key-demo
 。海康萤石可参考使用。具体使用参考[腾讯云IoT Video 1V多 P2P 服务端密钥生成模块参考](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/%E8%85%BE%E8%AE%AF%E4%BA%91IoT%20Video%201V%E5%A4%9A%20P2P%20%E6%9C%8D%E5%8A%A1%E7%AB%AF%E5%AF%86%E9%92%A5%E7%94%9F%E6%88%90%E6%A8%A1%E5%9D%97%E5%8F%82%E8%80%83.md)。
 
 ### 2、1V多 P2P 模块
