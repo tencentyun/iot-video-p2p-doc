@@ -8,10 +8,17 @@ Server 监听请求，从数据源拉取视频数据，为视频数据加sei帧�
 
 ## 二进制接入
 ./iot-server -h
+
 Syntax: ./iot-server [ OPTS ]
- -h      - help
- -u      - url host(eg:https://flvopen.ys7.com:9188)  # 拉流源域名
- -p      - port # 监听的端口
- -t      - delay seconds # 延迟退出时间（没有请求时，多久断开拉流)
- -d      - logdir  # 日志目录
- -v      - verbose # 开启日志
+
+-h      - help
+ 
+-u      - url host(eg:https://flvopen.ys7.com:9188)  # 拉流源域名
+
+-p      - port # 监听的端口
+
+-t      - delay seconds # 延迟退出时间（没有请求时，多久断开拉流)
+
+-d      - logdir  # 日志目录
+
+-v      - verbose # 开启日志
