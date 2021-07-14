@@ -42,3 +42,133 @@
   6-2：小程序Demo或自有小程序操作live-player的context，停止播放
 
 ### 小程序Demo和代码示例
+
+
+- 1、player插件事件回调
+
+``` javascript
+  onPlayerReady({ detail }) {
+    console.log('onPlayerReady', detail);
+    this.playerCtx = detail.livePlayerContext;
+    this.setData({
+      playerCtx: detail.livePlayerContext,
+    });
+  },
+  onPlayerStartPull() {
+    this.startStream();
+  },
+  onPlayerClose({ detail }) {
+    if(detail.error?.code === PlayerCloseType.LIVE_PLAYER_CLOSED) {
+      console.error('player close, now state: ', this.data.state);
+      // 拉流过程中停止
+      if(this.data.state === 'dataParsed' || this.data.state === 'request') {
+        // 因为player会自动重试，触发startPull回调，这里只是停止拉流即可。
+        this.stopStream();
+      }
+    }
+  },
+```
+
+- 2、初始化xp2p插件HttpModule模块
+
+``` javascript
+  initModule() {
+    if (this.data.state) {
+      this.showToast('p2pModule already running');
+      return;
+    }
+    this.setData({ state: 'init' });
+
+    p2pExports
+      .init({
+        appParams: config.appParams,
+        source: p2pExports.XP2PSource.IoTP2PServer,
+      })
+      .then((res) => {
+        console.log('init res', res);
+
+        if (res === 0) {
+          const localPeername = p2pExports.getLocalXp2pInfo();
+          console.log('localPeername', localPeername);
+          this.setData({ state: 'inited', localPeername });
+        } else {
+          this.resetXP2PData();
+          wx.showModal({
+            content: `init 失败, res=${res}`,
+            showCancel: false,
+          });
+        }
+      })
+      .catch((errcode) => {
+        console.error('init error', errcode);
+
+        this.resetXP2PData();
+        wx.showModal({
+          content: `init 失败, errcode: ${errcode}`,
+          showCancel: false,
+        });
+      });
+  },
+```
+
+- 3、xp2p插件开始拉流
+
+``` javascript
+  startStream() {
+    if (!this.data.inputId || !this.data.inputUrl) {
+      this.showToast('please input id and url');
+      return;
+    }
+
+    if (this.data.state !== 'inited') {
+      this.showToast('can not start service in state', this.data.state);
+      return;
+    }
+    this.setData({ state: 'startStream' });
+    this.addLog('start stream');
+
+    const id = this.data.inputId;
+    const msgCallback = (event, subtype, detail) => {
+      this.onP2PMessage(id, event, subtype, detail);
+    };
+
+    const player = this.selectComponent(`#${this.data.playerId}`);
+    p2pExports
+      .startP2PService(id, { url: this.data.inputUrl }, {
+        msgCallback,
+        dataCallback: (data) => {
+          player.addChunk(data);
+        },
+      })
+      .then((res) => {
+        console.log('startServiceWithStreamUrl res', res);
+
+        if (res === 0) {
+          this.setData({ state: 'serviceReady', id });
+          this.addLog('stream service ready');
+          const flvUrl = p2pExports.getHttpFlvUrl(id);
+          console.log('set flvUrl', flvUrl);
+          this.setData(
+            {
+              flvUrl,
+            }
+          );
+        } else {
+          this.stopStream();
+          wx.showModal({
+            content: `startServiceWithStreamUrl 失败, res=${res}`,
+            showCancel: false,
+          });
+        }
+      })
+      .catch((errcode) => {
+        console.error('startServiceWithStreamUrl error', errcode);
+
+        this.stopStream();
+        wx.showModal({
+          content: `startServiceWithStreamUrl 失败, errcode: ${errcode}`,
+          showCancel: false,
+        });
+      });
+  },
+```
