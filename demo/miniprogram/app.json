@@ -1,0 +1,20 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/xp2p-demo-1vN/demo"
+  ],
+  "plugins": {
+    "wechat-p2p-player": {
+      "version": "dev-66c63af10aaab4abb44c31f6bc64e152",
+      "provider": "wx9e8fbc98ceac2628"
+    },
+    "xp2p": {
+      "version": "dev-bcc8624d0a0c819853dfbed690cc60f4",
+      "provider": "wx1319af22356934bf"
+    }
+  },
+  "usingComponents": {
+    "p2p-player": "plugin://wechat-p2p-player/p2p-player"
+  },
+  "sitemapLocation": "sitemap.json"
+}

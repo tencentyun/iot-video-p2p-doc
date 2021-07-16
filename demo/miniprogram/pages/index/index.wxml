@@ -1,0 +1,6 @@
+<view>
+	<navigator url="/pages/xp2p-demo-1vN/demo?mode=ipc" hover-class="navigator-hover">跳转到 X-P2P Demo IPC</navigator>
+	<navigator url="/pages/xp2p-demo-1vN/demo?mode=xntp" hover-class="navigator-hover">跳转到 X-P2P Demo 1vN-xntp</navigator>
+	<navigator url="/pages/xp2p-demo-1vN/demo?mode=tcp" hover-class="navigator-hover">跳转到 X-P2P Demo 1vN-tcp</navigator>
+</view>
+

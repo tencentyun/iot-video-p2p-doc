@@ -1,0 +1,75 @@
+<view class="page-body">
+  <view wx:if="{{needPlayer}}" class="page-section tc">
+    <p2p-player 
+      id="{{playerId}}"
+      bind:playerReady="onPlayerReady" 
+      bind:statechange="onPlayerStateChange" 
+      bind:error="onPlayerError" 
+      bind:playerStartPull="onPlayerStartPull"
+		  bind:playerClose="onPlayerClose" />
+  </view>
+  <view class="page-section">
+    <view class="page-section-title">mode: {{mode}}</view>
+    <view class="group-button-area">
+      <button bindtap="initModule" class="group-button" type="primary" size="mini" disabled="{{!!state}}">
+        initModule
+      </button>
+      <button bindtap="destroyModule" class="group-button" type="primary" size="mini" disabled="{{!state}}">
+        destroyModule
+      </button>
+      <button bindtap="resetP2P" class="group-button" type="primary" size="mini" disabled="{{!state || flvUrl}}">
+        resetP2P
+      </button>
+    </view>
+  </view>
+  <view class="page-section">
+    <view wx:if="{{mode==='ipc'}}">
+      <view>peername:</view>
+      <view class="weui-cells weui-cells_after-title">
+        <view class="weui-cell weui-cell_input">
+          <input class="weui-input" type="text" value="{{peername}}" placeholder="请输入peername" placeholder-class="placeholder" bindinput="inputPeername" />
+        </view>
+      </view>
+    </view>
+    <view  wx:if="{{mode!=='ipc'}}">
+      <view>id:</view>
+      <view class="weui-cells weui-cells_after-title">
+        <view class="weui-cell weui-cell_input">
+          <input class="weui-input" type="text" value="{{inputId}}" placeholder="请输入id" placeholder-class="placeholder" bindinput="inputStreamId" />
+        </view>
+      </view>
+      <view>stream url:</view>
+      <view class="weui-cells weui-cells_after-title">
+        <view class="weui-cell weui-cell_input">
+          <input class="weui-input" type="text" value="{{inputUrl}}" placeholder="请输入url" placeholder-class="placeholder" bindinput="inputStreamUrl" />
+        </view>
+      </view>
+    </view>
+    <view class="group-button-area">
+      <button bindtap="startPlay" class="group-button" type="primary" size="mini" disabled="{{!localPeername || id}}">
+        startPlay
+      </button>
+      <button bindtap="stopPlay" class="group-button" type="primary" size="mini" disabled="{{!localPeername || !id}}">
+        stopPlay
+      </button>
+    </view>
+  </view>
+  <view class="page-section" wx:if="{{mode!=='ipc'}}">
+    <view>state: {{state}}</view>
+    <view>localPeername: {{localPeername}}</view>
+    <view>id: {{id}}</view>
+    <view wx:if="{{needPlayer}}">
+      <view>flvUrl: </view>
+      <view class="text-break" style="padding: 10rpx;">{{flvUrl}}</view>
+    </view>
+    <view wx:if="{{onlyp2p}}">totalBytes: {{totalBytes}}</view>
+  </view>
+  <view class="page-section" wx:if="{{mode!=='ipc'}}">
+    <view>peerlist:</view>
+    <scroll-view scroll-y="true" style="height: 300rpx; padding: 10rpx;">{{peerlist}}</scroll-view>
+  </view>
+  <view class="page-section page-section-gap">
+    <view>log:</view>
+    <scroll-view scroll-y="true" style="height: 500rpx; padding: 10rpx;"><text>{{log}}</text></scroll-view>
+  </view>
+</view>
