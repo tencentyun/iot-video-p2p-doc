@@ -1,6 +1,6 @@
 # 腾讯云IoT Video 1V多P2P Server端接口文档
 
-## server CHANGELOG
+## Server CHANGELOG
 
 | 版本号 | 发布时间  | 描述                             |
 | ------ | --------- | -------------------------------- |
@@ -29,5 +29,5 @@ Syntax: ./iot-server [ OPTS ]
 
 -v      - verbose # 开启日志
 
-## 下载方式
-d3c944858e244f6168ba2ac1dbfb1d2f
+## 下载地址
+https://dev.ad.qvb.qcloud.com/static/temp/iot-server
