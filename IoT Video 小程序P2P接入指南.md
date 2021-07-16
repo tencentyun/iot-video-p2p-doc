@@ -43,6 +43,7 @@
 
 ### 小程序Demo和代码示例
 
+Demo源码：https://github.com/tencentyun/iot-video-p2p-doc/tree/master/demo/miniprogram
 
 - 1、player插件事件回调
 
