@@ -131,8 +131,10 @@ Page({
     });
   },
   inputPeername(e) {
+    const {basePath, flvPath, flvParams} = this.data;
     this.setData({
       peername: e.detail.value,
+      inputUrl: `http://${e.detail.value}.xnet${basePath}${flvPath}${flvParams ? `?${flvParams}` : ''}`
     });
   },
   onPlayerReady({ detail }) {
