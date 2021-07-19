@@ -51,22 +51,22 @@
 
 1）进入主页面
 
-![1v1](/Users/judytong/Desktop/1v1.png)
+![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/demo.png)
 
 ”X-P2P Demo IPC“  演示1V1 P2P直连摄像头场景，”X-P2P Demo 1vN-xntp“ 和 ”X-P2P Demo 1vN-tcp“ 演示1V多 P2P场景。
 2）1V1 P2P 直连摄像头场景：
 
-![1v1](/Users/judytong/Desktop/1v1.png)
+![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/1v1.png)
 
-点击initModule，填写peername信息，点击startPlay，即可小程序1V1 P2P获取摄像头数据，peername获取规则如下：
+点击“initModule”，填写“peername”信息，点击“startPlay“，即可小程序1V1 P2P获取摄像头数据，”peername“获取规则如下：
 
-先通过获取设备属性数据API（ https://cloud.tencent.com/document/product/1131/53100 ) 获取"sys_p2p_info" 字段，"sys_p2p_info"字段样式如：XP2Pxxxxx%x.y.z，其中前4个字节为固定为”XP2P“，第5个字节到%(即：xxxx位置)为此版本的设备端peername信息，该字段填入到小程序中的“peername”中。
+先通过获取设备属性数据API（ https://cloud.tencent.com/document/product/1131/53100 ) 获取"sys_p2p_info" 字段，"sys_p2p_info"字段样式如：XP2Pxxxxx%x.y.z，其中前4个字节为固定为”XP2P“，第5个字节到%(即：xxxx位置)为此版本的设备端”peername“信息，该字段填入到小程序中的”peername“中。（!注：此版本1V1 P2P为联调版本，正式上线后，直接将设备属性数据API的获取结果传入即可）
 
 3）1V多 P2P 直连场景
 
-![1v1](/Users/judytong/Desktop/1v1.png)
+![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/1vN.png)
 
-目前微信iOS客户端体验需要进入”X-P2P Demo 1vN-xntp“完成体验，Android客户端请联系腾讯云IoT Video团队获取新微信客户端版本，关掉微信自动更新，再进入”X-P2P Demo 1vN-tcp“体验。进入体验页后，点击initModule，再点击startPlay，即可播放视频流。
+目前微信iOS客户端体验需要进入”X-P2P Demo 1vN-xntp“完成体验，Android客户端请联系腾讯云IoT Video团队获取新微信客户端版本，关掉微信自动更新，再进入”X-P2P Demo 1vN-tcp“体验。进入体验页后，点击”initModule“，再点击”startPlay“，即可播放视频流。
 
 ###### 代码示例
 
