@@ -43,7 +43,32 @@
 
 ### 小程序Demo和代码示例
 
-Demo源码：https://github.com/tencentyun/iot-video-p2p-doc/tree/master/demo/miniprogram
+###### Demo源码
+
+###### https://github.com/tencentyun/iot-video-p2p-doc/tree/master/demo/miniprogram
+
+###### Demo使用流程
+
+1）进入主页面
+
+![1v1](/Users/judytong/Desktop/1v1.png)
+
+”X-P2P Demo IPC“  演示1V1 P2P直连摄像头场景，”X-P2P Demo 1vN-xntp“ 和 ”X-P2P Demo 1vN-tcp“ 演示1V多 P2P场景。
+2）1V1 P2P 直连摄像头场景：
+
+![1v1](/Users/judytong/Desktop/1v1.png)
+
+点击initModule，填写peername信息，点击startPlay，即可小程序1V1 P2P获取摄像头数据，peername获取规则如下：
+
+先通过获取设备属性数据API（ https://cloud.tencent.com/document/product/1131/53100 ) 获取"sys_p2p_info" 字段，"sys_p2p_info"字段样式如：XP2Pxxxxx%x.y.z，其中前4个字节为固定为”XP2P“，第5个字节到%(即：xxxx位置)为此版本的设备端peername信息，该字段填入到小程序中的“peername”中。
+
+3）1V多 P2P 直连场景
+
+![1v1](/Users/judytong/Desktop/1v1.png)
+
+目前微信iOS客户端体验需要进入”X-P2P Demo 1vN-xntp“完成体验，Android客户端请联系腾讯云IoT Video团队获取新微信客户端版本，关掉微信自动更新，再进入”X-P2P Demo 1vN-tcp“体验。进入体验页后，点击initModule，再点击startPlay，即可播放视频流。
+
+###### 代码示例
 
 - 1、player插件事件回调
 
