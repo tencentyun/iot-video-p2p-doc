@@ -66,7 +66,7 @@
 
 ![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/1vN.png)
 
-目前微信iOS客户端体验需要进入”X-P2P Demo 1vN-xntp“完成体验，Android客户端请联系腾讯云IoT Video团队获取新微信客户端版本，关掉微信自动更新，再进入”X-P2P Demo 1vN-tcp“体验。进入体验页后，点击”initModule“，再点击”startPlay“，即可播放视频流。
+目前微信iOS客户端体验需要进入”X-P2P Demo 1vN-xntp“完成体验，Android客户端均可支持，但体验”X-P2P Demo 1vN-tcp“请联系腾讯云IoT Video团队获取新微信客户端版本，关掉微信自动更新，再进入”X-P2P Demo 1vN-tcp“体验。进入体验页后，点击”initModule“，再点击”startPlay“，即可播放视频流。（！注：正式上线时为了server端不暴露UDP端口，请使用1vN-tcp的调用方式。）
 
 ###### 代码示例
 
