@@ -60,7 +60,7 @@
 
 点击“initModule”，填写“peername”信息，点击“startPlay“，即可小程序1V1 P2P获取摄像头数据，”peername“获取规则如下：
 
-先通过获取设备属性数据API（ https://cloud.tencent.com/document/product/1131/53100 ) 获取"sys_p2p_info" 字段，"sys_p2p_info"字段样式如：XP2Pxxxxx%x.y.z，其中前4个字节为固定为”XP2P“，第5个字节到%(即：xxxx位置)为此版本的设备端”peername“信息，该字段填入到小程序中的”peername“中。（!注：此版本1V1 P2P为联调版本，正式上线后，直接将设备属性数据API的获取结果传入即可）
+先通过获取设备属性数据API（ https://cloud.tencent.com/document/product/1131/53100 ) 获取"sys_p2p_info" 字段，"sys_p2p_info"字段样式如：XP2Pxxxxx%x.y.z，其中前4个字节为固定为”XP2P“，第5个字节到%(即：xxxx位置)为此版本的设备端”peername“信息，该字段填入到小程序中的”peername“中。（!注：调用P2P插件接口时直接将该信息传给P2P模块即可）
 
 3）1V多 P2P 直连场景
 
