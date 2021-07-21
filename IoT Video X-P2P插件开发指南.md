@@ -56,7 +56,7 @@ appid: 'wx1319af22356934bf'
 
 ### 3. 调用插件接口
 
-这里会用到接入腾讯云 IOT Video P2P 服务时收到的 `appParams`，该字段只有在1V多P2P中有效，1V1 P2P可直接传空。
+这里会用到接入腾讯云 IOT Video P2P 服务时收到的 `appParams`，该字段只有在1V多P2P中有效，1V1 P2P可直接传demo中提供的appParams信息。
 
 ```
 // 获取插件
