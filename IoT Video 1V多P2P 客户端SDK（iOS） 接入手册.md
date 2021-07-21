@@ -15,7 +15,7 @@ SDK支持多实例，即支持同时开启多个不同视频源的直播p2p。
 - 直接通过Xode -> General -> "Framework, Libraries, and Embedded Content" 添加xnet.framework
 
 ### 2.应用配置
-腾讯云对接人员会提供iOS项目的Bundle identifier，并索取App ID、App Key、App Secret Key，如以下形式：
+腾讯云对接人员会索取iOS项目的Bundle identifier，并提供App ID、App Key、App Secret Key，如以下形式：
 ```
 Bundle identifier：com.qcloud.helloworld
 NSString *appID = @"5919174f79883b4648a90bdd";
