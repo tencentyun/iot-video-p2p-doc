@@ -14,7 +14,7 @@ const defaultData = {
     mode: 'ipc',
     ...config.ipc['v1.3'],
     id: 'iamipcid',
-    peername: '25QPD2ozyZoHmxkCNW',
+    peername: '25QPD2ozzZD5A0qxOg',
   },
   xntp: {
     mode: 'server-xntp',
@@ -131,10 +131,10 @@ Page({
     });
   },
   inputPeername(e) {
-    const {basePath, flvPath, flvParams} = this.data;
+    const { basePath, flvPath, flvParams } = this.data;
     this.setData({
       peername: e.detail.value,
-      inputUrl: `http://${e.detail.value}.xnet${basePath}${flvPath}${flvParams ? `?${flvParams}` : ''}`
+      inputUrl: `http://${e.detail.value}.xnet${basePath}${flvPath}${flvParams ? `?${flvParams}` : ''}`,
     });
   },
   onPlayerReady({ detail }) {
@@ -172,6 +172,9 @@ Page({
   },
   resetXP2PData() {
     this.setData({ state: '', localPeername: '', id: '', flvUrl: '', totalBytes: 0, peerlist: '', log: '' });
+  },
+  onPlayerStateChange(e) {
+    console.log('state change:', e);
   },
   initModule() {
     if (this.data.state) {

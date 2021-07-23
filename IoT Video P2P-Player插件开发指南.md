@@ -130,7 +130,7 @@ Page({
     this.pullVideo();
   },
   onPlayerClose({ detail }) {
-    this.abortVideoReq();
+    // 结束推流处理
   },
   bindPlay() {
     this.startToPlay();

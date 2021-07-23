@@ -6,7 +6,17 @@
       bind:statechange="onPlayerStateChange" 
       bind:error="onPlayerError" 
       bind:playerStartPull="onPlayerStartPull"
-		  bind:playerClose="onPlayerClose" />
+		  bind:playerClose="onPlayerClose">
+      <cover-view class="cover-view">
+        <cover-view class="container">
+          <cover-view class="flex-wrp" style="flex-direction:row;">
+            <cover-view class="flex-item demo-text-1"></cover-view>
+            <cover-view class="flex-item demo-text-2"></cover-view>
+            <cover-view class="flex-item demo-text-3"></cover-view>
+          </cover-view>
+        </cover-view>
+      </cover-view>
+    </p2p-player>
   </view>
   <view class="page-section">
     <view class="page-section-title">mode: {{mode}}</view>
