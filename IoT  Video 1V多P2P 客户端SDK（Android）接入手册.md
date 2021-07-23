@@ -10,12 +10,13 @@ SDK支持多实例，即支持同时开启多个不同视频源的直播p2p。
 支持的流媒体：http-flv。
 
 ## 接入
+### 接入准备
+#### aar接入
+1.接入之前，请提供腾讯云IoT Video团队package name，IoT Video团队将为您分发密钥，并提供aar库
 
-#### 添加依赖
-##### 一、aar接入
-1.xnet-release.aar拷贝到libs目录下
+2.xnet-release.aar拷贝到libs目录下
 
-2.在应用模块的build.gradle中加入
+3.在应用模块的build.gradle中加入
 ``` gradle
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
