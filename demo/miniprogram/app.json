@@ -5,7 +5,7 @@
   ],
   "plugins": {
     "wechat-p2p-player": {
-      "version": "dev-4bdc124d9abe9600b7f3725a2e46d1c9",
+      "version": "dev-1f3c24241e2db60eaa1947e74aa1a851",
       "provider": "wx9e8fbc98ceac2628"
     },
     "xp2p": {
