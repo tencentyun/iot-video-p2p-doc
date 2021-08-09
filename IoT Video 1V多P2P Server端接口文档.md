@@ -4,7 +4,9 @@
 
 | 版本号 | 发布时间  | 描述                             |
 | ------ | --------- | -------------------------------- |
-| v0.0.1 | 2021.7.12 | 暂不支持加密（md5：d3c944858e244f6168ba2ac1dbfb1d2f ） |
+| v1.0.0.beta | 2021.7.12 | 暂不支持加密（md5：d3c944858e244f6168ba2ac1dbfb1d2f ） |
+| v1.0.0 | 2021.8.10 | 支持加密（md5：9c20394748bf94f4c0335f2907014816 ） |
+
 
 ## 说明
 Server 监听请求，从数据源拉取视频数据，为视频数据加sei帧以做数据分隔，提供视频数据给请求方，同时也存储客户端上报的节点信息，下发同房间的节点给客户端，以支持p2p。
@@ -21,6 +23,8 @@ Syntax: ./iot-server [ OPTS ]
  
 -u      - url host(eg:https://flvopen.ys7.com:9188)  # 拉流源域名
 
+-k      - secret url host(eg:http://9.139.45.153:10030/code/)
+
 -p      - port # 监听的端口
 
 -t      - delay seconds # 延迟退出时间（没有请求时，多久断开拉流)
@@ -30,4 +34,6 @@ Syntax: ./iot-server [ OPTS ]
 -v      - verbose # 开启日志
 
 ## 下载地址
-https://dev.ad.qvb.qcloud.com/static/temp/iot-server
+v1.0.0.beta：https://dev.ad.qvb.qcloud.com/static/temp/iot-server
+
+v1.0.0：https://dev.ad.qvb.qcloud.com/static/temp/iot-server.encrypt

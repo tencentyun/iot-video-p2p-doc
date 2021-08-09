@@ -51,9 +51,9 @@
 
 1）进入主页面
 
-![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/demo.png)
+![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/demo-v1.0.0.png)
 
-”X-P2P Demo IPC“  演示1V1 P2P直连摄像头场景，”X-P2P Demo 1vN-xntp“ 和 ”X-P2P Demo 1vN-tcp“ 演示1V多 P2P场景。
+”X-P2P Demo IPC“  演示1V1 P2P直连摄像头场景，”X-P2P Demo 1vN-xntp“ 和 ”X-P2P Demo 1vN-tcp“ 演示1V多 P2P场景，“多播放器”示例多播放器的调用。
 
 2）1V1 P2P 直连摄像头场景：
 
