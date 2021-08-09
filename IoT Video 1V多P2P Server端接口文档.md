@@ -23,6 +23,8 @@ Syntax: ./iot-server [ OPTS ]
  
 -u      - url host(eg:https://flvopen.ys7.com:9188)  # 拉流源域名
 
+-k      - secret url host(eg:http://9.139.45.153:10030/code/)
+
 -p      - port # 监听的端口
 
 -t      - delay seconds # 延迟退出时间（没有请求时，多久断开拉流)
@@ -33,4 +35,5 @@ Syntax: ./iot-server [ OPTS ]
 
 ## 下载地址
 v1.0.0.beta：https://dev.ad.qvb.qcloud.com/static/temp/iot-server
+
 v1.0.0：https://dev.ad.qvb.qcloud.com/static/temp/iot-server.encrypt
