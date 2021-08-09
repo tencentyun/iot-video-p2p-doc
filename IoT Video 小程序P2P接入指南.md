@@ -75,49 +75,47 @@
 
 ``` javascript
   onPlayerReady({ detail }) {
-    console.log('onPlayerReady', detail);
-    this.playerCtx = detail.livePlayerContext;
-    this.setData({
-      playerCtx: detail.livePlayerContext,
-    });
-  },
-  onPlayerStartPull() {
-    this.startStream();
-  },
-  onPlayerClose({ detail }) {
-    if(detail.error?.code === PlayerCloseType.LIVE_PLAYER_CLOSED) {
-      console.error('player close, now state: ', this.data.state);
-      // 拉流过程中停止
-      if(this.data.state === 'dataParsed' || this.data.state === 'request') {
-        // 因为player会自动重试，触发startPull回调，这里只是停止拉流即可。
-        this.stopStream();
+      console.log(`[${this.id}]`, '======== onPlayerReady', detail);
+      this.setData({
+        state: 'inited',
+        player: this.selectComponent(`#${this.data.playerId}`),
+        playerCtx: detail.livePlayerContext,
+      });
+    },
+    onPlayerStartPull() {
+      console.info(`[${this.id}]`, '======== onPlayerStartPull');
+      // 如果player请求断掉再恢复，持续的流无法播放，暂时p2p先重新拉流处理
+      this.startStream();
+    },
+    onPlayerClose({ detail }) {
+      console.info(`[${this.id}]`, '======== onPlayerClose');
+      if (detail.error?.code === PlayerCloseType.LIVE_PLAYER_CLOSED) {
+        console.error('player close, now state: ', this.data.state);
+        // 拉流过程中停止
+        if (this.data.state === 'dataParsed' || this.data.state === 'request') {
+          // 因为player会自动重试，触发startPull回调，这里只是停止拉流即可。
+          this.stopStream();
+        }
       }
-    }
-  },
+    },
 ```
 
 - 2、初始化xp2p插件HttpModule模块
 
 ``` javascript
-  initModule() {
-    if (this.data.state) {
-      this.showToast('p2pModule already running');
-      return;
-    }
-    this.setData({ state: 'init' });
-
     p2pExports
       .init({
         appParams: config.appParams,
-        source: p2pExports.XP2PSource.IoTP2PServer,
       })
       .then((res) => {
         console.log('init res', res);
 
         if (res === 0) {
+          const now = Date.now();
+          console.log('init delay', now - start);
           const localPeername = p2pExports.getLocalXp2pInfo();
           console.log('localPeername', localPeername);
-          this.setData({ state: 'inited', localPeername });
+          this.setData({ state: 'inited', 'timestamps.inited': now, localPeername });
         } else {
           this.resetXP2PData();
           wx.showModal({
@@ -135,7 +133,6 @@
           showCancel: false,
         });
       });
-  },
 ```
 
 - 3、xp2p插件开始拉流
