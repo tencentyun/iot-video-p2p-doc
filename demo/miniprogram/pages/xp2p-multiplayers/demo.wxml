@@ -14,14 +14,18 @@
     <view bindtap="printData">moduleState: {{state}}</view>
     <view>localPeername: {{localPeername}}</view>
   </view>
-  <view class="page-section" wx:if="{{cfg}}">
-    <view class="page-section-title">player: {{playerId}}</view>
+  <view class="page-section" wx:if="{{cfg1}}">
+    <view class="page-section-title">player1: {{playerId1}}</view>
     <iot-p2p-player
-      id="{{playerId}}"
-      cfg="{{cfg}}" 
-      onlyp2p="{{onlyp2p}}"
-      bind:p2pNotify="onP2PMessage_Notify"
-      bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
-    />
+      id="{{playerId1}}"
+      cfg="{{cfg1}}" 
+      onlyp2p="{{onlyp2p}}" />
+  </view>
+  <view class="page-section" wx:if="{{cfg2}}">
+    <view class="page-section-title">player2: {{playerId2}}</view>
+    <iot-p2p-player
+      id="{{playerId2}}"
+      cfg="{{cfg2}}" 
+      onlyp2p="{{onlyp2p}}" />
   </view>
 </view>

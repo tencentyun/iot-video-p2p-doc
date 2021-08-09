@@ -9,12 +9,13 @@
       "provider": "wx9e8fbc98ceac2628"
     },
     "xp2p": {
-      "version": "dev-abd56d6791e95e3e1a3f91f435d78cb8",
+      "version": "dev-3d9728848c8df991a19bc2b5f0a11120",
       "provider": "wx1319af22356934bf"
     }
   },
   "usingComponents": {
-    "p2p-player": "plugin://wechat-p2p-player/p2p-player"
+    "p2p-player": "plugin://wechat-p2p-player/p2p-player",
+    "iot-p2p-player": "components/iot-p2p-player/player"
   },
   "sitemapLocation": "sitemap.json"
 }

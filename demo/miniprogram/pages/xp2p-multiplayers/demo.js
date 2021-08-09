@@ -8,7 +8,8 @@ const delay = (duration) => new Promise((resolve) => setTimeout(resolve, duratio
 Page({
   data: {
     // 这是onLoad时就固定的
-    cfg: '',
+    cfg1: '',
+    cfg2: '',
     onlyp2p: false,
 
     // 这些是p2p状态
@@ -22,49 +23,48 @@ Page({
     },
 
     // 这些是控制player和p2p的
-    playerId: 'iot-p2p-player',
-    player: null,
+    playerId1: 'iot-p2p-player-1',
+    playerId2: 'iot-p2p-player-2',
+    playerMap: {},
   },
   onLoad(query) {
     console.log('p2pExports', p2pExports);
 
     console.log('onLoad', query);
-    const cfg = query.cfg || query.mode || '';
+    const cfg1 = query.cfg1 || '';
+    const cfg2 = query.cfg2 || '';
     const onlyp2p = !!parseInt(query.onlyp2p, 10);
     this.setData(
       {
-        cfg,
+        cfg1,
+        cfg2,
         onlyp2p,
       },
       () => {
         console.log('now data', this.data);
-        const player = this.selectComponent(`#${this.data.playerId}`);
-        if (player) {
-          this.setData({ player });
-        } else {
-          console.error('create player error', this.data.playerId);
-        }
+
+        const playerMap = {};
+        [this.data.playerId1, this.data.playerId2].forEach((playerId) => {
+          const player = this.selectComponent(`#${playerId}`);
+          if (player) {
+            playerMap[playerId] = player;
+          } else {
+            console.error('create player error', playerId);
+          }
+        });
+        this.setData(
+          {
+            playerMap,
+          },
+          () => {
+            console.log('now playerMap', this.data.playerMap);
+          },
+        );
       },
     );
 
-    // 监听网络变化
-    wx.onNetworkStatusChange((res) => {
-      console.error('network changed, now state: ', this.data.state);
-      console.log(res);
-      if (this.data.player) {
-        this.data.player.stopAll();
-        if (res.isConnected) {
-          this.resetP2P();
-          this.data.player.startPlay();
-        }
-      }
-    });
-
     p2pExports.enableHttpLog(false);
     p2pExports.enableNetLog(false);
-
-    // 自动 initModule
-    this.initModule();
   },
   onUnload() {
     console.log('onUnload');
@@ -134,9 +134,9 @@ Page({
       return;
     }
 
-    if (this.data.player) {
-      this.data.player.stopAll();
-    }
+    Object.values(this.data.playerMap).forEach((player) => {
+      player.stopAll();
+    });
 
     this.resetXP2PData();
     p2pExports.destroy();
@@ -152,9 +152,9 @@ Page({
       return;
     }
 
-    if (this.data.player) {
-      this.data.player.stopAll();
-    }
+    Object.values(this.data.playerMap).forEach((player) => {
+      player.stopAll();
+    });
 
     const start = Date.now();
     this.setData({ state: 'resetP2P', 'timestamps.resetP2P': start, localPeername: '' });
@@ -184,26 +184,5 @@ Page({
           showCancel: false,
         });
       });
-  },
-  onP2PMessage_Notify(event) {
-    const { playerId, type, detail } = event.detail;
-    if (type === p2pExports.XP2PNotify_SubType.Disconnect) {
-      wx.showModal({
-        content: `${playerId}: 连接断开\n${(detail && detail.msg) || ''}`, // 换行在开发者工具中无效，真机正常
-        confirmText: '重置P2P',
-        success: (result) => {
-          if (result.confirm) {
-            // 重置P2P
-            this.resetP2P();
-          }
-        },
-      });
-    }
-  },
-  onPlayerSystemPermissionDenied({ detail }) {
-    wx.showModal({
-      content: `systemPermissionDenied\n${detail.errMsg}`,
-      showCancel: false,
-    });
   },
 });

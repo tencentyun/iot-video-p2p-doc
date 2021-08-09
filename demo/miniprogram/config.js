@@ -1,3 +1,4 @@
+// 这些是和设备无关的配置
 const config = {
   ipc: {
     old: {
@@ -15,14 +16,18 @@ const config = {
     xntp: {
       host: '25QWpIISwMaH6wru24.xnet',
       basePath: '/iot.p2p.com/openlive/',
+      // codeUrl: 'https://dev.ad.qvb.qcloud.com/code', // TODO 有问题，带code拉不到流
     },
     tcp: {
       host: '106.52.41.74:12680',
-      basePath: '/test-server/',
+      // basePath: '/test-server/', // 这个不支持加密，后面都用 openlive
+      basePath: '/openlive/',
+      codeUrl: 'https://dev.ad.qvb.qcloud.com/code',
     },
     tcp80: {
-      host: 'dev.ad.qvb.qcloud.com',
-      basePath: '/test-server/',
+      host: '106.52.41.74',
+      basePath: '/openlive/',
+      codeUrl: 'https://dev.ad.qvb.qcloud.com/code',
     },
   },
   appParams: {
