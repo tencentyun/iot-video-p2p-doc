@@ -57,17 +57,24 @@
 
 2）1V1 P2P 直连摄像头场景：
 
-![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/1v1.png)
+![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/1v1-1-v1.0.0.png)
 
-点击“initModule”，填写“peername”信息，点击“startPlay“，即可小程序1V1 P2P获取摄像头数据，”peername“获取规则如下：
+点击“initModule”，填写“productId”、“deviceName”，通过获取设备属性数据API（ https://cloud.tencent.com/document/product/1131/53100 ) 获取"sys_p2p_info" 字段填入”xp2pInfo“中。点击“prepare”和“startPlay”即可开始播放。
+“flvFile”字段可设置播放清晰度，信令交互参考：
+https://github.com/tencentyun/iot-link-android/blob/master/sdk/video-link-android/doc/%E8%AE%BE%E5%A4%87%E4%B8%8EAPP%E4%BA%A4%E4%BA%92%E6%8C%87%E5%BC%95.md 。
 
-先通过获取设备属性数据API（ https://cloud.tencent.com/document/product/1131/53100 ) 获取"sys_p2p_info" 字段，"sys_p2p_info"字段样式如：XP2Pxxxxx%x.y.z，其中前4个字节为固定为”XP2P“，第5个字节到%(即：xxxx位置)为设备端”peername“信息，该字段填入到小程序中的”peername“中。（!注：调用P2P插件接口时直接将云API获取的"sys_p2p_info"原始字段传给P2P插件localpeername即可）
+![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/1v1-2-v1.0.0.png)
+
+点击“不加密对讲”和“加密对讲”可演示小程序语音对讲，点击“挂断”停止对讲。
+修改信令command的"cmd=xxx“可演示自定义信令。
 
 3）1V多 P2P 直连场景
 
-![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/1vN.png)
+![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/1vN-v1.0.0.png)
 
-目前微信iOS客户端体验需要进入”X-P2P Demo 1vN-xntp“完成体验，Android客户端均可支持，但体验”X-P2P Demo 1vN-tcp“请联系腾讯云IoT Video团队获取新微信客户端版本，关掉微信自动更新，再进入”X-P2P Demo 1vN-tcp“体验。进入体验页后，点击”initModule“，再点击”startPlay“，即可播放视频流。（！注：正式上线时为了server端不暴露UDP端口，请使用1vN-tcp的调用方式。）
+目前微信iOS客户端体验需要进入”X-P2P Demo 1vN-xntp“完成体验，Android客户端均可支持，但体验”X-P2P Demo 1vN-tcp“请联系腾讯云IoT Video团队获取新微信客户端版本，关掉微信自动更新，再进入”X-P2P Demo 1vN-tcp“体验。
+进入体验页后，支持输入"codeUrl"为部署的密钥服务模块的接入层，点击”initModule“，再点击”startPlay“，即可播放视频流。（！注：正式上线时为了server端不暴露UDP端口，请使用1vN-tcp的调用方式。）
+
 
 ###### 代码示例
 
