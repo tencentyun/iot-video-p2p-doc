@@ -27,33 +27,12 @@
 
 ## 微信版本限制
 
-微信 8.0.7以上 基础库 2.18.0以上
+微信 8.0.7以上
+基础库 2.18.0以上
 
 ## 使用方法
 
 本插件需配合 [P2P-Player插件](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md) 使用，请先引用 *P2P-Player插件*
-
-### 1. 申请使用插件
-
-小程序后台添加插件，详见[官方文档](https://developers.weixin.qq.com/miniprogram/dev/framework/plugin/using.html)
-
-```
-appid: 'wx1319af22356934bf'
-```
-
-### 2. 引入插件代码包
-
-```
-// 在app.json里面引入插件，注意插件版本号
-{
-  "plugins": {
-    "iotvideo-weapp-plugin": {
-      "version": "1.0.0", // 具体需要使用的版本号
-      "provider": "wx1319af22356934bf" // 插件的appid
-    }
-  }
-}
-```
 
 ### 1. 申请使用插件
 
@@ -80,7 +59,9 @@ appid: 'wx1319af22356934bf'
 
 ### 3.1 1v多
 
-这里会用到接入腾讯云 IOT Video P2P 服务时收到的 `appParams`
+<img width="700" src="./pic/plugin-p2p/1vN.png"/>
+
+初始化时会用到接入腾讯云 IOT Video P2P 服务时收到的 `appParams`
 
 ``` js
 // 获取插件
@@ -136,7 +117,9 @@ p2pModule.destroy();
 
 ### 3.2 1v1
 
-基本流程和1v多类似，也会用到接入腾讯云 IOT Video P2P 服务时收到的 `appParams`
+<img width="700" src="./pic/plugin-p2p/1v1.png"/>
+
+基本流程和1v多类似，初始化时也会用到接入腾讯云 IOT Video P2P 服务时收到的 `appParams`
 
 ``` js
 // 获取插件
@@ -178,6 +161,11 @@ p2pModule.startP2PService(ipcId, ipcInfo, {
 ``` js
 // 在 p2p-player 插件开始请求后启动p2p拉流，注意需要先调用 startP2PService
 p2pModule.startP2PStream(ipcId, {
+  // 不指定 flv 就从 startP2PService 的参数里解析
+  flv: {
+    filename: 'ipc.flv',
+    params: 'action=live&channel=0&quality=high',
+  },
   dataCallback: (data) => {
     // data 是 ArrayBuffer 类型，在这里把数据推送给 p2p-player
   },
@@ -408,7 +396,7 @@ res 的值
 
 --------
 
-### p2pModule.startP2PStream(id, callbacks) => Promise\<res\>
+### p2pModule.startP2PStream(id, params) => Promise\<res\>
 
 开始指定id的拉流服务
 
@@ -417,17 +405,18 @@ res 的值
 | 参数 | 类型 | 说明 |
 | - | - | - |
 | id | string | 唯一id |
-| callbacks | Object | 各种回调函数 |
+| params | Object | 流的具体参数和回调函数 |
 
-##### callbacks: Object
+##### params: Object
 
 各种回调函数
 
 | 属性 | 类型 | 默认值 | 必填 | 说明 |
 | - | - | - | - | - |
 | dataCallback | (data: ArrayBuffer) => void | - | 是 | 直播流数据回调 |
+| flv | { filename: string; params: string } | - | 否 | 不指定就从 startP2PService 的参数中解析 |
 
-**callbacks.dataCallback 参数**
+**params.dataCallback 参数**
 
 | 参数 | 类型 | 说明 |
 | - | - | - |
@@ -462,7 +451,7 @@ res 的值
 
 --------
 
-### p2pModule.startVoiceService(id， recorderManager) => Promise\<res\>
+### p2pModule.startVoiceService(id, recorderManager) => Promise\<res\>
 
 开始指定id的语音对讲服务
 
