@@ -1,5 +1,12 @@
 <view class="page-body">
-	<navigator url="/pages/xp2p-demo-1vN/demo?mode=ipc" hover-class="navigator-hover">跳转到 X-P2P Demo IPC</navigator>
+  <view class="page-section">
+    <button wx:for="{{listBtn}}" wx:key="cfg" type="primary" class="page-body-button" bindtap="gotoDemoPage" data-cfg="{{item.cfg}}">{{item.productId}}/{{item.deviceName}}</button>
+  </view>
+  <view class="page-section">
+    <view wx:for="{{listNav}}" wx:key="cfg">
+      <navigator url="/pages/xp2p-demo-1vN/demo?mode={{item.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 1v1 {{item.cfg}}</navigator>
+    </view>
+  </view>
 	<navigator url="/pages/xp2p-demo-1vN/demo?mode=xntp" hover-class="navigator-hover">跳转到 X-P2P Demo 1vN-xntp</navigator>
 	<navigator url="/pages/xp2p-demo-1vN/demo?mode=tcp" hover-class="navigator-hover">跳转到 X-P2P Demo 1vN-tcp</navigator>
 	<navigator url="/pages/xp2p-multiplayers/demo?cfg1=ipc&cfg2=xntp&mode=xntp" hover-class="navigator-hover">跳转到 X-P2P Demo IPC+XNTP 多播放器</navigator>

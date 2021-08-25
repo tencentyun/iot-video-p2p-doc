@@ -2,13 +2,14 @@
   <view wx:if="{{needPlayer}}" class="component-section tc">
     <p2p-player 
       id="{{playerId}}"
+      mode="live"
+      minCache="0.2"
+      maxCache="0.8"
       bind:playerReady="onPlayerReady"
       bind:playerStartPull="onPlayerStartPull"
       bind:playerClose="onPlayerClose"
       bind:statechange="onPlayerStateChange"
-      minCache="0.2"
-      maxCache="0.8"
-      mode="{{mode==='ipc' ? 'RTC' : 'live'}}"
+      bindnetstatus="onNetstatusChange"
       bind:error="onPlayerError" />
   </view>
   <view class="component-section">
@@ -61,6 +62,8 @@
         </view>
       </view>
     </view>
+    <view>state: {{state}}</view>
+    <view>totalBytes: {{totalBytes}}</view>
     <view class="group-button-area">
       <button wx:if="{{mode === 'ipc'}}" bindtap="prepare" class="group-button" type="primary" size="mini" disabled="{{!!targetId}}">
         prepare
@@ -106,7 +109,6 @@
   </view>
   <view class="component-section" bindtap="printData">
     <view class="component-section-title">状态</view>
-    <view>state: {{state}}</view>
     <view>targetId: {{targetId}}</view>
     <view>
       <view>flvUrl: </view>
@@ -116,7 +118,6 @@
       <view>innerUrl: </view>
       <view class="text-break" style="padding: 10rpx;">{{innerUrl}}</view>
     </view>
-    <view wx:if="{{onlyp2p}}">totalBytes: {{totalBytes}}</view>
   </view>
   <view class="component-section" wx:if="{{mode !== 'ipc'}}">
     <view>peerlist:</view>

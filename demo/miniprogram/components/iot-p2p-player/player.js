@@ -88,6 +88,7 @@ Component({
       startStream: 0,
       request: 0,
       dataParsed: 0,
+      firstChunk: 0,
     },
 
     // 这些是控制player和p2p的
@@ -167,6 +168,7 @@ Component({
     },
     onPlayerReady({ detail }) {
       console.log(`[${this.id}]`, '======== onPlayerReady', detail);
+      this.addLog('==== onPlayerReady');
       this.setData({
         state: 'inited',
         player: this.selectComponent(`#${this.data.playerId}`),
@@ -175,18 +177,20 @@ Component({
     },
     onPlayerStartPull() {
       console.info(`[${this.id}]`, '======== onPlayerStartPull');
+      this.addLog('==== onPlayerStartPull');
       // 如果player请求断掉再恢复，持续的流无法播放，暂时p2p先重新拉流处理
       this.startStream();
     },
-    onNetstatusChange(detail) {
-      // console.log('net change: ', detail);
+    onNetstatusChange(e) {
+      // console.log('net change: ', e.detail.info);
     },
     onPlayerClose({ detail }) {
-      console.info(`[${this.id}]`, '======== onPlayerClose');
+      console.info(`[${this.id}]`, '======== onPlayerClose', detail);
+      this.addLog('==== onPlayerClose');
       if (detail.error?.code === PlayerCloseType.LIVE_PLAYER_CLOSED) {
         console.error('player close, now state: ', this.data.state);
         // 拉流过程中停止
-        if (this.data.state === 'dataParsed' || this.data.state === 'request') {
+        if (this.data.state === 'firstChunk' || this.data.state === 'dataParsed' || this.data.state === 'request') {
           // 因为player会自动重试，触发startPull回调，这里只是停止拉流即可。
           this.stopStream();
         }
@@ -197,7 +201,8 @@ Component({
     },
     onPlayerError({ detail }) {
       console.log(`[${this.id}]`, '======== onPlayerError', detail);
-      if (detail.errMsg.indexOf('system permission denied') >= 0) {
+      this.addLog('==== onPlayerError');
+      if (detail.errMsg?.indexOf('system permission denied') >= 0) {
         // 如果liveplayer是RTC模式，当微信没有系统录音权限时会出错，但是没有专用的错误码，微信侧建议先判断errMsg来兼容
         this.triggerEvent('systemPermissionDenied', detail);
         return;
@@ -377,9 +382,11 @@ Component({
             this.data.playerCtx.play({
               success: (res) => {
                 console.log(`[${this.id}]`, 'call play success');
+                this.addLog('==== call play success');
               },
               fail: (res) => {
                 console.log(`[${this.id}]`, 'call play fail', res);
+                this.addLog('==== call play fail');
                 this.showToast('call play fail');
               },
             });
@@ -390,6 +397,7 @@ Component({
       );
     },
     stopPlay() {
+      this.addLog('click stop play');
       if (this.data.needPlayer) {
         if (!this.data.playerCtx) {
           return;
@@ -398,9 +406,11 @@ Component({
         this.data.playerCtx.stop({
           success: (res) => {
             console.log(`[${this.id}]`, 'call stop success');
+            this.addLog('==== call stop success');
           },
           fail: (res) => {
             console.log(`[${this.id}]`, 'call stop fail');
+            this.addLog('==== call stop fail');
             this.showToast('call stop fail');
           },
         });
@@ -413,7 +423,7 @@ Component({
       const offCrypto = e.currentTarget.dataset.offcrypto || false;
       console.log('是否加密: ', !offCrypto);
       if (!this.data.targetId) {
-        this.showToast('invalid targetId');
+        this.showToast('startVoice: invalid targetId');
         return;
       }
       console.log(`[${this.id}]`, 'startVoice');
@@ -446,14 +456,13 @@ Component({
       this.voiceState = 'stopped';
     },
     sendCommand() {
-      if (!this.data.inputCommand) {
-        // 至少要有1个
-        this.showToast('please input command');
+      if (!this.data.targetId) {
+        this.showToast('sendCommand: invalid targetId');
         return;
       }
 
-      if (!this.data.targetId) {
-        this.showToast('invalid targetId');
+      if (!this.data.inputCommand) {
+        this.showToast('sendCommand: please input command');
         return;
       }
 
@@ -476,8 +485,15 @@ Component({
         });
     },
     prepareService(serviceSuccessCallback) {
-      if (!this.data.targetId || !this.data.flvUrl) {
-        this.showToast('invalid targetId or flvUrl');
+      if (!this.data.targetId) {
+        console.log('prepareService: invalid targetId', this.data);
+        this.showToast('prepareService: invalid targetId');
+        return;
+      }
+
+      if (!this.data.flvUrl) {
+        console.log('prepareService: invalid flvUrl', this.data);
+        this.showToast('prepareService: invalid flvUrl');
         return;
       }
 
@@ -540,23 +556,30 @@ Component({
 
     startStream() {
       let dataCallback;
+      let chunkCount = 0;
+      let totalBytes = 0;
+      const onlyDataCallback = (data) => {
+        const now = Date.now();
+        chunkCount++;
+        totalBytes += data.byteLength;
+        if (chunkCount === 1) {
+          this.addLog(`first chunk delay ${now - this.data.serviceTimestamps.clickStartPlay}`);
+          this.setData({ state: 'firstChunk', 'serviceTimestamps.firstChunk': now });
+        }
+        this.setData({
+          totalBytes,
+        });
+      };
       if (this.data.needPlayer) {
         // 用player触发请求时
         const { player } = this.data;
         dataCallback = (data) => {
+          onlyDataCallback(data);
           player.addChunk(data);
         };
       } else {
         // 只拉数据时
-        let chunkCount = 0;
-        let totalBytes = 0;
-        dataCallback = (data) => {
-          chunkCount++;
-          totalBytes += data.byteLength;
-          this.setData({
-            totalBytes,
-          });
-        };
+        dataCallback = onlyDataCallback;
       }
 
       this.prepareService(() => {
@@ -564,10 +587,18 @@ Component({
           return;
         }
 
-        this.addLog('start stream');
-        this.setData({ state: 'startStream', 'serviceTimestamps.startStream': Date.now(), playing: true });
+        const [filename, params] = this.data.inputFlvFile.split('?');
+
+        this.addLog(`start stream: ${filename} ${params}`);
+        this.setData({
+          state: 'startStream',
+          'serviceTimestamps.startStream': Date.now(),
+          playing: true,
+          totalBytes: 0,
+        });
 
         p2pExports.startP2PStream(this.data.targetId, {
+          flv: { filename, params },
           // msgCallback, // 不传 msgCallback 就是保持之前设置的
           dataCallback,
         });
@@ -579,7 +610,7 @@ Component({
       }
 
       this.addLog('stop stream');
-      this.setData({ state: 'serviceStarted', 'serviceTimestamps.startStream': 0, playing: false });
+      this.setData({ state: 'serviceStarted', 'serviceTimestamps.startStream': 0, playing: false, totalBytes: 0 });
 
       p2pExports.stopP2PStream(this.data.targetId);
     },
@@ -631,14 +662,14 @@ Component({
           // 数据传输开始
           console.log(`[${this.id}]`, 'XP2PNotify_SubType.Parsed', detail);
           this.addLog('notify parsed');
-          this.addLog(`play delay ${now - this.data.serviceTimestamps.clickStartPlay}`);
+          this.addLog(`parsed delay ${now - this.data.serviceTimestamps.clickStartPlay}`);
           this.setData({ state: 'dataParsed', 'serviceTimestamps.dataParsed': now });
           break;
         case p2pExports.XP2PNotify_SubType.Success:
         case p2pExports.XP2PNotify_SubType.Eof:
           // 数据传输正常结束
           console.log(`[${this.id}]`, 'XP2PNotify_SubType.Success/Eof', detail);
-          if (this.data.state === 'dataParsed') {
+          if (this.data.state === 'dataParsed' || this.data.state === 'firstChunk') {
             // dataParsed 之前的好像可以自动重试
             this.showToast('直播结束');
           }

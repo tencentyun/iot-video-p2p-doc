@@ -3,9 +3,11 @@ import devices from '../../devices';
 Page({
   data: {
     listBtn: [],
+    listNav: [],
   },
   onLoad() {
     const listBtn = [];
+    const listNav = [];
     for (const key in devices) {
       const item = devices[key];
       item.showInHomePageBtn &&
@@ -14,8 +16,13 @@ Page({
           cfg: key,
           ...item,
         });
+      item.showInHomePageNav &&
+        listNav.push({
+          mode: 'ipc',
+          cfg: key,
+        });
     }
-    this.setData({ listBtn });
+    this.setData({ listBtn, listNav });
   },
   onUnload() {},
   gotoDemoPage(e) {
