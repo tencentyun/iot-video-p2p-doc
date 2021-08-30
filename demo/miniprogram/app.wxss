@@ -86,6 +86,9 @@
   min-height: 80rpx;
   line-height: 80rpx;
 }
+.weui-input[disabled] {
+  color: rgba(0,0,0,0.3);
+}
 .text-box {
   width: 100%;
   min-height: 80rpx;

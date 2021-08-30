@@ -1,15 +1,16 @@
 {
   "pages": [
     "pages/index/index",
-    "pages/xp2p-demo-1vN/demo"
+    "pages/xp2p-demo-1vN/demo",
+    "pages/xp2p-multiplayers/demo"
   ],
   "plugins": {
     "wechat-p2p-player": {
-      "version": "dev-1f3c24241e2db60eaa1947e74aa1a851",
+      "version": "dev-c56ab42f824a86d0f82691b7d8ffec0e",
       "provider": "wx9e8fbc98ceac2628"
     },
     "xp2p": {
-      "version": "dev-0bc7079712e7597969bac59017c91c03",
+      "version": "dev-aafa5c602432368b1bcefe5dc7cfe9f3",
       "provider": "wx1319af22356934bf"
     }
   },

@@ -1,12 +1,6 @@
 <view class="page-body">
   <view class="page-section page-section-gap">
     <view class="group-button-area">
-      <button bindtap="initModule" class="group-button" type="primary" size="mini" disabled="{{!!state}}">
-        initModule
-      </button>
-      <button bindtap="destroyModule" class="group-button" type="primary" size="mini" disabled="{{!state}}">
-        destroyModule
-      </button>
       <button bindtap="resetP2P" class="group-button" type="primary" size="mini" disabled="{{!state}}">
         resetP2P
       </button>
@@ -20,6 +14,7 @@
       id="{{playerId}}"
       cfg="{{cfg}}" 
       onlyp2p="{{onlyp2p}}"
+      reserve="{{reserve}}"
       bind:p2pNotify="onP2PMessage_Notify"
       bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
     />

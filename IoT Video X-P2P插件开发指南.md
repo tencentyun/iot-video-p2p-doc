@@ -159,6 +159,16 @@ p2pModule.startP2PService(ipcId, ipcInfo, {
 ```
 
 ``` js
+// 支持修改 callbacks
+p2pModule.updateServiceCallbacks(ipcId, {
+  msgCallback: (event, subtype, detail) => {
+    // 各种消息通知，取值见api说明
+  },
+});
+
+```
+
+``` js
 // 在 p2p-player 插件开始请求后启动p2p拉流，注意需要先调用 startP2PService
 p2pModule.startP2PStream(ipcId, {
   // 不指定 flv 就从 startP2PService 的参数里解析
@@ -381,6 +391,30 @@ res 的值
 | -2401 | 重复启动p2p服务 |
 | -2402 | 启动拉流失败 |
 | -2403 | p2p服务尚未启动 |
+
+--------
+
+### p2pModule.updateServiceCallbacks(id, callbacks) => res
+
+更新指定xp2p服务的callbacks
+
+#### 参数
+
+| 参数 | 类型 | 说明 |
+| - | - | - |
+| id | string | 唯一id |
+| callbacks | Object | 各种回调函数，同 startP2PService 的 callbacks 参数 |
+
+#### 返回值
+
+##### res: number
+
+res 的值
+
+| res | 说明 |
+| - | - |
+| 0 | 成功 |
+| -2000 | 参数错误 |
 
 --------
 

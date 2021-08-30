@@ -65,10 +65,17 @@ Page({
 
     p2pExports.enableHttpLog(false);
     p2pExports.enableNetLog(false);
+
+    // 自动 initModule
+    this.initModule();
   },
   onUnload() {
     console.log('onUnload');
-    this.destroyModule();
+
+    // 监控页关掉player就好，不用销毁 p2p 模块
+    Object.values(this.data.playerMap).forEach((player) => {
+      player.stopAll();
+    });
   },
   showToast(content) {
     wx.showToast({
@@ -95,17 +102,16 @@ Page({
     const start = Date.now();
     this.setData({ state: 'init', 'timestamps.init': start });
 
-    p2pExports
-      .init({
-        appParams: config.appParams,
-      })
+    const app = getApp();
+    app
+      .initModule()
       .then((res) => {
         console.log('init res', res);
 
         if (res === 0) {
           const now = Date.now();
           console.log('init delay', now - start);
-          const localPeername = p2pExports.getLocalXp2pInfo();
+          const { localPeername } = app.p2pData;
           console.log('localPeername', localPeername);
           this.setData({ state: 'inited', 'timestamps.inited': now, localPeername });
         } else {
@@ -139,12 +145,9 @@ Page({
     });
 
     this.resetXP2PData();
-    p2pExports.destroy();
-  },
-  destroyModuleAsync() {
-    delay(10).then(() => {
-      this.destroyModule();
-    });
+
+    const app = getApp();
+    app.destroyModule();
   },
   resetP2P() {
     if (!this.data.state) {
@@ -158,14 +161,16 @@ Page({
 
     const start = Date.now();
     this.setData({ state: 'resetP2P', 'timestamps.resetP2P': start, localPeername: '' });
-    p2pExports
+
+    const app = getApp();
+    app
       .resetP2P()
       .then((res) => {
         console.log('resetP2P res', res);
         if (res === 0) {
           const now = Date.now();
           console.log('resetP2P delay', now - start);
-          const localPeername = p2pExports.getLocalXp2pInfo();
+          const { localPeername } = app.p2pData;
           console.log('localPeername', localPeername);
           this.setData({ state: 'inited', 'timestamps.reseted': now, localPeername });
         } else {
@@ -177,10 +182,10 @@ Page({
         }
       })
       .catch((errcode) => {
-        console.error('reset error', errcode);
+        console.error('resetP2P error', errcode);
         this.destroyModule();
         wx.showModal({
-          content: `reset 失败, errcode: ${errcode}`,
+          content: `resetP2P 失败, errcode: ${errcode}`,
           showCancel: false,
         });
       });

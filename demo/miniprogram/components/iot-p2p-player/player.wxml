@@ -9,8 +9,9 @@
       bind:playerStartPull="onPlayerStartPull"
       bind:playerClose="onPlayerClose"
       bind:statechange="onPlayerStateChange"
-      bindnetstatus="onNetstatusChange"
-      bind:error="onPlayerError" />
+      bind:error="onPlayerError"
+      bindnetstatus="onNetStatusChange"
+    />
   </view>
   <view class="component-section">
     <view class="component-section-title">mode: {{mode}}</view>
@@ -26,25 +27,25 @@
       <view>productId:</view>
       <view class="weui-cells weui-cells_after-title">
         <view class="weui-cell weui-cell_input">
-          <input class="weui-input" type="text" value="{{inputProductId}}" placeholder="请输入productId" placeholder-class="placeholder" bindinput="inputIPCProductId" />
+          <input class="weui-input" type="text" value="{{inputProductId}}" disabled="{{targetId}}" placeholder="请输入productId" placeholder-class="placeholder" bindinput="inputIPCProductId" />
         </view>
       </view>
       <view>deviceName:</view>
       <view class="weui-cells weui-cells_after-title">
         <view class="weui-cell weui-cell_input">
-          <input class="weui-input" type="text" value="{{inputDeviceName}}" placeholder="请输入deviceName" placeholder-class="placeholder" bindinput="inputIPCDeviceName" />
+          <input class="weui-input" type="text" value="{{inputDeviceName}}" disabled="{{targetId}}" placeholder="请输入deviceName" placeholder-class="placeholder" bindinput="inputIPCDeviceName" />
         </view>
       </view>
       <view>xp2pInfo:</view>
       <view class="weui-cells weui-cells_after-title">
         <view class="weui-cell weui-cell_input">
-          <input class="weui-input" type="text" value="{{inputXp2pInfo}}" placeholder="请输入xp2pInfo" placeholder-class="placeholder" bindinput="inputIPCXp2pInfo" />
+          <input class="weui-input" type="text" value="{{inputXp2pInfo}}" disabled="{{targetId}}" placeholder="请输入xp2pInfo" placeholder-class="placeholder" bindinput="inputIPCXp2pInfo" />
         </view>
       </view>
       <view>flvFile:</view>
       <view class="weui-cells weui-cells_after-title">
         <view class="weui-cell weui-cell_input">
-          <input class="weui-input" type="text" value="{{inputFlvFile}}" placeholder="请输入xp2pInfo" placeholder-class="placeholder" bindinput="inputIPCFlvFile" />
+          <input class="weui-input" type="text" value="{{inputFlvFile}}" disabled="{{targetId && playing}}" placeholder="请输入flvFile" placeholder-class="placeholder" bindinput="inputIPCFlvFile" />
         </view>
       </view>
     </view>
@@ -52,13 +53,13 @@
       <view>codeUrl:</view>
       <view class="weui-cells weui-cells_after-title">
         <view class="weui-cell weui-cell_input">
-          <input class="weui-input" type="text" value="{{inputCodeUrl}}" placeholder="请输入codeUrl" placeholder-class="placeholder" bindinput="inputServerCodeUrl" />
+          <input class="weui-input" type="text" value="{{inputCodeUrl}}" disabled="{{targetId}}" placeholder="请输入codeUrl" placeholder-class="placeholder" bindinput="inputServerCodeUrl" />
         </view>
       </view>
       <view>streamUrl:</view>
       <view class="weui-cells weui-cells_after-title">
         <view class="weui-cell weui-cell_input">
-          <input class="weui-input" type="text" value="{{inputUrl}}" placeholder="请输入streamUrl" placeholder-class="placeholder" bindinput="inputStreamUrl" />
+          <input class="weui-input" type="text" value="{{inputUrl}}" disabled="{{targetId}}" placeholder="请输入streamUrl" placeholder-class="placeholder" bindinput="inputStreamUrl" />
         </view>
       </view>
     </view>
@@ -124,7 +125,7 @@
     <scroll-view scroll-y="true" style="height: 300rpx; padding: 10rpx;">{{peerlist}}</scroll-view>
   </view>
   <view class="component-section component-section-gap">
-    <view>log:</view>
-    <scroll-view scroll-y="true" style="height: 500rpx; padding: 10rpx;"><text>{{log}}</text></scroll-view>
+    <view class="component-section-title">Log<view style="float: right; padding-right: 10rpx; color: blue;" bindtap="clearLog">clear</view></view>
+    <scroll-view scroll-y="true" style="height: 500rpx; padding: 10rpx; border: solid 1px #dddddd"><text>{{log}}</text></scroll-view>
   </view>
 </view>

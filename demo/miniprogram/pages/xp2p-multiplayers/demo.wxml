@@ -1,12 +1,6 @@
 <view class="page-body">
   <view class="page-section page-section-gap">
     <view class="group-button-area">
-      <button bindtap="initModule" class="group-button" type="primary" size="mini" disabled="{{!!state}}">
-        initModule
-      </button>
-      <button bindtap="destroyModule" class="group-button" type="primary" size="mini" disabled="{{!state}}">
-        destroyModule
-      </button>
       <button bindtap="resetP2P" class="group-button" type="primary" size="mini" disabled="{{!state}}">
         resetP2P
       </button>
@@ -15,14 +9,14 @@
     <view>localPeername: {{localPeername}}</view>
   </view>
   <view class="page-section" wx:if="{{cfg1}}">
-    <view class="page-section-title">player1: {{playerId1}}</view>
+    <view class="page-section-title player-title">player1: {{playerId1}}</view>
     <iot-p2p-player
       id="{{playerId1}}"
       cfg="{{cfg1}}" 
       onlyp2p="{{onlyp2p}}" />
   </view>
   <view class="page-section" wx:if="{{cfg2}}">
-    <view class="page-section-title">player2: {{playerId2}}</view>
+    <view class="page-section-title player-title">player2: {{playerId2}}</view>
     <iot-p2p-player
       id="{{playerId2}}"
       cfg="{{cfg2}}" 

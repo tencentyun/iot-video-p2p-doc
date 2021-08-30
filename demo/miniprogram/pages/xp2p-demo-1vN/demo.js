@@ -1,5 +1,3 @@
-import config from '../../config';
-
 const xp2pPlugin = requirePlugin('xp2p');
 const p2pExports = xp2pPlugin.p2p;
 
@@ -10,6 +8,7 @@ Page({
     // 这是onLoad时就固定的
     cfg: '',
     onlyp2p: false,
+    reserve: false, // 退出时保留连接，仅适用于1v1
 
     // 这些是p2p状态
     state: '',
@@ -31,10 +30,12 @@ Page({
     console.log('onLoad', query);
     const cfg = query.cfg || query.mode || '';
     const onlyp2p = !!parseInt(query.onlyp2p, 10);
+    const reserve = !!parseInt(query.reserve, 10);
     this.setData(
       {
         cfg,
         onlyp2p,
+        reserve,
       },
       () => {
         console.log('now data', this.data);
@@ -68,7 +69,11 @@ Page({
   },
   onUnload() {
     console.log('onUnload');
-    this.destroyModule();
+
+    // 监控页关掉player就好，不用销毁 p2p 模块
+    if (this.data.player) {
+      this.data.player.stopAll('auto'); // 按player内部属性来
+    }
   },
   showToast(content) {
     wx.showToast({
@@ -95,17 +100,16 @@ Page({
     const start = Date.now();
     this.setData({ state: 'init', 'timestamps.init': start });
 
-    p2pExports
-      .init({
-        appParams: config.appParams,
-      })
+    const app = getApp();
+    app
+      .initModule()
       .then((res) => {
         console.log('init res', res);
 
         if (res === 0) {
           const now = Date.now();
           console.log('init delay', now - start);
-          const localPeername = p2pExports.getLocalXp2pInfo();
+          const { localPeername } = app.p2pData;
           console.log('localPeername', localPeername);
           this.setData({ state: 'inited', 'timestamps.inited': now, localPeername });
         } else {
@@ -139,12 +143,9 @@ Page({
     }
 
     this.resetXP2PData();
-    p2pExports.destroy();
-  },
-  destroyModuleAsync() {
-    delay(10).then(() => {
-      this.destroyModule();
-    });
+
+    const app = getApp();
+    app.destroyModule();
   },
   resetP2P() {
     if (!this.data.state) {
@@ -158,14 +159,16 @@ Page({
 
     const start = Date.now();
     this.setData({ state: 'resetP2P', 'timestamps.resetP2P': start, localPeername: '' });
-    p2pExports
+
+    const app = getApp();
+    app
       .resetP2P()
       .then((res) => {
         console.log('resetP2P res', res);
         if (res === 0) {
           const now = Date.now();
           console.log('resetP2P delay', now - start);
-          const localPeername = p2pExports.getLocalXp2pInfo();
+          const { localPeername } = app.p2pData;
           console.log('localPeername', localPeername);
           this.setData({ state: 'inited', 'timestamps.reseted': now, localPeername });
         } else {
@@ -177,10 +180,10 @@ Page({
         }
       })
       .catch((errcode) => {
-        console.error('reset error', errcode);
+        console.error('resetP2P error', errcode);
         this.destroyModule();
         wx.showModal({
-          content: `reset 失败, errcode: ${errcode}`,
+          content: `resetP2P 失败, errcode: ${errcode}`,
           showCancel: false,
         });
       });

@@ -50,11 +50,15 @@ Component({
     onlyp2p: {
       type: Boolean,
     },
+    reserve: {
+      type: Boolean,
+    },
   },
   data: {
     // 这是onLoad时就固定的
     mode: '',
     needPlayer: false,
+    realReserve: false,
 
     // 这些是不同的流，注意改变输入值不应该改变已经启动的p2p服务
     inputTargetId: '',
@@ -105,6 +109,8 @@ Component({
       console.log(`[${this.id}]`, 'attached', this.id, this.properties);
       const data = (this.properties.cfg && defaultData[this.properties.cfg]) || defaultData.tcp;
       const onlyp2p = this.properties.onlyp2p || false;
+      const reserve = this.properties.reserve || false;
+      const realReserve = data.mode === 'ipc' && reserve;
       const needPlayer = !onlyp2p;
       const playerId = needPlayer
         ? `${this.id || `iot-p2p-player-${Date.now()}-${Math.floor(Math.random() * 1000)}`}-player`
@@ -115,6 +121,7 @@ Component({
         {
           mode: data.mode,
           needPlayer,
+          realReserve,
           playerId,
           inputTargetId: data.targetId || '',
           inputProductId: data.productId || '',
@@ -128,6 +135,9 @@ Component({
         },
         () => {
           console.log(`[${this.id}]`, 'attached, now data', this.data);
+          if (this.data.state === 'inited') {
+            this.checkReservedService();
+          }
         },
       );
     },
@@ -136,7 +146,7 @@ Component({
     },
     detached() {
       // 在组件实例被从页面节点树移除时执行
-      this.stopAll();
+      this.stopAll('auto');
     },
     error() {
       // 每当组件方法抛出错误时执行
@@ -145,10 +155,6 @@ Component({
   export() {
     return {
       prepare: this.prepare.bind(this),
-      startPlay: this.startPlay.bind(this),
-      stopPlay: this.stopPlay.bind(this),
-      startVoice: this.startVoice.bind(this),
-      stopVoice: this.stopVoice.bind(this),
       stopAll: this.stopAll.bind(this),
     };
   },
@@ -166,23 +172,83 @@ Component({
         icon: 'none',
       });
     },
+    addLog(str) {
+      this.setData({ log: `${this.data.log}${Date.now()} - ${str}\n` });
+    },
+    clearLog() {
+      this.setData({ log: '' });
+    },
+    checkReservedService() {
+      if (!this.data.realReserve) {
+        return;
+      }
+      const nowService = p2pExports.getServiceInitInfo(this.data.inputTargetId);
+      if (!nowService?.id || !nowService?.streamInfo) {
+        return;
+      }
+
+      // 有保留连接
+      this.addLog('service already started');
+
+      // 更新callbacks
+      p2pExports.updateServiceCallbacks(nowService.id, {
+        msgCallback: (event, subtype, detail) => {
+          this.onP2PMessage(nowService.id, event, subtype, detail);
+        },
+      });
+
+      // 之前的信息显示出来
+      const { streamInfo } = nowService;
+      // 解析flvFile
+      let flvFile = this.data.inputFlvFile;
+      const index = streamInfo.url.lastIndexOf('/');
+      if (index >= 0) {
+        flvFile = streamInfo.url.substr(index + 1) || flvFile;
+      }
+      this.setData(
+        {
+          targetId: nowService.id,
+          inputUrl: streamInfo.url,
+          flvUrl: streamInfo.url,
+          inputProductId: streamInfo.productId || '',
+          inputDeviceName: streamInfo.deviceName || '',
+          inputXp2pInfo: streamInfo.xp2pInfo || '',
+          inputFlvFile: flvFile || '',
+          inputCodeUrl: streamInfo.codeUrl || '',
+          streamExInfo: {
+            productId: streamInfo.productId,
+            deviceName: streamInfo.deviceName,
+            xp2pInfo: streamInfo.xp2pInfo,
+            codeUrl: streamInfo.codeUrl,
+          },
+          state: 'serviceStarted',
+        },
+        () => {
+          console.log(`[${this.id}]`, 'use init streamInfo, now data', this.data);
+        },
+      );
+    },
     onPlayerReady({ detail }) {
       console.log(`[${this.id}]`, '======== onPlayerReady', detail);
       this.addLog('==== onPlayerReady');
-      this.setData({
-        state: 'inited',
-        player: this.selectComponent(`#${this.data.playerId}`),
-        playerCtx: detail.livePlayerContext,
-      });
+      this.setData(
+        {
+          state: 'inited',
+          player: this.selectComponent(`#${this.data.playerId}`),
+          playerCtx: detail.livePlayerContext,
+        },
+        () => {
+          if (this.data.state === 'inited') {
+            this.checkReservedService();
+          }
+        },
+      );
     },
     onPlayerStartPull() {
       console.info(`[${this.id}]`, '======== onPlayerStartPull');
       this.addLog('==== onPlayerStartPull');
       // 如果player请求断掉再恢复，持续的流无法播放，暂时p2p先重新拉流处理
       this.startStream();
-    },
-    onNetstatusChange(e) {
-      // console.log('net change: ', e.detail.info);
     },
     onPlayerClose({ detail }) {
       console.info(`[${this.id}]`, '======== onPlayerClose', detail);
@@ -208,6 +274,9 @@ Component({
         return;
       }
       this.triggerEvent('playerError', detail);
+    },
+    onNetStatusChange(e) {
+      // console.log('net change: ', e.detail.info);
     },
     inputP2PTargetId(e) {
       this.setData({
@@ -332,16 +401,38 @@ Component({
         this.prepareService();
       });
     },
-    stopAll() {
+    stopAll(reserve = false) {
       if (!this.data.targetId) {
         return;
       }
+
+      // 不用等stopPlay的回调，先把流停掉
+      this.stopStream();
+
       this.stopPlay();
       this.stopVoice();
 
-      const { targetId } = this.data;
-      this.resetServiceData();
-      p2pExports.stopServiceById(targetId);
+      if (reserve === 'auto') {
+        reserve = this.data.realReserve;
+      } else if (reserve === true) {
+        // 必须指定true才保留，因为reserve还可能是 clickevent 等等
+      } else {
+        // 其他都不保留
+        reserve = false;
+      }
+
+      // 1v1 才支持保留连接
+      const realReserve = this.data.mode === 'ipc' && reserve === true;
+      if (realReserve) {
+        // 保留连接
+        console.log('stopAll but reserve');
+      } else {
+        // 不保留，全部停掉
+        console.log('stopAll');
+        const { targetId } = this.data;
+        this.resetServiceData();
+        p2pExports.stopServiceById(targetId);
+      }
 
       if (this.data.player || !this.data.needPlayer) {
         this.setData({
@@ -713,9 +804,6 @@ Component({
           this.addLog(detail);
           break;
       }
-    },
-    addLog(str) {
-      this.setData({ log: `${this.data.log}${Date.now()} - ${str}\n` });
     },
     checkAudioAuthorize() {
       return new Promise((resolve, reject) => {
