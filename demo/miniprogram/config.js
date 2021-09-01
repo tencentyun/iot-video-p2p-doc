@@ -19,13 +19,7 @@ const config = {
       // codeUrl: 'https://dev.ad.qvb.qcloud.com/code', // TODO 有问题，带code拉不到流
     },
     tcp: {
-      host: '106.52.41.74:12680',
-      // basePath: '/test-server/', // 这个不支持加密，后面都用 openlive
-      basePath: '/openlive/',
-      codeUrl: 'https://dev.ad.qvb.qcloud.com/code',
-    },
-    tcp80: {
-      host: '106.52.41.74',
+      host: 'dev.ad.qvb.qcloud.com:12680',
       basePath: '/openlive/',
       codeUrl: 'https://dev.ad.qvb.qcloud.com/code',
     },

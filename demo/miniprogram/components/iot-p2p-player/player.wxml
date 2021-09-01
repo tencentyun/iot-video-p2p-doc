@@ -72,7 +72,7 @@
       <button bindtap="startPlay" class="group-button" type="primary" size="mini" disabled="{{targetId && playing}}">
         startPlay
       </button>
-      <button bindtap="stopPlay" class="group-button" type="primary" size="mini" disabled="{{!targetId || !playing}}">
+      <button wx:if="{{mode === 'ipc'}}" bindtap="stopPlay" class="group-button" type="primary" size="mini" disabled="{{!targetId || !playing}}">
         stopPlay
       </button>
       <button bindtap="stopAll" class="group-button" type="primary" size="mini" disabled="{{!targetId}}">

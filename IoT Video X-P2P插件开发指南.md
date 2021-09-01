@@ -23,12 +23,13 @@
 使用本插件需要：
 
 - 接入腾讯云 IoT Video P2P 服务，获取访问密钥
-- 有使用 live-player 的权限，详见[官方文档](https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html)
+- 有使用 live-player 的权限，详见 [live-player官方文档](https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html)
+- 如果使用 1v多 模式，需要将flv流的域名加到小程序的 `request合法域名` 和 `tcp合法域名` 配置中，详见 [服务器域名配置官方文档](https://developers.weixin.qq.com/miniprogram/dev/framework/ability/network.html#1.%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%9F%9F%E5%90%8D%E9%85%8D%E7%BD%AE)
 
 ## 微信版本限制
 
-微信 8.0.7以上
-基础库 2.18.0以上
+微信 8.0.10 以上
+基础库 2.19.2 以上
 
 ## 使用方法
 
