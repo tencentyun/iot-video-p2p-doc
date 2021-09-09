@@ -251,15 +251,12 @@ Component({
       this.startStream();
     },
     onPlayerClose({ detail }) {
-      console.info(`[${this.id}]`, '======== onPlayerClose', detail);
+      console.info(`[${this.id}]`, `======== onPlayerClose in state ${this.data.state}`, detail);
       this.addLog('==== onPlayerClose');
-      if (detail.error?.code === PlayerCloseType.LIVE_PLAYER_CLOSED) {
-        console.error('player close, now state: ', this.data.state);
-        // 拉流过程中停止
-        if (this.data.state === 'firstChunk' || this.data.state === 'dataParsed' || this.data.state === 'request') {
-          // 因为player会自动重试，触发startPull回调，这里只是停止拉流即可。
-          this.stopStream();
-        }
+      // 拉流过程中停止
+      if (this.data.state === 'firstChunk' || this.data.state === 'dataParsed' || this.data.state === 'request') {
+        // 因为player会自动重试，触发startPull回调，这里只是停止拉流即可。
+        this.stopStream();
       }
     },
     onPlayerStateChange({ detail }) {
