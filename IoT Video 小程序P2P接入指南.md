@@ -76,5 +76,6 @@ https://github.com/tencentyun/iot-link-android/blob/master/sdk/video-link-androi
 进入体验页后，支持输入"codeUrl"为部署的密钥服务模块的接入层，点击”initModule“，再点击”startPlay“，即可播放视频流。（！注：正式上线时为了server端不暴露UDP端口，请使用1vN-tcp的调用方式。）
 
 
-###### 插件使用施力
+###### 代码示例
+
 参考 [IoT Video P2P插件](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20X-P2P%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md) 和 [IoT Video P2P-Player插件](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
