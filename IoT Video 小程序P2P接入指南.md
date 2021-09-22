@@ -77,5 +77,4 @@ https://github.com/tencentyun/iot-link-android/blob/master/sdk/video-link-androi
 
 
 ###### 插件使用施力
-参考https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20X-P2P%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md
-和https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md
+参考 [IoT Video P2P插件](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20X-P2P%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md) 和 [IoT Video P2P-Player插件](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
