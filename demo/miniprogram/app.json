@@ -6,17 +6,18 @@
   ],
   "plugins": {
     "wechat-p2p-player": {
-      "version": "dev-bd3c18a004a0ff371b0fb3d9c7b8c6b3",
+      "version": "dev-1fee43e577f0d4e625ac4c0a48c0951f",
       "provider": "wx9e8fbc98ceac2628"
     },
     "xp2p": {
-      "version": "dev-aafa5c602432368b1bcefe5dc7cfe9f3",
+      "version": "dev-fac070c957a7876c1ada7d531a43e7cf",
       "provider": "wx1319af22356934bf"
     }
   },
   "usingComponents": {
     "p2p-player": "plugin://wechat-p2p-player/p2p-player",
-    "iot-p2p-player": "components/iot-p2p-player/player"
+    "iot-p2p-player": "components/iot-p2p-player/player",
+    "iot-p2p-control": "components/iot-p2p-control/control"
   },
   "sitemapLocation": "sitemap.json"
 }

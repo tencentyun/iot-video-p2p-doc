@@ -1,0 +1,17 @@
+<view class="component">
+  <view class="component-section">
+    <view class="group-button-area">
+      <button wx:if="{{!state}}" bindtap="initModule" class="group-button" type="primary" size="mini" disabled="{{!!state}}">
+        initModule
+      </button>
+      <button wx:if="{{state}}" bindtap="resetP2P" class="group-button" type="primary" size="mini" disabled="{{!state}}">
+        resetP2P
+      </button>
+      <button wx:if="{{showDestroy}}" bindtap="destroyModule" class="group-button" type="primary" size="mini" disabled="{{!state}}">
+        destroyModule
+      </button>
+    </view>
+    <view bindtap="printData">moduleState: {{state}}</view>
+    <view>localPeername: {{localPeername}}</view>
+  </view>
+</view>

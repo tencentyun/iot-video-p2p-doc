@@ -25,6 +25,7 @@ const config = {
     },
   },
   appParams: {
+    appid: 1253131157,
     appOauthId: '600a4206062556e21befdc98',
     appKey: 'pMqRNpU3M4wOA2BY',
     appSecretKey: 'b62XcOoDcvJOgnibM8iKFVgVsXcdxNda',

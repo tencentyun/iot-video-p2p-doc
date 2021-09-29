@@ -37,7 +37,7 @@
     "minifyWXSS": true
   },
   "appid": "wx1319af22356934bf",
-  "projectname": "iotvideo-weapp-demo-2plugins",
+  "projectname": "iotvideo-xp2p-demo",
   "simulatorType": "wechat",
   "simulatorPluginLibVersion": {},
   "condition": {}

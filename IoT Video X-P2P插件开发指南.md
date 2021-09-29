@@ -192,7 +192,7 @@ p2pModule.stopP2PStream(ipcId);
 
 ``` js
 // 开始语音对讲，注意需要先调用 startP2PService
-p2pModule.startVoiceService(ipcId, recorderManager);
+p2pModule.startVoiceService(ipcId, recorderManager, options, callbacks);
 
 ```
 
@@ -486,7 +486,7 @@ res 的值
 
 --------
 
-### p2pModule.startVoiceService(id, recorderManager) => Promise\<res\>
+### p2pModule.startVoiceService(id, recorderManager, options, callbacks) => Promise\<res\>
 
 开始指定id的语音对讲服务
 
@@ -495,7 +495,20 @@ res 的值
 | 参数 | 类型 | 说明 |
 | - | - | - |
 | id | string | 唯一id |
-| recorderManager | RecorderManager | 小程序小程序录音管理器 |
+| recorderManager | RecorderManager | 录音管理器 |
+| options | RecorderManagerStartOption | 录音参数 |
+| callbacks | Object | 各种回调函数 |
+
+##### callbacks: Object
+
+各种回调函数
+
+| 属性 | 类型 | 默认值 | 必填 | 说明 |
+| - | - | - | - | - |
+| onStart | () => void | - | 否 | 参考 RecorderManager.onStart |
+| onPause | ({ inInterruption: boolean }) => void | - | 否 | 参考 RecorderManager.onPause，参数增加属性 inInterruption |
+| onResume | () => void | - | 否 | 参考 RecorderManager.onStart |
+| onStop | ({ willRestart: boolean }) => void | - | 否 | 参考 RecorderManager.onStop，参数增加属性 willRestart |
 
 #### 返回值
 

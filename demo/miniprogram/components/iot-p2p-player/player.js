@@ -1,32 +1,28 @@
-import config from '../../config';
-import devices from '../../devices';
+import config from '../../config/config';
+import devices from '../../config/devices';
+import serverStreams from '../../config/streams';
 
-const xp2pPlugin = requirePlugin('xp2p');
-const playerPlugin = requirePlugin('wechat-p2p-player');
+import { getXp2pManager } from '../../xp2pManager';
 
-const p2pExports = xp2pPlugin.p2p;
-const { PlayerCloseType } = playerPlugin;
+const xp2pManager = getXp2pManager();
+const { XP2PEventEnum, XP2PNotify_SubType, XP2PDevNotify_SubType } = xp2pManager;
 
-const defaultData = {
-  xntp: {
-    mode: 'server-xntp',
-    ...config.server.xntp,
-    targetId: '6e0b2be040a943489ef0b9bb344b96b8',
-    flvPath: '6e0b2be040a943489ef0b9bb344b96b8.hd.flv',
-  },
-  tcp: {
-    mode: 'server-tcp',
-    ...config.server.tcp,
-    targetId: '6e0b2be040a943489ef0b9bb344b96b8',
-    flvPath: '6e0b2be040a943489ef0b9bb344b96b8.hd.flv',
-  },
-  tcp80: {
-    mode: 'server-tcp',
-    ...config.server.tcp80,
-    targetId: '6e0b2be040a943489ef0b9bb344b96b8',
-    flvPath: '6e0b2be040a943489ef0b9bb344b96b8.hd.flv',
-  },
-};
+const defaultData = {};
+
+// server流都加进去
+console.log('serverStreams', serverStreams);
+for (const key in serverStreams) {
+  const streamCfg = serverStreams[key];
+  const serverBaseData = {
+    mode: 'server',
+    ...config.server[streamCfg.serverName]
+  };
+  defaultData[key] = {
+    ...serverBaseData,
+    ...streamCfg,
+    targetId: key,
+  };
+}
 
 // ipc设备都加进去
 const ipcBaseData = {
@@ -40,6 +36,23 @@ for (const key in devices) {
     targetId: key,
   };
 }
+
+console.log('total config', defaultData);
+
+// ts才能用enum，先这么处理吧
+const PlayStateEnum = {
+  unknown: 'unknown',
+  playerReady: 'playerReady',
+  playerError: 'playerError',
+  servicePrearing: 'servicePrearing',
+  serviceStarted: 'serviceStarted',
+  // 这些全部 stream 开头，方便清理
+  streamPreparing: 'streamPreparing',
+  streamStarted: 'streamStarted',
+  streamRequest: 'streamRequest',
+  streamHeaderParsed: 'streamHeaderParsed',
+  streamFirstChunk: 'streamFirstChunk',
+};
 
 Component({
   behaviors: ['wx://component-export'],
@@ -84,16 +97,10 @@ Component({
     innerUrl: '',
     peerlist: '',
     log: '',
-    serviceTimestamps: {
-      clickStartPlay: 0,
-      prepareService: 0,
-      serviceStarted: 0,
-      conncted: 0,
-      startStream: 0,
-      request: 0,
-      dataParsed: 0,
-      firstChunk: 0,
-    },
+    serviceTimestamps: {},
+
+    // 语音对讲
+    voiceState: '',
 
     // 这些是控制player和p2p的
     playerId: '',
@@ -107,7 +114,7 @@ Component({
     attached() {
       // 在组件实例进入页面节点树时执行
       console.log(`[${this.id}]`, 'attached', this.id, this.properties);
-      const data = (this.properties.cfg && defaultData[this.properties.cfg]) || defaultData.tcp;
+      const data = (this.properties.cfg && defaultData[this.properties.cfg]) || defaultData.tcptest;
       const onlyp2p = this.properties.onlyp2p || false;
       const reserve = this.properties.reserve || false;
       const realReserve = data.mode === 'ipc' && reserve;
@@ -131,11 +138,11 @@ Component({
           inputCommand: data.command || '',
           inputCodeUrl: data.codeUrl || '',
           inputUrl: `http://${realHost}${data.basePath}${flvFile}`,
-          state: needPlayer ? '' : 'inited',
+          state: needPlayer ? '' : PlayStateEnum.playerReady,
         },
         () => {
           console.log(`[${this.id}]`, 'attached, now data', this.data);
-          if (this.data.state === 'inited') {
+          if (this.data.state === PlayStateEnum.playerReady) {
             this.checkReservedService();
           }
         },
@@ -156,6 +163,7 @@ Component({
     return {
       prepare: this.prepare.bind(this),
       stopAll: this.stopAll.bind(this),
+      addLog: this.addLog.bind(this),
     };
   },
   methods: {
@@ -173,7 +181,14 @@ Component({
       });
     },
     addLog(str) {
-      this.setData({ log: `${this.data.log}${Date.now()} - ${str}\n` });
+      const newLog = `${this.data.log}${Date.now()} - ${str}\n`;
+      this.setData({ log: newLog });
+      return newLog;
+    },
+    setLog(str) {
+      const newLog = `${Date.now()} - ${str}\n`;
+      this.setData({ log: newLog });
+      return newLog;
     },
     clearLog() {
       this.setData({ log: '' });
@@ -182,8 +197,8 @@ Component({
       if (!this.data.realReserve) {
         return;
       }
-      const nowService = p2pExports.getServiceInitInfo(this.data.inputTargetId);
-      if (!nowService?.id || !nowService?.streamInfo) {
+      const nowService = xp2pManager.getServiceInitInfo(this.data.inputTargetId);
+      if (!nowService || !nowService.id || !nowService.streamInfo) {
         return;
       }
 
@@ -191,7 +206,7 @@ Component({
       this.addLog('service already started');
 
       // 更新callbacks
-      p2pExports.updateServiceCallbacks(nowService.id, {
+      xp2pManager.updateServiceCallbacks(nowService.id, {
         msgCallback: (event, subtype, detail) => {
           this.onP2PMessage(nowService.id, event, subtype, detail);
         },
@@ -221,7 +236,7 @@ Component({
             xp2pInfo: streamInfo.xp2pInfo,
             codeUrl: streamInfo.codeUrl,
           },
-          state: 'serviceStarted',
+          state: PlayStateEnum.serviceStarted,
         },
         () => {
           console.log(`[${this.id}]`, 'use init streamInfo, now data', this.data);
@@ -233,47 +248,84 @@ Component({
       this.addLog('==== onPlayerReady');
       this.setData(
         {
-          state: 'inited',
+          state: PlayStateEnum.playerReady,
           player: this.selectComponent(`#${this.data.playerId}`),
           playerCtx: detail.livePlayerContext,
         },
         () => {
-          if (this.data.state === 'inited') {
+          if (this.data.state === PlayStateEnum.playerReady) {
             this.checkReservedService();
           }
         },
       );
     },
     onPlayerStartPull() {
-      console.info(`[${this.id}]`, '======== onPlayerStartPull');
+      console.info(`[${this.id}]`, `======== onPlayerStartPull in state ${this.data.state}`, this.data.targetId);
+      if (!this.data.targetId) {
+        return;
+      }
       this.addLog('==== onPlayerStartPull');
       // 如果player请求断掉再恢复，持续的流无法播放，暂时p2p先重新拉流处理
       this.startStream();
     },
     onPlayerClose({ detail }) {
-      console.info(`[${this.id}]`, `======== onPlayerClose in state ${this.data.state}`, detail);
-      this.addLog('==== onPlayerClose');
-      // 拉流过程中停止
-      if (this.data.state === 'firstChunk' || this.data.state === 'dataParsed' || this.data.state === 'request') {
-        // 因为player会自动重试，触发startPull回调，这里只是停止拉流即可。
-        this.stopStream();
+      console.info(`[${this.id}]`, `======== onPlayerClose in state ${this.data.state}`, this.data.targetId, detail);
+      if (!this.data.targetId) {
+        return;
       }
-    },
-    onPlayerStateChange({ detail }) {
-      // console.log(`[${this.id}]`, '======== onPlayerStateChange', detail);
+      this.addLog('==== onPlayerClose');
+      // 停止拉流
+      this.stopStream();
     },
     onPlayerError({ detail }) {
       console.log(`[${this.id}]`, '======== onPlayerError', detail);
       this.addLog('==== onPlayerError');
-      if (detail.errMsg?.indexOf('system permission denied') >= 0) {
+      this.setData({
+        state: PlayStateEnum.playerError,
+      });
+      this.stopPlay();
+      wx.showModal({
+        content: `player error: ${detail.error && detail.error.code}`,
+        showCancel: false,
+      });
+    },
+    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+    onLivePlayerError({ detail }) {
+      console.error(`[${this.id}]`, '======== onLivePlayerError', detail);
+      this.addLog('==== onLivePlayerError');
+      this.setData({
+        state: PlayStateEnum.playerError,
+      });
+      if (detail.errMsg && detail.errMsg.indexOf('system permission denied') >= 0) {
         // 如果liveplayer是RTC模式，当微信没有系统录音权限时会出错，但是没有专用的错误码，微信侧建议先判断errMsg来兼容
         this.triggerEvent('systemPermissionDenied', detail);
         return;
       }
-      this.triggerEvent('playerError', detail);
+      // TODO 什么情况会走到这里？先弹个提示
+      this.stopPlay();
+      wx.showModal({
+        content: `live-player error: ${detail.errMsg}`,
+        showCancel: false,
+      });
     },
-    onNetStatusChange(e) {
-      // console.log('net change: ', e.detail.info);
+    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+    onLivePlayerStateChange({ detail }) {
+      // console.log(`[${this.id}]`, '======== onLivePlayerStateChange', detail.code, detail.message);
+      switch (detail.code) {
+        case -2301: // live-player断连，且经多次重连抢救无效，更多重试请自行重启播放
+          console.error('==== onLivePlayerStateChange', detail.code, detail);
+          // 到这里应该已经触发过 onPlayerClose 了
+          this.stopPlay();
+          wx.showModal({
+            content: `播放失败: ${detail.code}`,
+            showCancel: false,
+          });
+          break;
+      }
+    },
+    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+    onLivePlayerNetStatusChange({ detail }) {
+      // console.log(`[${this.id}]`, '======== onLivePlayerNetStatusChange', detail.info);
     },
     inputP2PTargetId(e) {
       this.setData({
@@ -324,7 +376,7 @@ Component({
         totalBytes: 0,
         innerUrl: '',
         peerlist: '',
-        log: '',
+        // log: '', // 保留log，开始新的时再清
         serviceTimestamps: {},
       });
     },
@@ -387,10 +439,12 @@ Component({
         return;
       }
 
-      if (this.data.state !== 'inited') {
+      if (this.data.state !== PlayStateEnum.playerReady) {
         this.showToast(`can not start service in state ${this.data.state}`);
         return;
       }
+
+      this.clearLog();
 
       this.setData(streamData, () => {
         // 确定 targetId 和 flvUrl
@@ -398,21 +452,30 @@ Component({
         this.prepareService();
       });
     },
-    stopAll(reserve = false) {
+    stopAll(e) {
       if (!this.data.targetId) {
         return;
       }
 
+      if (e && e.currentTarget) {
+        // 这是真的点击
+        this.addLog('click stop all');
+      } else {
+        this.addLog('stop all');
+      }
+
       // 不用等stopPlay的回调，先把流停掉
       this.stopStream();
-
       this.stopPlay();
+
       this.stopVoice();
 
-      if (reserve === 'auto') {
+      let reserve;
+      if (e === 'auto') {
         reserve = this.data.realReserve;
-      } else if (reserve === true) {
-        // 必须指定true才保留，因为reserve还可能是 clickevent 等等
+      } else if (e === true) {
+        // 必须指定true才保留，因为e还可能是 clickevent 等等
+        reserve = true;
       } else {
         // 其他都不保留
         reserve = false;
@@ -428,16 +491,16 @@ Component({
         console.log('stopAll');
         const { targetId } = this.data;
         this.resetServiceData();
-        p2pExports.stopServiceById(targetId);
+        xp2pManager.stopP2PService(targetId);
       }
 
       if (this.data.player || !this.data.needPlayer) {
         this.setData({
-          state: 'inited',
+          state: PlayStateEnum.playerReady,
         });
       } else {
         this.setData({
-          state: 'unknown', // 不应该到这里
+          state: PlayStateEnum.unknown, // 不应该到这里
         });
       }
     },
@@ -447,12 +510,19 @@ Component({
         return;
       }
 
-      if (this.data.state !== 'inited' && this.data.state !== 'serviceStarted') {
+      if (this.data.state !== PlayStateEnum.playerReady && this.data.state !== PlayStateEnum.serviceStarted) {
         this.showToast(`can not start service in state ${this.data.state}`);
         return;
       }
 
-      this.addLog('click start play');
+      if (this.data.targetId) {
+        // prepare 后再 startPlay，保留log
+        this.addLog('click start play');
+      } else {
+        // 直接 startPlay，先清掉
+        this.setLog('click start play');
+      }
+
       this.setData(
         {
           ...streamData,
@@ -469,7 +539,7 @@ Component({
             // 这个会触发 onPlayerStartPull
             this.data.playerCtx.play({
               success: (res) => {
-                console.log(`[${this.id}]`, 'call play success');
+                console.log(`[${this.id}]`, 'call play success', res);
                 this.addLog('==== call play success');
               },
               fail: (res) => {
@@ -484,64 +554,89 @@ Component({
         },
       );
     },
-    stopPlay() {
-      this.addLog('click stop play');
+    stopPlay(e) {
+      if (e && e.currentTarget) {
+        // 这是真的点击
+        this.addLog('click stop play');
+      } else {
+        this.addLog('stop play');
+      }
+
       if (this.data.needPlayer) {
         if (!this.data.playerCtx) {
           return;
         }
         // 这个会触发 onPlayerClose
-        this.data.playerCtx.stop({
-          success: (res) => {
-            console.log(`[${this.id}]`, 'call stop success');
-            this.addLog('==== call stop success');
-          },
-          fail: (res) => {
-            console.log(`[${this.id}]`, 'call stop fail');
-            this.addLog('==== call stop fail');
-            this.showToast('call stop fail');
-          },
-        });
+        try {
+          this.data.playerCtx.stop({
+            success: (res) => {
+              console.log(`[${this.id}]`, 'call stop success', res);
+              this.addLog('==== call stop success');
+            },
+            fail: (res) => {
+              console.log(`[${this.id}]`, 'call stop fail', res);
+              this.addLog('==== call stop fail');
+              this.showToast('call stop fail');
+            },
+          });
+        } catch (err) {
+          // 各种err
+          console.log(`[${this.id}]`, 'call stop err', err);
+          this.stopStream();
+        }
       } else {
         this.stopStream();
       }
     },
     startVoice(e) {
-      console.log(e.currentTarget.dataset);
-      const offCrypto = e.currentTarget.dataset.offcrypto || false;
-      console.log('是否加密: ', !offCrypto);
       if (!this.data.targetId) {
         this.showToast('startVoice: invalid targetId');
         return;
       }
-      console.log(`[${this.id}]`, 'startVoice');
-      console.log('check auth');
-      this.checkAudioAuthorize()
-        .then((result) => {
-          console.log('授权结果：', result);
-          // 语音对讲
-          const recorderManager = wx.getRecorderManager();
 
-          p2pExports
-            .startVoiceService(this.data.targetId, recorderManager, { wxObj: wx, offCrypto })
-            .then((result) => {
-              console.log(`[${this.id}]`, '语音服务启动结果', result);
-              if (result === 0) {
-                this.voiceState = 'started';
-              }
-            })
-            .catch((error) => {
-              console.log(`[${this.id}]`, '语音服务启动出错', error);
-            });
+      if (this.data.voiceState === 'starting' || this.data.voiceState === 'sending') {
+        this.showToast(`can not start voice in voiceState ${this.data.voiceState}`);
+        return;
+      }
+
+      // 每种采样率有对应的编码码率范围有效值，设置不合法的采样率或编码码率会导致录音失败
+      // 具体参考 https://developers.weixin.qq.com/miniprogram/dev/api/media/recorder/RecorderManager.start.html
+      const [numberOfChannels, sampleRate, encodeBitRate] = e.currentTarget.dataset.recorderCfg.split('-').map((v) => Number(v));
+      const recorderOptions = {
+        numberOfChannels, // 录音通道数
+        sampleRate, // 采样率
+        encodeBitRate, // 编码码率
+      };
+
+      console.log(`[${this.id}]`, 'startVoice', e.currentTarget.dataset, recorderOptions);
+      this.setData({ voiceState: 'starting' });
+      xp2pManager
+        .startVoice(this.data.targetId, recorderOptions, {
+          onPause: (res) => {
+            console.log(`[${this.id}]`, 'voice onPause', res);
+            // 简单点，recorder暂停就停止语音对讲
+            this.stopVoice();
+          },
+          onStop: (res) => {
+            console.log(`[${this.id}]`, 'voice onStop', res);
+            if (res.willRestart) {
+              // 如果是到时间触发的，插件会自动续期，不自动restart的才需要stopVoice
+              this.stopVoice();
+            }
+          },
         })
-        .catch((error) => {
-          // todo, 第一次弹窗未授权后，不再出现弹窗
-          console.log('没有授权', error);
+        .then((res) => {
+          console.log('startVoice success', res);
+          this.setData({ voiceState: 'sending' });
+        })
+        .catch((res) => {
+          console.log('startVoice fail', res);
+          this.setData({ voiceState: '' });
         });
     },
     stopVoice() {
-      p2pExports.stopVoiceService(this.data.targetId);
-      this.voiceState = 'stopped';
+      xp2pManager.stopVoice(this.data.targetId);
+      this.setData({ voiceState: '' });
     },
     sendCommand() {
       if (!this.data.targetId) {
@@ -555,7 +650,7 @@ Component({
       }
 
       console.log(`[${this.id}]`, 'sendCommand', this.data.targetId, this.data.inputCommand);
-      p2pExports
+      xp2pManager
         .sendCommand(this.data.targetId, this.data.inputCommand)
         .then((res) => {
           console.log(`[${this.id}]`, 'sendCommand res', res);
@@ -585,13 +680,13 @@ Component({
         return;
       }
 
-      if (this.data.state === 'serviceStarted') {
+      if (this.data.state === PlayStateEnum.serviceStarted) {
         // 已经prepare过
         serviceSuccessCallback && serviceSuccessCallback();
         return;
       }
 
-      if (this.data.state !== 'inited') {
+      if (this.data.state !== PlayStateEnum.playerReady) {
         this.showToast(`can not start service in state: ${this.data.state}`);
         return;
       }
@@ -605,9 +700,9 @@ Component({
 
       const start = Date.now();
       this.addLog('prepare service');
-      this.setData({ state: 'prepareService', 'serviceTimestamps.prepareService': start });
+      this.setData({ state: PlayStateEnum.servicePrearing, 'serviceTimestamps.servicePrearing': start });
 
-      p2pExports
+      xp2pManager
         .startP2PService(
           targetId,
           { url: flvUrl, ...streamExInfo },
@@ -622,9 +717,10 @@ Component({
             const now = Date.now();
             console.log(`[${this.id}]`, 'startP2PService delay', now - start);
             this.addLog('service started');
-            this.setData({ state: 'serviceStarted', 'serviceTimestamps.serviceStarted': now });
+            this.setData({ state: PlayStateEnum.serviceStarted, 'serviceTimestamps.serviceStarted': now });
             serviceSuccessCallback && serviceSuccessCallback();
           } else {
+            this.addLog('start service error');
             this.stopAll();
             wx.showModal({
               content: `startP2PService 失败, res=${res}`,
@@ -634,6 +730,7 @@ Component({
         })
         .catch((errcode) => {
           console.error(`[${this.id}]`, 'startP2PService error', errcode);
+          this.addLog('start service error');
           this.stopAll();
           wx.showModal({
             content: `startP2PService 失败, errcode: ${errcode}`,
@@ -651,8 +748,9 @@ Component({
         chunkCount++;
         totalBytes += data.byteLength;
         if (chunkCount === 1) {
+          console.log(`[${this.id}]`, 'firstChunk', data.byteLength);
           this.addLog(`first chunk delay ${now - this.data.serviceTimestamps.clickStartPlay}`);
-          this.setData({ state: 'firstChunk', 'serviceTimestamps.firstChunk': now });
+          this.setData({ state: PlayStateEnum.streamFirstChunk, 'serviceTimestamps.streamFirstChunk': now });
         }
         this.setData({
           totalBytes,
@@ -677,19 +775,41 @@ Component({
 
         const [filename, params] = this.data.inputFlvFile.split('?');
 
-        this.addLog(`start stream: ${filename} ${params}`);
+        this.addLog(`start stream: ${filename} ${params || ''}`);
+
+        const newTimestamps = this.clearStreamTimestamps();
+        newTimestamps.streamPreparing = Date.now();
         this.setData({
-          state: 'startStream',
-          'serviceTimestamps.startStream': Date.now(),
+          state: PlayStateEnum.streamPreparing,
+          serviceTimestamps: newTimestamps,
           playing: true,
           totalBytes: 0,
         });
 
-        p2pExports.startP2PStream(this.data.targetId, {
-          flv: { filename, params },
-          // msgCallback, // 不传 msgCallback 就是保持之前设置的
-          dataCallback,
-        });
+        xp2pManager
+          .startStream(this.data.targetId, {
+            flv: { filename, params },
+            // msgCallback, // 不传 msgCallback 就是保持之前设置的
+            dataCallback,
+          })
+          .then((res) => {
+            console.log('startStream success', res);
+            this.addLog('stream started');
+            this.setData({
+              state: PlayStateEnum.streamStarted,
+              'serviceTimestamps.streamStarted': Date.now(),
+            });
+          })
+          .catch((res) => {
+            console.log('startStream fail', res);
+            this.addLog('start stream error');
+            this.setData({
+              state: PlayStateEnum.serviceStarted,
+              'serviceTimestamps.streamPreparing': 0,
+              playing: false,
+              totalBytes: 0,
+            });
+          });
       });
     },
     stopStream() {
@@ -698,9 +818,26 @@ Component({
       }
 
       this.addLog('stop stream');
-      this.setData({ state: 'serviceStarted', 'serviceTimestamps.startStream': 0, playing: false, totalBytes: 0 });
+      this.clearStreamTimestamps();
+      this.setData({
+        state: PlayStateEnum.serviceStarted,
+        playing: false,
+        totalBytes: 0,
+      });
 
-      p2pExports.stopP2PStream(this.data.targetId);
+      xp2pManager.stopStream(this.data.targetId);
+    },
+    clearStreamTimestamps() {
+      const newTimestamps = {};
+      for (const key in this.data.serviceTimestamps) {
+        if (!/^stream/.test(key)) {
+          newTimestamps[key] = this.data.serviceTimestamps[key];
+        }
+      }
+      this.setData({
+        serviceTimestamps: newTimestamps,
+      });
+      return newTimestamps;
     },
     onP2PMessage(targetId, event, subtype, detail) {
       if (targetId !== this.data.targetId) {
@@ -715,15 +852,15 @@ Component({
       }
 
       switch (event) {
-        case p2pExports.XP2PEventEnum.Notify:
+        case XP2PEventEnum.Notify:
           this.onP2PMessage_Notify(subtype, detail);
           break;
 
-        case p2pExports.XP2PEventEnum.DevNotify:
+        case XP2PEventEnum.DevNotify:
           this.onP2PMessage_DevNotify(subtype, detail);
           break;
 
-        case p2pExports.XP2PEventEnum.Log:
+        case XP2PEventEnum.Log:
           console.log(`[${this.id}]`, 'onP2PMessage, Log', subtype, detail);
           break;
 
@@ -732,58 +869,55 @@ Component({
       }
     },
     onP2PMessage_Notify(type, detail) {
+      console.log(`[${this.id}]`, 'onP2PMessage_Notify', type, detail);
+      this.addLog(`p2p notify ${type}`);
       const now = Date.now();
       switch (type) {
-        case p2pExports.XP2PNotify_SubType.Connected:
-          console.log(`[${this.id}]`, 'XP2PNotify_SubType.Connected', detail);
-          this.addLog('notify conncted');
-          this.addLog(`connct delay ${now - this.data.serviceTimestamps.prepareService}`);
+        case XP2PNotify_SubType.Connected:
+          this.addLog(`connect delay ${now - this.data.serviceTimestamps.servicePrearing}`);
           // 注意不要修改state，Connected只在心跳保活时可能收到，不在关键路径上，只是记录一下
-          this.setData({ 'serviceTimestamps.conncted': now });
+          this.setData({ 'serviceTimestamps.serviceConnected': now });
           break;
-        case p2pExports.XP2PNotify_SubType.Request:
-          console.log(`[${this.id}]`, 'XP2PNotify_SubType.Request', detail);
-          this.addLog('notify request');
-          this.setData({ state: 'request', 'serviceTimestamps.request': now });
+        case XP2PNotify_SubType.Request:
+          this.setData({ state: PlayStateEnum.streamRequest, 'serviceTimestamps.streamRequest': now });
           break;
-        case p2pExports.XP2PNotify_SubType.Parsed:
+        case XP2PNotify_SubType.Parsed:
           // 数据传输开始
-          console.log(`[${this.id}]`, 'XP2PNotify_SubType.Parsed', detail);
-          this.addLog('notify parsed');
           this.addLog(`parsed delay ${now - this.data.serviceTimestamps.clickStartPlay}`);
-          this.setData({ state: 'dataParsed', 'serviceTimestamps.dataParsed': now });
+          this.setData({ state: PlayStateEnum.streamHeaderParsed, 'serviceTimestamps.streamHeaderParsed': now });
           break;
-        case p2pExports.XP2PNotify_SubType.Success:
-        case p2pExports.XP2PNotify_SubType.Eof:
+        case XP2PNotify_SubType.Success:
+        case XP2PNotify_SubType.Eof:
           // 数据传输正常结束
-          console.log(`[${this.id}]`, 'XP2PNotify_SubType.Success/Eof', detail);
-          if (this.data.state === 'dataParsed' || this.data.state === 'firstChunk') {
+          if (this.data.state === PlayStateEnum.streamHeaderParsed
+            || this.data.state === PlayStateEnum.streamFirstChunk) {
             // dataParsed 之前的好像可以自动重试
-            this.showToast('直播结束');
+            this.showToast('直播结束或断开');
           }
           this.stopStream();
           break;
-        case p2pExports.XP2PNotify_SubType.Fail:
+        case XP2PNotify_SubType.Fail:
           // 数据传输出错
-          console.log(`[${this.id}]`, 'XP2PNotify_SubType.Fail', detail);
           this.showToast(`直播请求出错, errcode: ${detail.errcode}`);
           this.stopStream();
           break;
-        case p2pExports.XP2PNotify_SubType.Close:
+        case XP2PNotify_SubType.Close:
           // 用户主动关闭
-          console.log(`[${this.id}]`, 'XP2PNotify_SubType.Close', detail);
+          this.stopStream();
           break;
-        case p2pExports.XP2PNotify_SubType.Disconnect:
+        case XP2PNotify_SubType.Disconnect:
           // p2p链路断开
-          console.error(`[${this.id}]`, 'XP2PNotify_SubType.Disconnect', detail);
-          if (this.data.state && this.data.state !== 'inited') {
-            this.showToast('连接断开');
+          console.error(`[${this.id}]`, `XP2PNotify_SubType.Disconnect in state ${this.data.state}`, detail);
+          if (this.data.state
+            && this.data.state !== PlayStateEnum.playerReady
+            && this.data.state !== PlayStateEnum.unknown) {
+            this.showToast('连接失败或断开');
             this.stopAll();
-            this.triggerEvent('p2pNotify', {
+            this.triggerEvent('p2pDisconnect', {
               playerId: this.id,
               targetId: this.data.targetId,
-              type,
-              detail,
+              notifyType: type,
+              notifyDetail: detail,
             });
           }
           break;
@@ -791,18 +925,19 @@ Component({
     },
     onP2PMessage_DevNotify(type, detail) {
       switch (type) {
-        case p2pExports.XP2PDevNotify_SubType.InnerUrl:
+        case XP2PDevNotify_SubType.InnerUrl:
           this.setData({ innerUrl: detail });
           break;
-        case p2pExports.XP2PDevNotify_SubType.Peerlist:
+        case XP2PDevNotify_SubType.Peerlist:
           this.setData({ peerlist: `${Date.now()} - ${detail}` });
           break;
-        case p2pExports.XP2PDevNotify_SubType.Subscribe:
+        case XP2PDevNotify_SubType.Subscribe:
           this.addLog(detail);
           break;
       }
     },
-    checkAudioAuthorize() {
+    checkRecordAuthorize() {
+      console.log('check record auth');
       return new Promise((resolve, reject) => {
         wx.getSetting({
           success(res) {

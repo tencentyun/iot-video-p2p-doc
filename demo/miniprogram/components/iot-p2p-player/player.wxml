@@ -8,13 +8,15 @@
       bind:playerReady="onPlayerReady"
       bind:playerStartPull="onPlayerStartPull"
       bind:playerClose="onPlayerClose"
-      bind:statechange="onPlayerStateChange"
-      bind:error="onPlayerError"
-      bindnetstatus="onNetStatusChange"
+      bind:playerError="onPlayerError"
+      bind:error="onLivePlayerError"
+      bind:statechange="onLivePlayerStateChange"
+      bind:netstatus="onLivePlayerNetStatusChange"
     />
+    <view>playState: {{state}}</view>
   </view>
   <view class="component-section">
-    <view class="component-section-title">mode: {{mode}}</view>
+    <view class="component-section-title">模式: {{mode}}</view>
     <!--
     <view>targetId:</view>
     <view class="weui-cells weui-cells_after-title">
@@ -63,7 +65,7 @@
         </view>
       </view>
     </view>
-    <view>state: {{state}}</view>
+    <view bindtap="printData" >playState: {{state}}</view>
     <view>totalBytes: {{totalBytes}}</view>
     <view class="group-button-area">
       <button wx:if="{{mode === 'ipc'}}" bindtap="prepare" class="group-button" type="primary" size="mini" disabled="{{!!targetId}}">
@@ -81,15 +83,16 @@
     </view>
   </view>
   <view class="component-section" wx:if="{{mode==='ipc'}}">
-    <view class="component-section-title">语音</view>
+    <view class="component-section-title">语音对讲</view>
+    <view>voiceState: {{voiceState}}</view>
     <view class="group-button-area">
-      <button bindtap="startVoice" data-offcrypto="true" class="group-button" type="primary" size="mini" disabled="{{!targetId}}">
-        不加密对讲
+      <button bindtap="startVoice" data-recorder-cfg="1-8000-16000" class="group-button" type="primary" size="mini" disabled="{{!targetId || (voiceState === 'starting' || voiceState === 'sending')}}">
+        单通道录音
       </button>
-      <button bindtap="startVoice" class="group-button" type="primary" size="mini" disabled="{{!targetId}}">
-        加密对讲
+      <button bindtap="startVoice" data-recorder-cfg="2-44100-192000" class="group-button" type="primary" size="mini" disabled="{{!targetId || (voiceState === 'starting' || voiceState === 'sending')}}">
+        双通道录音
       </button>
-      <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!targetId}}">
+      <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!targetId || !voiceState || voiceState === 'error'}}">
         挂断
       </button>
     </view>
@@ -122,10 +125,10 @@
   </view>
   <view class="component-section" wx:if="{{mode !== 'ipc'}}">
     <view>peerlist:</view>
-    <scroll-view scroll-y="true" style="height: 300rpx; padding: 10rpx;">{{peerlist}}</scroll-view>
+    <scroll-view scroll-y="true" style="height: 200rpx; padding: 10rpx; border: solid 1px #dddddd;">{{peerlist}}</scroll-view>
   </view>
   <view class="component-section component-section-gap">
     <view class="component-section-title">Log<view style="float: right; padding-right: 10rpx; color: blue;" bindtap="clearLog">clear</view></view>
-    <scroll-view scroll-y="true" style="height: 500rpx; padding: 10rpx; border: solid 1px #dddddd;"><text>{{log}}</text></scroll-view>
+    <scroll-view scroll-y="true" style="height: 800rpx; padding: 10rpx; border: solid 1px #dddddd;"><text>{{log}}</text></scroll-view>
   </view>
 </view>

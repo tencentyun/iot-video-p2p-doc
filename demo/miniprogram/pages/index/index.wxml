@@ -1,36 +1,27 @@
 <view class="page-body">
   <view class="page-section page-section-gap">
-    <view class="group-button-area">
-      <button bindtap="initModule" class="group-button" type="primary" size="mini" disabled="{{!!state}}">
-        initModule
-      </button>
-      <button bindtap="destroyModule" class="group-button" type="primary" size="mini" disabled="{{!state}}">
-        destroyModule
-      </button>
-      <button bindtap="resetP2P" class="group-button" type="primary" size="mini" disabled="{{!state}}">
-        resetP2P
-      </button>
-    </view>
-    <view bindtap="printData">moduleState: {{state}}</view>
-    <view>localPeername: {{localPeername}}</view>
+    <iot-p2p-control
+      id="{{controlId}}"
+      show-destroy
+      bind:statechange="onP2PModuleStateChange"
+    />
   </view>
   <view class="page-section">
     <button wx:for="{{listBtn}}" wx:key="cfg" type="primary" class="page-body-button"
       bindtap="gotoDemoPage"
-      data-url="/pages/xp2p-demo-1vN/demo?mode={{item.cfg}}&reserve={{item.reserve?1:0}}"
+      data-url="/pages/xp2p-demo-1vN/demo?cfg={{item.cfg}}&reserve={{item.reserve?1:0}}"
     >
       {{item.productId}}/{{item.deviceName}}{{item.reserve?' (rsv)':''}}
     </button>
   </view>
   <view class="page-section">
     <view wx:for="{{listNav}}" wx:key="cfg">
-      <navigator url="/pages/xp2p-demo-1vN/demo?mode={{item.cfg}}&reserve={{item.reserve?1:0}}" hover-class="navigator-hover">
+      <navigator url="/pages/xp2p-demo-1vN/demo?cfg={{item.cfg}}&reserve={{item.reserve?1:0}}" hover-class="navigator-hover">
         跳转到 X-P2P 1v1 {{item.cfg}}{{item.reserve?'-reserve':''}}
       </navigator>
     </view>
   </view>
-  <navigator url="/pages/xp2p-demo-1vN/demo?mode=xntp" hover-class="navigator-hover">跳转到 X-P2P Demo 1vN-xntp</navigator>
-  <navigator url="/pages/xp2p-demo-1vN/demo?mode=tcp" hover-class="navigator-hover">跳转到 X-P2P Demo 1vN-tcp</navigator>
-  <navigator url="/pages/xp2p-multiplayers/demo?cfg1=ipc1&cfg2=xntp" hover-class="navigator-hover">跳转到 X-P2P Demo 多播放器 ipc1+xntp</navigator>
+  <navigator url="/pages/xp2p-demo-1vN/demo?cfg=tcptest" hover-class="navigator-hover">跳转到 X-P2P Demo 1vN-tcptest</navigator>
+  <navigator url="/pages/xp2p-multiplayers/demo?cfg1=ipc1&cfg2=tcptest" hover-class="navigator-hover">跳转到 X-P2P Demo 多播放器 ipc1+tcptest</navigator>
 </view>
 

@@ -15,26 +15,24 @@
 
 // 这些是预置的ipc设备
 const devices = {
-  ipc_1_49822230_1: {
+  jlfeng: {
     showInHomePageBtn: true,
     productId: 'LYEOZCNW0U',
     deviceName: '1_49822230_1',
     peername: '',
-    flvPath: 'ipc.flv',
-    flvParams: 'action=live&channel=0&quality=standard',
     command: 'action=user_define&cmd=xxx',
   },
-  ipc_test_34683636_1: {
+  judy1: {
     showInHomePageBtn: true,
     productId: '9L1S66FZ3Q',
     deviceName: 'test_34683636_1',
-    peername: 'XP2PbO/Z0z0cLXllhYWkMO4R/Zue%2.3.0',
+    peername: 'XP2PbO/R01VuHltXhbq4ba8jrpGW%2.3.5',
     flvPath: 'ipc.flv',
     flvParams: 'action=live&channel=0&quality=standard',
     command: 'action=user_define&cmd=xxx',
   },
   ipc: {
-    showInHomePageNav: false,
+    // showInHomePageNav: true,
     productId: 'AQTV2839QJ',
     deviceName: 'sp01_32820237_10',
     peername: '25QPD2ozz0p8RLMpLa',
@@ -45,7 +43,7 @@ const devices = {
     reserve: true,
     productId: 'CBOWA1B6I2',
     deviceName: 'iot_48598675_1',
-    peername: 'XP2PUCSoT421lV4driOifDU+YAH4%2.1.0',
+    peername: 'XP2PUCSoT421lV5Hrlj/bmcaeiPA%2.1.0',
     command: 'action=user_define&cmd=xxx',
   },
 };
