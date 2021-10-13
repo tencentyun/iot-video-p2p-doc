@@ -26,7 +26,7 @@ const devices = {
     showInHomePageBtn: true,
     productId: '9L1S66FZ3Q',
     deviceName: 'test_34683636_1',
-    peername: 'XP2PbO/R01VuHltXhbq4ba8jrpGW%2.3.5',
+    peername: 'XP2PbO/R01VuHltYvpyFHusb95n7%2.3.5',
     flvPath: 'ipc.flv',
     flvParams: 'action=live&channel=0&quality=standard',
     command: 'action=user_define&cmd=xxx',

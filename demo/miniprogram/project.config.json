@@ -40,5 +40,6 @@
   "projectname": "iotvideo-xp2p-demo",
   "simulatorType": "wechat",
   "simulatorPluginLibVersion": {},
+  "libVersion": "2.19.3",
   "condition": {}
 }

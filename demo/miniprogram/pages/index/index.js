@@ -40,11 +40,6 @@ Page({
     }
     this.data.p2pControl.refreshState();
     this.setData({ dirty: false });
-
-    if (xp2pManager.networkChanged) {
-      console.log('index: networkChanged, resetP2P');
-      this.data.p2pControl.resetP2P();
-    }
   },
   onHide() {
     this.setData({ dirty: true });

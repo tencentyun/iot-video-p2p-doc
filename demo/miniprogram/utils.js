@@ -1,22 +1,27 @@
-exports.getErrorMsg = function getErrorMsg(err, { defaultMsg = '', errMsgKey = 'msg' } = {}) {
-  console.log(err, err.stack);
+export function compareVersion(ver1, ver2) {
+  const v1 = ver1.split('.');
+  const v2 = ver2.split('.');
+  const len = Math.max(v1.length, v2.length);
 
-  const errorMsg = (() => {
-    if (!err) return;
-    let message = '';
+  while (v1.length < len) {
+    v1.push('0');
+  }
+  while (v2.length < len) {
+    v2.push('0');
+  }
 
-    if (typeof err === 'string') return err;
+  for (let i = 0; i < len; i++) {
+    const num1 = parseInt(v1[i]);
+    const num2 = parseInt(v2[i]);
 
-    if (typeof err === 'object') {
-      message = err[errMsgKey] || err.Message || err.msg || err.message || err.errMsg || '连接服务器失败，请稍后再试';
+    if (num1 > num2) {
+      return 1;
+    } else if (num1 < num2) {
+      return -1;
     }
+  }
 
-    if (!message) {
-      message = defaultMsg || '连接服务器失败，请稍后再试';
-    }
+  return 0;
+}
 
-    return message;
-  })();
-
-  return errorMsg;
-};
+export const canUseP2P = compareVersion(wx.getSystemInfoSync().SDKVersion, '2.19.3') >= 0;

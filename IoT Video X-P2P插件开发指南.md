@@ -4,8 +4,8 @@
 
 | 版本号 | 发布时间  | 描述                             |
 | ------ | --------- | -------------------------------- |
-| v1.0.0.beta | 2021.7.19 | 支持小程序P2P初版，支持1V多P2P和1V1P2P观看摄像头实时监控流的内测beta版本 |
-| v1.0.0 | 2021.8.10 | 增加加密和支持1V1 P2P 语音对讲和自定义信令 |
+| 1.0.0.beta | 2021.7.19 | 支持小程序P2P初版，支持1V多P2P和1V1P2P观看摄像头实时监控流的内测beta版本 |
+| 1.0.0 | 2021.8.10 | 增加加密和支持1V1 P2P 语音对讲和自定义信令 |
 
 ## 介绍
 ### 1V多P2P
@@ -75,10 +75,11 @@ const p2pModule = videoPlugin.p2p;
 p2pModule
   .init({
     appParams: {
-      appOauthId: '$yourAppOauthId',
-      appKey: '$yourAKey',
-      appSecretKey: '$yourASecretKey',
-      appPackage: '$yourAPackage',
+      appid: $yourTCloudAppId,
+      appOauthId: $yourAppOauthId,
+      appKey: $yourAppKey,
+      appSecretKey: $yourAppSecretKey,
+      appPackage: $yourAppPackage,
     },
   })
   .then((res) => {
@@ -133,10 +134,11 @@ const p2pModule = videoPlugin.p2p;
 p2pModule
   .init({
     appParams: {
-      appOauthId: '$yourAppOauthId',
-      appKey: '$yourAKey',
-      appSecretKey: '$yourASecretKey',
-      appPackage: '$yourAPackage',
+      appid: $yourTCloudAppId,
+      appOauthId: $yourAppOauthId,
+      appKey: $yourAppKey,
+      appSecretKey: $yourAppSecretKey,
+      appPackage: $yourAppPackage,
     },
   })
   .then((res) => {
@@ -222,7 +224,7 @@ p2pModule.destroy();
 
 ### 4. 异常处理
 
-当模块出现异常时，会通过 `msgCallback` 通知出来。如果是p2p链路断开，用户可以根据需要重置p2p模块
+当模块出现异常时，会通过 `msgCallback` 通知出来。如果是p2p链路断开，用户可以根据需要（比如检测到网络状态发生变化）重置p2p模块
 ``` js
 onP2PMessage(event, subtype, detail) {
   switch (event) {

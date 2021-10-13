@@ -6,11 +6,11 @@
   ],
   "plugins": {
     "wechat-p2p-player": {
-      "version": "dev-1fee43e577f0d4e625ac4c0a48c0951f",
+      "version": "1.0.1",
       "provider": "wx9e8fbc98ceac2628"
     },
     "xp2p": {
-      "version": "dev-fac070c957a7876c1ada7d531a43e7cf",
+      "version": "1.0.0",
       "provider": "wx1319af22356934bf"
     }
   },

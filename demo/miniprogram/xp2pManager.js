@@ -29,9 +29,12 @@ class Xp2pManager {
   }
 
   get networkChanged() {
-    return this._networkChanged;
+    return !!this._networkChanged;
   }
 
+  set networkChanged(v) {
+    this._networkChanged = v ? { timestamp: Date.now() } : null;
+  }
   constructor() {
     this._promise = null;
     this._state = '';
@@ -77,7 +80,7 @@ class Xp2pManager {
 
     const start = Date.now();
     this._state = 'initing';
-    this._networkChanged = false;
+    this._networkChanged = null;
 
     const promise = new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
@@ -151,7 +154,7 @@ class Xp2pManager {
 
     const start = Date.now();
     this._state = 'reseting';
-    this._networkChanged = false;
+    this._networkChanged = null;
 
     const promise = new Promise((resolve, reject) => {
       const timer = setTimeout(() => {

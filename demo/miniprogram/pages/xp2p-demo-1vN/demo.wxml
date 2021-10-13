@@ -1,20 +1,13 @@
 <view class="page-body">
-  <view class="page-section page-section-gap">
-    <iot-p2p-control
-      id="{{controlId}}"
-      bind:statechange="onP2PModuleStateChange"
-      bind:beforeResetP2P="stopAllPlayers"
-      bind:beforeDestroyP2P="stopAllPlayers"
-    />
-  </view>
   <view class="page-section" wx:if="{{cfg}}">
-    <view class="page-section-title">player: {{playerId}}</view>
+    <view class="page-section-title player-title">player: {{playerId}}</view>
     <iot-p2p-player
       id="{{playerId}}"
       cfg="{{cfg}}" 
       onlyp2p="{{onlyp2p}}"
       reserve="{{reserve}}"
       bind:p2pDisconnect="onP2PDisconnect"
+      bind:localServerError="onPlayerLocalServerError"
       bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
     />
   </view>
