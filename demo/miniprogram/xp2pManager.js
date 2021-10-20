@@ -1,5 +1,16 @@
 import config from './config/config';
 
+// ts才能用enum，先这么处理吧
+export const Xp2pManagerErrorEnum = {
+  NoPlugin: -1,
+  ParamError: -2,
+  ModuleNotInited: -3,
+  Timeout: -4,
+  NoAuth: -5,
+};
+
+const { appParams } = config;
+
 const xp2pPlugin = requirePlugin('xp2p');
 const p2pExports = xp2pPlugin.p2p;
 
@@ -42,6 +53,8 @@ class Xp2pManager {
     this._networkType = '';
     this._networkChanged = null;
 
+    this._msgSeq = 0;
+
     wx.getNetworkType({
       success: (res) => {
         console.log('Xp2pManager: getNetworkType res', res);
@@ -60,7 +73,7 @@ class Xp2pManager {
   }
 
   initModule() {
-    console.log('Xp2pManager: initModule');
+    console.log('Xp2pManager: initModule in state', this._state);
 
     if (this._networkChanged) {
       console.log('Xp2pManager: networkChanged, destoryModule first');
@@ -88,15 +101,15 @@ class Xp2pManager {
         if (this._promise !== promise) {
           return;
         }
-        console.log('Xp2pManager: init timeout');
+        console.error('Xp2pManager: init timeout');
 
         this.destroyModule();
-        return reject(-1);
+        return reject(Xp2pManagerErrorEnum.Timeout);
       }, 3000);
 
       p2pExports
         .init({
-          appParams: config.appParams,
+          appParams,
         })
         .then((res) => {
           clearTimeout(timer);
@@ -133,7 +146,7 @@ class Xp2pManager {
   }
 
   destroyModule() {
-    console.log('Xp2pManager: destroyModule');
+    console.log('Xp2pManager: destroyModule in state', this._state);
 
     if (!this._state) {
       console.log('p2pModule not running');
@@ -145,11 +158,11 @@ class Xp2pManager {
   }
 
   resetP2P() {
-    console.log('Xp2pManager: resetP2P');
+    console.log('Xp2pManager: resetP2P in state', this._state);
 
     if (this._state !== 'inited') {
       console.log('p2pModule not inited');
-      return Promise.reject(-2002);
+      return Promise.reject(Xp2pManagerErrorEnum.ModuleNotInited);
     }
 
     const start = Date.now();
@@ -162,10 +175,10 @@ class Xp2pManager {
         if (this._promise !== promise) {
           return;
         }
-        console.log('Xp2pManager: resetP2P timeout');
+        console.error('Xp2pManager: resetP2P timeout');
 
         this.destroyModule();
-        return reject(-1);
+        return reject(Xp2pManagerErrorEnum.Timeout);
       }, 3000);
 
       p2pExports
@@ -267,9 +280,31 @@ class Xp2pManager {
     return p2pExports.stopVoiceService(targetId);
   }
 
-  sendCommand(deviceId, command) {
-    console.log('Xp2pManager: sendCommand', deviceId, command);
-    return p2pExports.sendCommand(deviceId, command);
+  sendCommand(targetId, command) {
+    console.log('Xp2pManager: sendCommand', targetId, command);
+    return p2pExports.sendCommand(targetId, command);
+  }
+
+  sendCommandByTopic(targetId, { channel, cmd }) {
+    console.log('Xp2pManager: sendCommandByTopic', targetId, channel, cmd);
+
+    this._msgSeq++;
+    const cmdObj = { ...cmd, message_id: this._msgSeq };
+
+    return new Promise((resolve, reject) => {
+      this.sendCommand(targetId, `action=user_define&channel=${channel || 0}&cmd=${JSON.stringify(cmdObj)}`)
+        .then((res) => {
+          if (res.type === 'success') {
+            resolve(JSON.parse(res.data));
+            return;
+          }
+
+          reject(res.errmsg || `发送信令失败：${res.status} ${res.errcode}`);
+        })
+        .catch((error) => {
+          reject(`发送信令失败：${error}`);
+        });
+    });
   }
 
   _resetXP2PData() {
@@ -277,12 +312,14 @@ class Xp2pManager {
     this._state = '';
     this._localPeername = '';
     this._networkChanged = null;
+    this._msgSeq = 0;
   }
 
   _checkRecordAuthorize() {
     return new Promise((resolve, reject) => {
       wx.getSetting({
         success(res) {
+          console.log('wx.getSetting res', res);
           if (!res.authSetting['scope.record']) {
             wx.authorize({
               scope: 'scope.record',
@@ -291,7 +328,7 @@ class Xp2pManager {
                 resolve(0);
               },
               fail() {
-                reject(1);
+                reject(Xp2pManagerErrorEnum.NoAuth);
               },
             });
           } else {

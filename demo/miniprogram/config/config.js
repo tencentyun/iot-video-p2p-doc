@@ -28,6 +28,10 @@ const config = {
       codeUrl: 'https://dev.ad.qvb.qcloud.com/code',
     },
   },
+  commandMap: {
+    getUserNum: { topic: 'get_status' },
+    getVoiceStatus: { topic: 'intercom' },
+  },
   appParams: {
     appid: 1253131157,
     appOauthId: '600a4206062556e21befdc98',

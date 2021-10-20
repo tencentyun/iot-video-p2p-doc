@@ -22,28 +22,13 @@ const devices = {
     peername: '',
     command: 'action=user_define&cmd=xxx',
   },
-  judy1: {
+  judy3: {
     showInHomePageBtn: true,
     productId: '9L1S66FZ3Q',
-    deviceName: 'test_34683636_1',
-    peername: 'XP2PbO/R01VuHltYvpyFHusb95n7%2.3.5',
+    deviceName: 'test_34683636_3',
+    peername: 'XP2PcDd3JlQPiXxxwoaNuaykt0Ez%2.3.5',
     flvPath: 'ipc.flv',
     flvParams: 'action=live&channel=0&quality=standard',
-    command: 'action=user_define&cmd=xxx',
-  },
-  ipc: {
-    // showInHomePageNav: true,
-    productId: 'AQTV2839QJ',
-    deviceName: 'sp01_32820237_10',
-    peername: '25QPD2ozz0p8RLMpLa',
-    command: 'action=user_define&cmd=xxx',
-  },
-  ipc1: {
-    showInHomePageNav: true,
-    reserve: true,
-    productId: 'CBOWA1B6I2',
-    deviceName: 'iot_48598675_1',
-    peername: 'XP2PUCSoT421lV5Hrlj/bmcaeiPA%2.1.0',
     command: 'action=user_define&cmd=xxx',
   },
 };

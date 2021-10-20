@@ -134,7 +134,18 @@
     </view>
   </view>
   <view class="component-section" wx:if="{{mode==='ipc'}}">
-    <view class="component-section-title">信令</view>
+    <view class="component-section-title">常用信令</view>
+    <view class="group-button-area">
+      <button bindtap="sendCommand" class="group-button" type="primary" size="mini" disabled="{{!targetId}}" data-cmd="getUserNum">
+        获取当前观看人数
+      </button>
+      <button bindtap="sendCommand" class="group-button" type="primary" size="mini" disabled="{{!targetId}}" data-cmd="getVoiceStatus">
+        获取设备对讲状态
+      </button>
+    </view>
+  </view>
+  <view class="component-section" wx:if="{{mode==='ipc'}}">
+    <view class="component-section-title">自定义信令</view>
     <view>command:</view>
     <view class="weui-cells weui-cells_after-title">
       <view class="weui-cell weui-cell_input">

@@ -1,9 +1,11 @@
 import config from '../../config/config';
 import { canUseP2P } from '../../utils';
-import { getXp2pManager } from '../../xp2pManager';
+import { getXp2pManager, Xp2pManagerErrorEnum } from '../../xp2pManager';
 
 const xp2pManager = getXp2pManager();
 const { XP2PEventEnum, XP2PNotify_SubType, XP2PDevNotify_SubType } = xp2pManager;
+
+const { commandMap } = config;
 
 // ts才能用enum，先这么处理吧
 const PlayStateEnum = {
@@ -647,40 +649,71 @@ Component({
         .catch((res) => {
           console.log('startVoice fail', res);
           this.setData({ voiceState: '' });
+          wx.showToast({
+            title: res === Xp2pManagerErrorEnum.NoAuth ? '请授权小程序访问麦克风' : '发起语音对讲失败',
+            icon: 'error',
+          });
         });
     },
     stopVoice() {
       xp2pManager.stopVoice(this.data.targetId);
       this.setData({ voiceState: '' });
     },
-    sendCommand() {
+    sendCommand(e) {
       if (!this.data.targetId) {
         this.showToast('sendCommand: invalid targetId');
         return;
       }
 
-      if (!this.data.inputCommand) {
-        this.showToast('sendCommand: please input command');
-        return;
+      let cmdDetail;
+      const { cmd } = e.currentTarget.dataset;
+      console.log(`[${this.id}]`, 'sendCommand', this.data.targetId, cmd);
+      if (cmd) {
+        // 常用信令
+        if (!commandMap[cmd]) {
+          this.showToast(`sendCommand: invalid cmd ${cmd}`);
+          return;
+        }
+        cmdDetail = commandMap[cmd];
+        xp2pManager
+          .sendCommandByTopic(this.data.targetId, { cmd: cmdDetail })
+          .then((res) => {
+            console.log(`[${this.id}]`, 'sendCommandByTopic res', res);
+            wx.showModal({
+              content: `sendCommandByTopic res: ${JSON.stringify(res, null, 2)}`,
+              showCancel: false,
+            });
+          })
+          .catch((errmsg) => {
+            console.error(`[${this.id}]`, 'sendCommandByTopic error', errmsg);
+            wx.showModal({
+              content: errmsg,
+              showCancel: false,
+            });
+          });
+      } else {
+        // 自定义信令
+        if (!this.data.inputCommand) {
+          this.showToast('sendCommand: please input command');
+          return;
+        }
+        xp2pManager
+          .sendCommand(this.data.targetId, this.data.inputCommand)
+          .then((res) => {
+            console.log(`[${this.id}]`, 'sendCommand res', res);
+            wx.showModal({
+              content: `sendCommand res: type=${res.type}, status=${res.status}, data=${res.data}`,
+              showCancel: false,
+            });
+          })
+          .catch((errcode) => {
+            console.error(`[${this.id}]`, 'sendCommand error', errcode);
+            wx.showModal({
+              content: `sendCommand error: ${errcode}`,
+              showCancel: false,
+            });
+          });
       }
-
-      console.log(`[${this.id}]`, 'sendCommand', this.data.targetId, this.data.inputCommand);
-      xp2pManager
-        .sendCommand(this.data.targetId, this.data.inputCommand)
-        .then((res) => {
-          console.log(`[${this.id}]`, 'sendCommand res', res);
-          wx.showModal({
-            content: `sendCommand res: type=${res.type}, status=${res.status}, data=${res.data}`,
-            showCancel: false,
-          });
-        })
-        .catch((errcode) => {
-          console.error(`[${this.id}]`, 'sendCommand error', errcode);
-          wx.showModal({
-            content: `sendCommand error: ${errcode}`,
-            showCancel: false,
-          });
-        });
     },
     prepareService(serviceSuccessCallback) {
       if (!this.data.targetId) {
@@ -1009,20 +1042,18 @@ Component({
       const p2pId = this.data.targetId;
       const cmdDetail = {
         topic: 'ptz',
-        message_id: 1,
         data: {
           cmd,
         },
       };
-      const totalCommand = `action=user_define&channel=0&cmd=${JSON.stringify(cmdDetail)}`;
       const start = Date.now();
       xp2pManager
-        .sendCommand(p2pId, totalCommand)
+        .sendCommandByTopic(p2pId, { cmd: cmdDetail })
         .then((res) => {
           console.log(`[${p2pId}] sendPTZCommand delay ${Date.now() - start}, res`, res);
         })
-        .catch((errcode) => {
-          console.error(`[${p2pId}] sendPTZCommand delay ${Date.now() - start}, error`, errcode);
+        .catch((err) => {
+          console.error(`[${p2pId}] sendPTZCommand delay ${Date.now() - start}, error`, err);
         });
     },
 

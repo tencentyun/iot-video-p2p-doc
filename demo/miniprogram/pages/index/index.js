@@ -1,7 +1,4 @@
 import devices from '../../config/devices';
-import { getXp2pManager } from '../../xp2pManager';
-
-const xp2pManager = getXp2pManager();
 
 Page({
   data: {

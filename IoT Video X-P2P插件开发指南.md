@@ -29,7 +29,7 @@
 ## 微信版本限制
 
 微信 8.0.10 以上
-基础库 2.19.2 以上
+基础库 2.19.3 以上
 
 ## 使用方法
 
@@ -58,7 +58,7 @@ appid: 'wx1319af22356934bf'
 
 ### 3. 调用插件接口
 
-### 3.1 1v多
+#### 3.1 1v多
 
 <img width="700" src="./pic/plugin-p2p/1vN.png"/>
 
@@ -117,7 +117,7 @@ p2pModule.destroy();
 
 ```
 
-### 3.2 1v1
+#### 3.2 1v1
 
 <img width="700" src="./pic/plugin-p2p/1v1.png"/>
 
@@ -224,25 +224,30 @@ p2pModule.destroy();
 
 ### 4. 异常处理
 
-当模块出现异常时，会通过 `msgCallback` 通知出来。如果是p2p链路断开，用户可以根据需要（比如检测到网络状态发生变化）重置p2p模块
+监控时需要 `xp2p插件` 和 `p2p-player插件` 同时使用，2个插件的错误事件都需要处理
+
+#### 4.1 进入监控页，第一次触发播放，有时live-player并没有开始播放，没收到 playerStartPull 事件
+
+通过代码 playerCtx.play() 来触发播放，有时候 live-player 并没有真正开始播放，建议按这个流程处理：
+- 进入监控页，启动p2p和创建player并行
+- 收到 playerReady 时
+  - 如果 startP2PService 已经完成，把 p2p-player 组件的 autoplay 属性设为 true
+  - 如果 startP2PService 还没有完成，等待完成后再调用 playerCtx.play()
+
+#### 4.2 播放一段时间之后，收到xp2p插件的连接断开事件
+
+xp2p插件会通过 `msgCallback` 通知各种事件。
+如果是连接断开，可能有多种情况：设备离线、设备停止推流、本地网络状态变化等等，通常处理是退出监控页，用户检查之后再重新进入页面。
+注意：在退出时可能需要重置p2p模块，详见 4.4。
+
 ``` js
+// xp2p插件消息处理
 onP2PMessage(event, subtype, detail) {
   switch (event) {
     case p2pModule.XP2PEventEnum.Notify:
       console.log('onP2PMessage, Notify', subtype, detail);
       if (subtype === p2pModule.XP2PNotify_SubType.Disconnect) {
-        // p2p链路断开，建议间隔一段时间后，检查网络状态并重置p2p模块
-        setTimeout(() => {
-          p2pModule
-            .resetP2P()
-            .then((res) => {
-              // res === 0 说明reset成功
-              console.log('reset res', res);
-            })
-            .catch(({ errcode, errmsg }) => {
-              console.error('reset error', errcode, errmsg);
-            });
-        }, 5000); 
+        // p2p链路断开，弹个提示，退出监控页
       }
       break;
 
@@ -254,6 +259,63 @@ onP2PMessage(event, subtype, detail) {
       console.log('onP2PMessage, unknown event', event, subtype);
   }
 }
+```
+
+#### 4.3 退后台一段时间再回来，live-player已经开始播放，但是没收到 playerStartPull 事件
+
+退后台一段时间，部分系统会中断网络服务，导致player插件启动的本地server无法再收到请求。这种情况目前暂时没有单独的事件，但是可以通过p2p-player组件的 statechange 事件详情间接判断。
+通常处理也是退出监控页，退出时重置本地server，用户重新进入页面后创建的player就能正常触发事件了。
+
+``` js
+// xp2p插件消息处理
+onLivePlayerStateChange({ detail }) {
+  switch (detail.code) {
+    case 2103: // 网络断连, 已启动自动重连
+      console.error('onLivePlayerStateChange', detail.code, detail);
+      if (detail.message.indexOf('errCode:-1004 ')) {
+        // 无法连接服务器，就是本地server连不上
+        this.setData({ needResetLocalServer: true });
+
+        // 这时其实网络状态应该也变了，但是网络状态变化事件延迟较大，networkChanged不一定为true，所以主动把 networkChanged 也设为true
+        xp2pManager.networkChanged = true;
+
+        // 销毁p2p-player组件，否则会多次重试，多次收到 2103
+        
+        // 弹个提示，退出监控页
+      }
+      break;
+  }
+}
+```
+
+#### 4.4 退出监控页时，根据标记重置插件
+``` js
+// 退出监控页时的处理
+onUnload() {
+  // 各种业务逻辑
+
+  if (xp2pManager.networkChanged) {
+    // 如果本地网络变化，需要重置p2p
+    try {
+      console.log('networkChanged, resetP2P when exit');
+      xp2pManager.resetP2P();
+    } catch (err) {
+      console.error('resetP2P error', err);
+    }
+  }
+
+  if (this.data.needResetLocalServer) {
+    // 如果本地Server出错，需要重置player插件
+    try {
+      console.log('reset playerPlugin when exit');
+      playerPlugin.reset();
+    } catch (err) {
+      console.error('reset playerPlugin error', err);
+    }
+  }
+}
+
+// 
 ```
 
 
