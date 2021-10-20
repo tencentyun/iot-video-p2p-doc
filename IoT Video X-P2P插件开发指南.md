@@ -267,7 +267,7 @@ onP2PMessage(event, subtype, detail) {
 通常处理也是退出监控页，退出时重置本地server，用户重新进入页面后创建的player就能正常触发事件了。
 
 ``` js
-// xp2p插件消息处理
+// p2p-player组件消息处理
 onLivePlayerStateChange({ detail }) {
   switch (detail.code) {
     case 2103: // 网络断连, 已启动自动重连
