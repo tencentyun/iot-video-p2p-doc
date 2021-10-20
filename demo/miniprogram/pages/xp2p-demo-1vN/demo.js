@@ -78,13 +78,15 @@ Page({
     }
 
     if (xp2pManager.networkChanged) {
-      console.log('networkChanged, destroyP2P when exit');
-      xp2pManager.destroyModule();
+      try {
+        console.log('networkChanged, destroyP2P when exit');
+        xp2pManager.destroyModule();
+      } catch (err) {}
     }
 
     if (this.data.needResetLocalServer) {
       try {
-        console.log('reset playerPlugin');
+        console.log('reset playerPlugin when exit');
         playerPlugin.reset();
       } catch (err) {
         console.error('reset playerPlugin error', err);

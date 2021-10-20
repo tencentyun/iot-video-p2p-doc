@@ -292,8 +292,9 @@ onLivePlayerStateChange({ detail }) {
 ``` js
 // 退出监控页时的处理
 onUnload() {
-  // 各种业务逻辑
+  // 各种针对当前设备的清理 stopVoice, stopStream, stopP2PService 等等
 
+  // 下面是对插件的处理
   if (xp2pManager.networkChanged) {
     // 如果本地网络变化，需要重置p2p
     try {
@@ -314,8 +315,6 @@ onUnload() {
     }
   }
 }
-
-// 
 ```
 
 
