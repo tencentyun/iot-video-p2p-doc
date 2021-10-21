@@ -272,7 +272,7 @@ onLivePlayerStateChange({ detail }) {
   switch (detail.code) {
     case 2103: // 网络断连, 已启动自动重连
       console.error('onLivePlayerStateChange', detail.code, detail);
-      if (detail.message.indexOf('errCode:-1004 ')) {
+      if (detail.message.indexOf('errCode:-1004 ') >= 0) {
         // 无法连接服务器，就是本地server连不上
         this.setData({ needResetLocalServer: true });
 
