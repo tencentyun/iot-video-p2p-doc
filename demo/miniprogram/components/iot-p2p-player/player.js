@@ -12,7 +12,7 @@ const PlayStateEnum = {
   unknown: 'unknown',
   playerReady: 'playerReady',
   playerError: 'playerError',
-  servicePrearing: 'servicePrearing',
+  servicePreparing: 'servicePreparing',
   serviceStarted: 'serviceStarted',
   // 这些全部 stream 开头，方便清理
   streamPreparing: 'streamPreparing',
@@ -20,6 +20,19 @@ const PlayStateEnum = {
   streamRequest: 'streamRequest',
   streamHeaderParsed: 'streamHeaderParsed',
   streamFirstChunk: 'streamFirstChunk',
+};
+
+const PlayErrorEnum = {
+  localServerError: 'localServerError',
+  p2pDisconnect: 'p2pDisconnect',
+  livePlayerError: 'livePlayerError',
+  livePlayerStateChange: 'livePlayerStateChange',
+};
+const errMsgMap = {
+  [PlayErrorEnum.localServerError]: '本地连接失败',
+  [PlayErrorEnum.p2pDisconnect]: '连接失败或断开',
+  [PlayErrorEnum.livePlayerError]: '播放器错误',
+  [PlayErrorEnum.livePlayerStateChange]: '播放失败',
 };
 
 Component({
@@ -76,17 +89,6 @@ Component({
     player: null,
     playerCtx: null,
     playerMsg: '',
-
-    // 搞个方便操作的面板
-    showPTZPanel: false,
-    ptzBtns: [
-      { name: 'up', cmd: 'ptz_up_press' },
-      { name: 'down', cmd: 'ptz_down_press' },
-      { name: 'left', cmd: 'ptz_left_press' },
-      { name: 'right', cmd: 'ptz_right_press' }
-    ],
-    ptzCmd: '',
-    releasePTZTimer: null,
   },
   lifetimes: {
     created() {
@@ -106,8 +108,8 @@ Component({
         ? `${this.id || `iot-p2p-player-${Date.now()}-${Math.floor(Math.random() * 1000)}`}-player`
         : '';
       const playerMsg = needPlayer && !canUseP2P ? '您的微信基础库版本过低，请升级后再使用' : '';
-      const realHost = data.host || this.getHostFromPeername(data.peername);
-      const flvFile = `${data.flvPath}${data.flvParams ? `?${data.flvParams}` : ''}`;
+      const realHost = data.host || this.getHostFromPeername(data.xp2pInfo || data.peername);
+      const flvFile = data.flvFile || '';
       this.setData(
         {
           mode: data.mode,
@@ -119,7 +121,7 @@ Component({
           inputTargetId: data.targetId || '',
           inputProductId: data.productId || '',
           inputDeviceName: data.deviceName || '',
-          inputXp2pInfo: data.peername || '',
+          inputXp2pInfo: data.xp2pInfo || data.peername || '',
           inputFlvFile: flvFile || '',
           inputCommand: data.command || '',
           inputCodeUrl: data.codeUrl || '',
@@ -290,44 +292,38 @@ Component({
       // TODO 什么情况会走到这里？
       this.stopPlay();
 
-      this.checkCanRetry('livePlayerError', detail);
+      this.handlePlayError(PlayErrorEnum.livePlayerError, detail);
     },
     // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     onLivePlayerStateChange({ detail }) {
       // console.log(`[${this.id}]`, '======== onLivePlayerStateChange', detail.code, detail.message);
+      if (!this.data.targetId) {
+        // 已经停止p2pservice了，不再处理
+        return;
+      }
       switch (detail.code) {
         case 2103: // 网络断连, 已启动自动重连
           console.error('==== onLivePlayerStateChange', detail.code, detail);
           if (detail.message.indexOf('errCode:-1004 ') >= 0) {
             // 无法连接服务器，就是本地server连不上
-            if (!this.data.targetId) {
-              return;
-            }
+            xp2pManager.needResetLocalServer = true;
 
             // 这时其实网络状态应该也变了，但是网络状态变化事件延迟较大，networkChanged不一定为true
             // 所以把 networkChanged 也设为true
             xp2pManager.networkChanged = true;
 
             this.addLog('==== onLivePlayerStateChange 2103 无法连接本地server');
-            this.showToast('本地连接失败');
             this.stopAll();
             this.setData({ hasPlayer: false });
-            this.triggerEvent('localServerError', {
-              playerId: this.id,
-              targetId: this.data.targetId,
-              notifyDetail: detail,
-            });
+            this.handlePlayError(PlayErrorEnum.localServerError, detail);
           }
           break;
         case -2301: // live-player断连，且经多次重连抢救无效，更多重试请自行重启播放
           console.error('==== onLivePlayerStateChange', detail.code, detail);
           // 到这里应该已经触发过 onPlayerClose 了
-          if (!this.data.targetId) {
-            return;
-          }
           this.addLog('==== onLivePlayerStateChange -2301 多次重连抢救无效');
           this.stopPlay();
-          this.checkCanRetry('livePlayerStateChange', detail);
+          this.handlePlayError(PlayErrorEnum.livePlayerStateChange, detail);
           break;
       }
     },
@@ -386,9 +382,6 @@ Component({
         peerlist: '',
         // log: '', // 保留log，开始新的时再清
         serviceTimestamps: {},
-        showPTZPanel: false,
-        ptzCmd: '',
-        releasePTZTimer: null,
       });
     },
     printData() {
@@ -475,15 +468,11 @@ Component({
         this.addLog('stop all');
       }
 
+      this.stopVoice();
+
       // 不用等stopPlay的回调，先把流停掉
       this.stopStream();
       this.stopPlay();
-
-      this.stopVoice();
-
-      if (this.data.ptzCmd || this.data.releasePTZTimer) {
-        this.controlDevicePTZ('ptz_release_pre');
-      }
 
       let reserve;
       if (e === 'auto') {
@@ -669,23 +658,23 @@ Component({
       const { cmd } = e.currentTarget.dataset;
       console.log(`[${this.id}]`, 'sendCommand', this.data.targetId, cmd);
       if (cmd) {
-        // 常用信令
+        // 内置信令
         if (!commandMap[cmd]) {
           this.showToast(`sendCommand: invalid cmd ${cmd}`);
           return;
         }
         cmdDetail = commandMap[cmd];
         xp2pManager
-          .sendCommandByTopic(this.data.targetId, { cmd: cmdDetail })
+          .sendInnerCommand(this.data.targetId, cmdDetail)
           .then((res) => {
-            console.log(`[${this.id}]`, 'sendCommandByTopic res', res);
+            console.log(`[${this.id}]`, 'sendInnerCommand res', res);
             wx.showModal({
-              content: `sendCommandByTopic res: ${JSON.stringify(res, null, 2)}`,
+              content: `sendInnerCommand res: ${JSON.stringify(res, null, 2)}`,
               showCancel: false,
             });
           })
           .catch((errmsg) => {
-            console.error(`[${this.id}]`, 'sendCommandByTopic error', errmsg);
+            console.error(`[${this.id}]`, 'sendInnerCommand error', errmsg);
             wx.showModal({
               content: errmsg,
               showCancel: false,
@@ -748,7 +737,7 @@ Component({
 
       const start = Date.now();
       this.addLog('prepare service');
-      this.setData({ state: PlayStateEnum.servicePrearing, 'serviceTimestamps.servicePrearing': start });
+      this.setData({ state: PlayStateEnum.servicePreparing, 'serviceTimestamps.servicePreparing': start });
 
       xp2pManager
         .startP2PService(
@@ -888,19 +877,34 @@ Component({
       return newTimestamps;
     },
     checkCanRetry(type, detail) {
-      if (xp2pManager.networkChanged) {
+      if (xp2pManager.networkChanged || xp2pManager.needResetLocalServer) {
         // 网络状态变化了，退出重来
-        console.log('networkChanged, trigger disconnect');
+        console.log('networkChanged or needResetLocalServer, trigger playError');
         this.stopAll();
-        this.triggerEvent('p2pDisconnect', {
+        this.triggerEvent('playError', {
           playerId: this.id,
-          targetId: this.data.targetId,
-          notifyType: type,
-          notifyDetail: detail,
+          errType: type,
+          errMsg: xp2pManager.needResetLocalServer ? errMsgMap.localServerError : errMsgMap.p2pDisconnect,
+          errDetail: detail,
+          isFatalError: true,
         });
         return false;
       }
       return true;
+    },
+    // 处理播放错误
+    handlePlayError(type, detail) {
+      if (!this.checkCanRetry(type, detail)) {
+        return;
+      }
+
+      // 能retry的才提示这个，不能retry的前面已经触发弹窗了
+      this.triggerEvent('playError', {
+        playerId: this.id,
+        errType: type,
+        errMsg: errMsgMap[type] || '播放失败',
+        errDetail: detail,
+      });
     },
     onP2PMessage(targetId, event, subtype, detail) {
       if (targetId !== this.data.targetId) {
@@ -937,7 +941,7 @@ Component({
       const now = Date.now();
       switch (type) {
         case XP2PNotify_SubType.Connected:
-          this.addLog(`connect delay ${now - this.data.serviceTimestamps.servicePrearing}`);
+          this.addLog(`connect delay ${now - this.data.serviceTimestamps.servicePreparing}`);
           // 注意不要修改state，Connected只在心跳保活时可能收到，不在关键路径上，只是记录一下
           this.setData({ 'serviceTimestamps.serviceConnected': now });
           break;
@@ -954,7 +958,7 @@ Component({
           // 数据传输正常结束
           if (
             this.data.state === PlayStateEnum.streamHeaderParsed
-            || this.data.state === PlayStateEnum.streamFirstChunk
+              || this.data.state === PlayStateEnum.streamFirstChunk
           ) {
             // dataParsed 之前的好像可以自动重试
             this.showToast('直播结束或断开');
@@ -973,20 +977,8 @@ Component({
         case XP2PNotify_SubType.Disconnect:
           // p2p链路断开
           console.error(`[${this.id}]`, `XP2PNotify_SubType.Disconnect in state ${this.data.state}`, detail);
-          if (
-            this.data.state
-            && this.data.state !== PlayStateEnum.playerReady
-            && this.data.state !== PlayStateEnum.unknown
-          ) {
-            this.showToast('连接失败或断开');
-            this.stopAll();
-            this.triggerEvent('p2pDisconnect', {
-              playerId: this.id,
-              targetId: this.data.targetId,
-              notifyType: type,
-              notifyDetail: detail,
-            });
-          }
+          this.stopAll();
+          this.handlePlayError(PlayErrorEnum.p2pDisconnect, detail);
           break;
       }
     },
@@ -1002,80 +994,6 @@ Component({
           this.addLog(detail);
           break;
       }
-    },
-    togglePTZPanel() {
-      this.setData({ showPTZPanel: !this.data.showPTZPanel });
-    },
-    toggleVoice(e) {
-      if (!this.data.targetId) {
-        return;
-      }
-
-      const isSendingVoice = this.data.voiceState === 'sending';
-      if (!isSendingVoice) {
-        this.startVoice(e);
-      } else {
-        this.stopVoice();
-      }
-    },
-    controlDevicePTZ(e) {
-      if (!this.data.targetId) {
-        return;
-      }
-      const cmd = e && e.currentTarget ? e.currentTarget.dataset.cmd : e;
-      if (!cmd) {
-        return;
-      }
-      console.log(`[${this.data.targetId}]`, 'controlDevicePTZ', cmd);
-
-      if (this.data.releasePTZTimer) {
-        clearTimeout(this.data.releasePTZTimer);
-        this.setData({ releasePTZTimer: null });
-      }
-
-      if (cmd !== 'ptz_release_pre') {
-        this.setData({ ptzCmd: cmd });
-      } else {
-        this.setData({ ptzCmd: '' });
-      }
-
-      const p2pId = this.data.targetId;
-      const cmdDetail = {
-        topic: 'ptz',
-        data: {
-          cmd,
-        },
-      };
-      const start = Date.now();
-      xp2pManager
-        .sendCommandByTopic(p2pId, { cmd: cmdDetail })
-        .then((res) => {
-          console.log(`[${p2pId}] sendPTZCommand delay ${Date.now() - start}, res`, res);
-        })
-        .catch((err) => {
-          console.error(`[${p2pId}] sendPTZCommand delay ${Date.now() - start}, error`, err);
-        });
-    },
-
-    releasePTZBtn() {
-      if (!this.data.targetId) {
-        return;
-      }
-      console.log(`[${this.data.targetId}]`, 'releasePTZBtn');
-
-      // 先把cmd清了，恢复按钮状态
-      this.setData({ ptzCmd: '' });
-
-      if (this.data.releasePTZTimer) {
-        clearTimeout(this.data.releasePTZTimer);
-        this.setData({ releasePTZTimer: null });
-      }
-
-      // 延迟发送release
-      const releasePTZTimer = setTimeout(() => {
-        this.controlDevicePTZ('ptz_release_pre');
-      }, 500);
-      this.setData({ releasePTZTimer });
     },
   },
 });

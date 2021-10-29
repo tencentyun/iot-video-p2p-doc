@@ -72,6 +72,20 @@ Component({
         state: xp2pManager.state,
         localPeername: xp2pManager.localPeername,
       });
+
+      if (xp2pManager.state === 'initing' || xp2pManager.state === 'reseting') {
+        xp2pManager.promise
+          .then((res) => {
+            if (res === 0) {
+              this.changeState({ state: 'inited', localPeername: xp2pManager.localPeername });
+            } else {
+              this.destroyModule();
+            }
+          })
+          .catch(() => {
+            this.destroyModule();
+          });
+      }
     },
     initModule() {
       console.log(`[${this.id}]`, 'initModule');
@@ -96,25 +110,21 @@ Component({
             console.log(`[${this.id}]`, 'localPeername', localPeername);
             this.changeState({ state: 'inited', localPeername });
           } else {
-            this.resetXP2PData();
+            this.destroyModule();
             wx.showModal({
               content: `init 失败, res=${res}`,
               showCancel: false,
             });
           }
-
-          this.triggerEvent('afterInitP2P', { result: res === 0 ? 'success' : 'failure' });
         })
         .catch((errcode) => {
           console.error(`[${this.id}]`, 'init error', errcode);
 
-          this.resetXP2PData();
+          this.destroyModule();
           wx.showModal({
             content: `init 失败, errcode: ${errcode}`,
             showCancel: false,
           });
-
-          this.triggerEvent('afterInitP2P', { result: 'error' });
         });
     },
     destroyModule() {
@@ -125,13 +135,8 @@ Component({
         return;
       }
 
-      this.triggerEvent('beforeDestroyP2P');
-
       this.resetXP2PData();
-
       xp2pManager.destroyModule();
-
-      this.triggerEvent('afterDestroyP2P');
     },
     resetP2P() {
       console.log(`[${this.id}]`, 'resetP2P');
@@ -141,8 +146,6 @@ Component({
         return;
       }
 
-      this.triggerEvent('beforeResetP2P');
-
       const start = Date.now();
       this.changeState({ state: 'reseting', localPeername: '' });
 
@@ -150,6 +153,7 @@ Component({
         .resetP2P()
         .then((res) => {
           console.log(`[${this.id}]`, 'resetP2P res', res);
+
           if (res === 0) {
             const now = Date.now();
             console.log(`[${this.id}]`, 'resetP2P delay', now - start);
@@ -163,18 +167,15 @@ Component({
               showCancel: false,
             });
           }
-
-          this.triggerEvent('afterResetP2P', { result: res === 0 ? 'success' : 'failure' });
         })
         .catch((errcode) => {
           console.error(`[${this.id}]`, 'resetP2P error', errcode);
+
           this.destroyModule();
           wx.showModal({
             content: `resetP2P 失败, errcode: ${errcode}`,
             showCancel: false,
           });
-
-          this.triggerEvent('afterResetP2P', { result: 'error' });
         });
     },
   },

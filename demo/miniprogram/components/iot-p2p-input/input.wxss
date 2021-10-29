@@ -1,0 +1,9 @@
+@import '../../input.wxss';
+
+.control-info {
+  position: relative;
+}
+
+.input-item {
+  margin-bottom: 10rpx;
+}

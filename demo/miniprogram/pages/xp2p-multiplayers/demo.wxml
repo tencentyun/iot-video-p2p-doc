@@ -1,23 +1,28 @@
 <view class="page-body">
-  <view class="page-section" wx:if="{{cfg1}}">
-    <view class="page-section-title player-title">player1: {{playerId1}}</view>
-    <iot-p2p-player
-      id="{{playerId1}}"
-      cfg="{{cfg1}}" 
-      onlyp2p="{{onlyp2p}}"
-      bind:p2pDisconnect="onP2PDisconnect"
-      bind:localServerError="onPlayerLocalServerError"
+  <view class="page-section page-section-gap" wx:for="{{playerPropsList}}" wx:key="playerId">
+    <view class="page-section-title player-title">==== {{item.playerId}}: {{item.mode}}</view>
+    <iot-p2p-player-ipc
+      wx:if="{{item.mode === 'ipc'}}"
+      id="{{item.playerId}}"
+      targetId="{{item.targetId}}" 
+      flvUrl="{{item.flvUrl}}" 
+      productId="{{item.productId}}" 
+      deviceName="{{item.deviceName}}" 
+      xp2pInfo="{{item.xp2pInfo}}" 
+      onlyp2p="{{item.onlyp2p}}"
+      showDebugInfo="{{item.showDebugInfo}}"
+      bind:playError="onPlayError"
       bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
     />
-  </view>
-  <view class="page-section" wx:if="{{cfg2}}">
-    <view class="page-section-title player-title">player2: {{playerId2}}</view>
-    <iot-p2p-player
-      id="{{playerId2}}"
-      cfg="{{cfg2}}" 
-      onlyp2p="{{onlyp2p}}"
-      bind:p2pDisconnect="onP2PDisconnect"
-      bind:localServerError="onPlayerLocalServerError"
+    <iot-p2p-player-server
+      wx:if="{{item.mode === 'server'}}"
+      id="{{item.playerId}}"
+      targetId="{{item.targetId}}" 
+      flvUrl="{{item.flvUrl}}" 
+      codeUrl="{{item.codeUrl}}" 
+      onlyp2p="{{item.onlyp2p}}"
+      showDebugInfo="{{item.showDebugInfo}}"
+      bind:playError="onPlayError"
       bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
     />
   </view>

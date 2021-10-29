@@ -14,6 +14,19 @@ const { appParams } = config;
 const xp2pPlugin = requirePlugin('xp2p');
 const p2pExports = xp2pPlugin.p2p;
 
+const playerPlugin = requirePlugin('wechat-p2p-player');
+
+const parseCommandResData = (data) => {
+  let jsonStr = data;
+  const pos = jsonStr.search(/\0/);
+  if (pos >= 0) {
+    // 兼容有 \0 结束符的情况
+    jsonStr = jsonStr.substr(0, pos);
+    console.log(`data length: ${data.length}, fixed length: ${jsonStr.length}\n`, jsonStr);
+  }
+  return JSON.parse(jsonStr);
+};
+
 class Xp2pManager {
   get XP2PVersion() {
     return p2pExports?.XP2PVersion;
@@ -31,6 +44,10 @@ class Xp2pManager {
     return p2pExports?.XP2PDevNotify_SubType;
   }
 
+  get promise() {
+    return this._promise;
+  }
+
   get state() {
     return this._state;
   }
@@ -46,12 +63,21 @@ class Xp2pManager {
   set networkChanged(v) {
     this._networkChanged = v ? { timestamp: Date.now() } : null;
   }
+
+  get needResetLocalServer() {
+    return this._needResetLocalServer;
+  }
+
+  set needResetLocalServer(v) {
+    this._needResetLocalServer = v;
+  }
   constructor() {
     this._promise = null;
     this._state = '';
     this._localPeername = '';
     this._networkType = '';
     this._networkChanged = null;
+    this._needResetLocalServer = false;
 
     this._msgSeq = 0;
 
@@ -72,6 +98,17 @@ class Xp2pManager {
     });
   }
 
+  resetLocalServer() {
+    console.log('Xp2pManager: resetLocalServer');
+    this._needResetLocalServer = false;
+
+    try {
+      playerPlugin.reset();
+    } catch (err) {
+      // 低版本插件没有 reset，保护一下
+      console.log('playerPlugin.reset error', err);
+    }
+  }
   initModule() {
     console.log('Xp2pManager: initModule in state', this._state);
 
@@ -285,8 +322,37 @@ class Xp2pManager {
     return p2pExports.sendCommand(targetId, command);
   }
 
-  sendCommandByTopic(targetId, { channel, cmd }) {
-    console.log('Xp2pManager: sendCommandByTopic', targetId, channel, cmd);
+  // 内部信令，参考 https://cloud.tencent.com/document/product/1131/61744
+  sendInnerCommand(targetId, { channel, cmd, params }) {
+    console.log('Xp2pManager: sendInnerCommand', targetId, channel, cmd, params);
+
+    let cmdStr = `action=inner_define&channel=${channel || 0}&cmd=${cmd}`;
+    if (params) {
+      for (const key in params) {
+        cmdStr += `&${key}=${encodeURIComponent(params[key])}`;
+      }
+    }
+
+    return new Promise((resolve, reject) => {
+      this.sendCommand(targetId, cmdStr)
+        .then((res) => {
+          if (res.type === 'success') {
+            console.log(`sendInnerCommand success, length: ${res.data.length}\n`, res.data);
+            resolve(parseCommandResData(res.data));
+            return;
+          }
+
+          reject(res.errmsg || `发送信令失败：${res.status} ${res.errcode}`);
+        })
+        .catch((error) => {
+          reject(`发送信令失败：${error}`);
+        });
+    });
+  }
+
+  // 用户自定义信令
+  sendUserCommand(targetId, { channel, cmd }) {
+    console.log('Xp2pManager: sendUserCommand', targetId, channel, cmd);
 
     this._msgSeq++;
     const cmdObj = { ...cmd, message_id: this._msgSeq };
@@ -295,7 +361,8 @@ class Xp2pManager {
       this.sendCommand(targetId, `action=user_define&channel=${channel || 0}&cmd=${JSON.stringify(cmdObj)}`)
         .then((res) => {
           if (res.type === 'success') {
-            resolve(JSON.parse(res.data));
+            console.log(`sendUserCommand success, length: ${res.data.length}\n`, res.data);
+            resolve(parseCommandResData(res.data));
             return;
           }
 

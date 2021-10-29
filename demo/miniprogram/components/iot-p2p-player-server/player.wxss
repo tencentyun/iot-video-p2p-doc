@@ -1,0 +1,17 @@
+.component-section {
+  margin-bottom: 20rpx;
+}
+.component-section-gap {
+  margin-bottom: 40rpx;
+}
+.component-section-title {
+  padding-bottom: 10rpx;
+  font-size: 18px;
+}
+
+.group-button-area {
+  padding-top: 10rpx;
+}
+.group-button {
+  margin-right: 10rpx;
+}

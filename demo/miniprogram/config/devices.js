@@ -7,9 +7,8 @@
  * 下面这些会自动填到player组件的输入框里，也可以手动修改
  * productId: string 摄像头的 productId
  * deviceName: string 摄像头的 deviceName
- * peername: string 摄像头的 peername 或加密后的 xp2pInfo
- * flvPath: string 摄像头的 flvPath，默认 ipc.flv
- * flvParams: string 摄像头的 flvParams，默认 action=live
+ * xp2pInfo: string 摄像头的 peername 或加密后的 xp2pInfo
+ * flvFile: string 摄像头的 flvFile，默认 ipc.flv?action=live
  * command: string 摄像头的 command
  */
 
@@ -19,16 +18,15 @@ const devices = {
     showInHomePageBtn: true,
     productId: 'LYEOZCNW0U',
     deviceName: '1_49822230_1',
-    peername: '',
+    xp2pInfo: '',
     command: 'action=user_define&cmd=xxx',
   },
   judy3: {
     showInHomePageBtn: true,
     productId: '9L1S66FZ3Q',
     deviceName: 'test_34683636_3',
-    peername: 'XP2PcDd3JlQPiXxxwoaNuaykt0Ez%2.3.5',
-    flvPath: 'ipc.flv',
-    flvParams: 'action=live&channel=0&quality=standard',
+    xp2pInfo: 'XP2PcDd3JnloqQZgt7Kf8Ke8iSo0%2.3.5',
+    flvFile: 'ipc.flv?action=live&channel=0&quality=super',
     command: 'action=user_define&cmd=xxx',
   },
 };

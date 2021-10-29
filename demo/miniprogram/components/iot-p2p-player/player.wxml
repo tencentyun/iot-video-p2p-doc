@@ -30,7 +30,7 @@
         </view>
       </view>
       -->
-      <view wx:if="{{mode==='ipc'}}" class="info-inputs {{showPTZPanel ? 'hidden' : ''}}">
+      <view wx:if="{{mode==='ipc'}}" class="info-inputs">
         <view>productId:</view>
         <view class="weui-cells weui-cells_after-title">
           <view class="weui-cell weui-cell_input">
@@ -56,7 +56,7 @@
           </view>
         </view>
       </view>
-      <view wx:if="{{mode!=='ipc'}}" class="info-inputs {{showPTZPanel ? 'hidden' : ''}}">
+      <view wx:if="{{mode!=='ipc'}}" class="info-inputs">
         <view>codeUrl:</view>
         <view class="weui-cells weui-cells_after-title">
           <view class="weui-cell weui-cell_input">
@@ -67,31 +67,6 @@
         <view class="weui-cells weui-cells_after-title">
           <view class="weui-cell weui-cell_input">
             <input class="weui-input" type="text" value="{{inputUrl}}" disabled="{{targetId}}" placeholder="请输入streamUrl" placeholder-class="placeholder" bindinput="inputStreamUrl" />
-          </view>
-        </view>
-      </view>
-      <view wx:if="{{mode==='ipc'}}" class="ptz-panel-wrap {{showPTZPanel ? '' : 'hide'}}">
-        <view class="ptz-panel">
-          <view class="ptz-controls">
-            <view class="ptz-controls-top">
-              <view class="ptz-position">
-                <view wx:for="{{ptzBtns}}" wx:key="name" class="ptz-dir ptz-{{item.name}}">
-                  <view class="ptz-btn"
-                    data-cmd="{{item.cmd}}"
-                    bind:touchstart="controlDevicePTZ"
-                    bind:touchend="releasePTZBtn"
-                    bind:touchcancel="releasePTZBtn"
-                  >
-                    <view class="ptz-icon arrow-{{item.name}} {{ptzCmd === item.cmd ? 'press' : ''}}"></view>
-                  </view>
-                </view>
-                <view class="ptz-cricle">
-                  <view class="voice-btn" bindtap="toggleVoice" data-recorder-cfg="1-8000-16000">
-                    <view class="voice-icon {{voiceState === 'sending' ? 'press' : ''}}">{{voiceState}}</view>
-                  </view>
-                </view>
-              </view>
-            </view>
           </view>
         </view>
       </view>
@@ -112,11 +87,6 @@
         stopAll
       </button>
     </view>
-    <view wx:if="{{mode==='ipc'}}">
-      <button bindtap="togglePTZPanel" type="primary" size="mini" disabled="{{!targetId}}">
-        打开/关闭PTZ面板
-      </button>
-    </view>
   </view>
   <view class="component-section" wx:if="{{mode==='ipc'}}">
     <view class="component-section-title">语音对讲</view>
@@ -134,13 +104,16 @@
     </view>
   </view>
   <view class="component-section" wx:if="{{mode==='ipc'}}">
-    <view class="component-section-title">常用信令</view>
+    <view class="component-section-title">内置信令</view>
     <view class="group-button-area">
-      <button bindtap="sendCommand" class="group-button" type="primary" size="mini" disabled="{{!targetId}}" data-cmd="getUserNum">
-        获取当前观看人数
+      <button bindtap="sendCommand" class="group-button" type="primary" size="mini" disabled="{{!targetId}}" data-cmd="getLiveStatus">
+        获取拉流状态
       </button>
       <button bindtap="sendCommand" class="group-button" type="primary" size="mini" disabled="{{!targetId}}" data-cmd="getVoiceStatus">
-        获取设备对讲状态
+        获取对讲状态
+      </button>
+      <button bindtap="sendCommand" class="group-button" type="primary" size="mini" disabled="{{!targetId}}" data-cmd="getRecordDates">
+        获取录像日期
       </button>
     </view>
   </view>

@@ -1,14 +1,35 @@
 <view class="page-body">
   <view class="page-section" wx:if="{{cfg}}">
-    <view class="page-section-title player-title">player: {{playerId}}</view>
-    <iot-p2p-player
-      id="{{playerId}}"
-      cfg="{{cfg}}" 
-      onlyp2p="{{onlyp2p}}"
-      reserve="{{reserve}}"
-      bind:p2pDisconnect="onP2PDisconnect"
-      bind:localServerError="onPlayerLocalServerError"
-      bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
+    <iot-p2p-input
+      wx:if="{{!targetId}}"
+      cfg="{{cfg}}"
+      bind:startPlayer="onStartPlayer"
     />
+    <view wx:if="{{playerId && mode && targetId}}">
+      <iot-p2p-player-ipc
+        wx:if="{{mode === 'ipc'}}"
+        id="{{playerId}}"
+        targetId="{{targetId}}" 
+        flvUrl="{{flvUrl}}" 
+        productId="{{productId}}" 
+        deviceName="{{deviceName}}" 
+        xp2pInfo="{{xp2pInfo}}" 
+        onlyp2p="{{onlyp2p}}"
+        showDebugInfo="{{showDebugInfo}}"
+        bind:playError="onPlayError"
+        bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
+      />
+      <iot-p2p-player-server
+        wx:if="{{mode === 'server'}}"
+        id="{{playerId}}"
+        targetId="{{targetId}}" 
+        flvUrl="{{flvUrl}}" 
+        codeUrl="{{codeUrl}}" 
+        onlyp2p="{{onlyp2p}}"
+        showDebugInfo="{{showDebugInfo}}"
+        bind:playError="onPlayError"
+        bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
+      />
+    </view>
   </view>
 </view>

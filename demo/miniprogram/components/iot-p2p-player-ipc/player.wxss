@@ -1,0 +1,28 @@
+@import '../../input.wxss';
+@import './ptz-panel.wxss';
+
+.component-section {
+  margin-bottom: 20rpx;
+}
+.component-section-gap {
+  margin-bottom: 40rpx;
+}
+.component-section-title {
+  padding-bottom: 10rpx;
+  font-size: 18px;
+}
+
+.group-button-area {
+  padding-top: 10rpx;
+}
+.group-button {
+  margin-right: 10rpx;
+}
+
+.ptz-panel-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}

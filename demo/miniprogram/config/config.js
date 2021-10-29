@@ -1,18 +1,26 @@
 import devices from './devices';
 import serverStreams from './streams';
 
+const getThisMonth = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  let month = String(now.getMonth() + 1);
+  if (month.length < 2) {
+    month = `0${month}`;
+  }
+  return `${year}${month}`;
+};
+
 // 这些是和设备无关的配置
 const config = {
   ipc: {
     old: {
       basePath: '/ipc.p2p.com/',
-      flvPath: 'ipc.flv',
-      flvParams: 'action=live',
+      flvFile: 'ipc.flv?action=live',
     },
     'v1.3': {
       basePath: '/ipc.p2p.com/',
-      flvPath: 'ipc.flv',
-      flvParams: 'action=live',
+      flvFile: 'ipc.flv?action=live',
     },
   },
   server: {
@@ -29,8 +37,25 @@ const config = {
     },
   },
   commandMap: {
-    getUserNum: { topic: 'get_status' },
-    getVoiceStatus: { topic: 'intercom' },
+    getLiveStatus: {
+      cmd: 'get_device_st',
+      params: {
+        type: 'live',
+        quality: 'super',
+      },
+    },
+    getVoiceStatus: {
+      cmd: 'get_device_st',
+      params: {
+        type: 'voice',
+      },
+    },
+    getRecordDates: {
+      cmd: 'get_month_record',
+      params: {
+        time: getThisMonth(), // yyyymm
+      },
+    },
   },
   appParams: {
     appid: 1253131157,

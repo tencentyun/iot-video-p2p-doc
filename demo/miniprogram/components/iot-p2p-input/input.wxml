@@ -1,0 +1,79 @@
+<view class="component">
+  <view class="component-section">
+    <view class="component-section-title">模式: {{mode}}</view>
+    <view class="control-info">
+      <!--
+      <view class="input-item">
+        <view>targetId:</view>
+        <view class="weui-cells weui-cells_after-title">
+          <view class="weui-cell weui-cell_input">
+            <input class="weui-input" type="text" value="{{inputTargetId}}" placeholder="请输入targetId" placeholder-class="placeholder" bindinput="inputP2PTargetId" />
+          </view>
+        </view>
+      </view>
+      -->
+      <view wx:if="{{mode==='ipc'}}" class="info-inputs">
+        <view class="input-item">
+          <view>productId:</view>
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_input">
+              <input class="weui-input" type="text" value="{{inputProductId}}" disabled="{{targetId}}" placeholder="请输入productId" placeholder-class="placeholder" bindinput="inputIPCProductId" />
+            </view>
+          </view>
+        </view>
+        <view class="input-item">
+          <view>deviceName:</view>
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_input">
+              <input class="weui-input" type="text" value="{{inputDeviceName}}" disabled="{{targetId}}" placeholder="请输入deviceName" placeholder-class="placeholder" bindinput="inputIPCDeviceName" />
+            </view>
+          </view>
+        </view>
+        <view class="input-item">
+          <view>xp2pInfo:</view>
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_input">
+              <input class="weui-input" type="text" value="{{inputXp2pInfo}}" disabled="{{targetId}}" placeholder="请输入xp2pInfo" placeholder-class="placeholder" bindinput="inputIPCXp2pInfo" />
+            </view>
+          </view>
+        </view>
+        <view class="input-item">
+          <view>flvFile:</view>
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_input">
+              <input class="weui-input" type="text" value="{{inputFlvFile}}" disabled="{{targetId}}" placeholder="请输入flvFile" placeholder-class="placeholder" bindinput="inputIPCFlvFile" />
+            </view>
+          </view>
+        </view>
+      </view>
+      <view wx:if="{{mode==='server'}}" class="info-inputs">
+        <view class="input-item">
+          <view>codeUrl:</view>
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_input">
+              <input class="weui-input" type="text" value="{{inputCodeUrl}}" disabled="{{targetId}}" placeholder="请输入codeUrl" placeholder-class="placeholder" bindinput="inputServerCodeUrl" />
+            </view>
+          </view>
+        </view>
+        <view class="input-item">
+          <view>streamUrl:</view>
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_input">
+              <input class="weui-input" type="text" value="{{inputUrl}}" disabled="{{targetId}}" placeholder="请输入streamUrl" placeholder-class="placeholder" bindinput="inputStreamUrl" />
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view class="component-section">
+    <view class="component-section-title">调试用</view>
+    <view class="input-item"><label><switch type="checkbox" checked="{{onlyp2pChecked}}" bindchange="switchOnlyP2P"/>onlyp2p</label></view>
+    <view class="input-item"><label><switch type="checkbox" checked="{{showDebugInfoChecked}}" bindchange="switchShowDebugInfo"/>showDebugInfo</label></view>
+  </view>
+  <view class="component-section">
+    <button bindtap="startPlayer" type="primary">
+      开始
+    </button>
+  </view>
+</view>

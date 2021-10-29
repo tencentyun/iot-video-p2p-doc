@@ -1,0 +1,29 @@
+<view class="page-body">
+  <view class="page-section page-section-gap" wx:if="{{playerId && mode && targetId}}">
+    <view class="page-section-title player-title">{{playerTitle || targetId}}</view>
+    <iot-p2p-player-ipc
+      wx:if="{{mode === 'ipc'}}"
+      id="{{playerId}}"
+      targetId="{{targetId}}" 
+      flvUrl="{{flvUrl}}" 
+      productId="{{productId}}" 
+      deviceName="{{deviceName}}" 
+      xp2pInfo="{{xp2pInfo}}" 
+      onlyp2p="{{onlyp2p}}"
+      showDebugInfo="{{showDebugInfo}}"
+      bind:playError="onPlayError"
+      bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
+    />
+    <iot-p2p-player-server
+      wx:if="{{mode === 'server'}}"
+      id="{{playerId}}"
+      targetId="{{targetId}}" 
+      flvUrl="{{flvUrl}}" 
+      codeUrl="{{codeUrl}}" 
+      onlyp2p="{{onlyp2p}}"
+      showDebugInfo="{{showDebugInfo}}"
+      bind:playError="onPlayError"
+      bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
+    />
+  </view>
+</view>

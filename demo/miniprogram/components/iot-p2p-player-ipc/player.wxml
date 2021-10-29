@@ -1,0 +1,102 @@
+<view class="component iot-p2p-player-ipc">
+  <view class="component-section">
+    <iot-p2p-common-player
+      id="{{playerId}}"
+      mode="ipc"
+      targetId="{{targetId}}"
+      flvUrl="{{flvUrl}}"
+      productId="{{productId}}"
+      deviceName="{{deviceName}}"
+      xp2pInfo="{{xp2pInfo}}"
+      onlyp2p="{{onlyp2p}}"
+      showDebugInfo="{{showDebugInfo}}"
+      bind:p2pStateChange="onP2PStateChange"
+      bind:playError="passEvent"
+      bind:systemPermissionDenied="passEvent"
+    />
+  </view>
+  <view class="component-section">
+    <view class="ptz-panel-wrap">
+      <view class="ptz-panel">
+        <view class="ptz-controls">
+          <view class="ptz-controls-top">
+            <view class="ptz-position">
+              <view wx:for="{{ptzBtns}}" wx:key="name" class="ptz-dir ptz-{{item.name}}">
+                <view class="ptz-btn"
+                  data-cmd="{{item.cmd}}"
+                  bind:touchstart="controlDevicePTZ"
+                  bind:touchend="releasePTZBtn"
+                  bind:touchcancel="releasePTZBtn"
+                >
+                  <view class="ptz-icon arrow-{{item.name}} {{ptzCmd === item.cmd ? 'press' : ''}}"></view>
+                </view>
+              </view>
+              <view class="ptz-cricle">
+                <view class="voice-btn" bindtap="toggleVoice" data-recorder-cfg="1-8000-16000">
+                  <view class="voice-icon {{voiceState === 'sending' ? 'press' : ''}}">{{voiceState}}</view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view class="component-section">
+    <view class="component-section-title">切换清晰度</view>
+    <view class="group-button-area">
+      <button bindtap="changeFlv" data-flv="ipc.flv?action=live&channel=0&quality=super" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+        超清
+      </button>
+      <button bindtap="changeFlv" data-flv="ipc.flv?action=live&channel=0&quality=high" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+        高清
+      </button>
+      <button bindtap="changeFlv" data-flv="ipc.flv?action=live&channel=0&quality=standard" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+        标清
+      </button>
+    </view>
+  </view>
+  <view class="component-section">
+    <view class="component-section-title">语音对讲</view>
+    <view>voiceState: {{voiceState}}</view>
+    <view class="group-button-area">
+      <button bindtap="startVoice" data-recorder-cfg="1-8000-16000" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState === 'starting' || voiceState === 'sending')}}">
+        单通道录音
+      </button>
+      <button bindtap="startVoice" data-recorder-cfg="2-44100-192000" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState === 'starting' || voiceState === 'sending')}}">
+        双通道录音
+      </button>
+      <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !voiceState || voiceState === 'error'}}">
+        挂断
+      </button>
+    </view>
+  </view>
+  <view class="component-section">
+    <view class="component-section-title">内置信令</view>
+    <view class="group-button-area">
+      <button bindtap="sendInnerCommand" data-cmd="getLiveStatus" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+        获取拉流状态
+      </button>
+      <button bindtap="sendInnerCommand" data-cmd="getVoiceStatus" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+        获取对讲状态
+      </button>
+      <button bindtap="sendInnerCommand" data-cmd="getRecordDates" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+        获取录像日期
+      </button>
+    </view>
+  </view>
+  <view class="component-section">
+    <view class="component-section-title">自定义信令</view>
+    <view>command:</view>
+    <view class="weui-cells weui-cells_after-title">
+      <view class="weui-cell weui-cell_input">
+        <input class="weui-input" type="text" value="{{inputCommand}}" placeholder="请输入command" placeholder-class="placeholder" bindinput="inputIPCCommand" />
+      </view>
+    </view>
+    <view class="group-button-area">
+      <button bindtap="sendCommand" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+        sendCommand
+      </button>
+    </view>
+  </view>
+</view>

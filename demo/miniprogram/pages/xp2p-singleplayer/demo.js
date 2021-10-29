@@ -3,13 +3,12 @@ import { getXp2pManager } from '../../xp2pManager';
 
 const xp2pManager = getXp2pManager();
 
-const getPlayerProperties = (playerId, cfg, opts) => {
+const getPlayerProperties = (cfg, opts) => {
   const { totalData } = config;
   const cfgData = (cfg && totalData[cfg]) || totalData.tcptest;
   const realHost = cfgData.mode === 'server' ? cfgData.host : 'XP2P_INFO.xnet';
 
   return {
-    playerId,
     mode: cfgData.mode,
     targetId: cfgData.targetId,
     flvUrl: `http://${realHost}${cfgData.basePath}${cfgData.flvFile}`,
@@ -24,65 +23,55 @@ const getPlayerProperties = (playerId, cfg, opts) => {
 Page({
   data: {
     // 这是onLoad时就固定的
-    playerIdPrefix: 'iot-p2p-player',
+    mode: '',
+    targetId: '',
+    flvUrl: '',
+    productId: '',
+    deviceName: '',
+    xp2pInfo: '',
+    codeUrl: '',
+    onlyp2p: false,
     showDebugInfo: false,
-    playerPropsList: [],
 
     // 这些是控制player和p2p的
-    playerMap: {},
+    playerId: 'iot-p2p-player',
+    playerTitle: '',
+    player: null,
   },
   onLoad(query) {
-    console.log('multiplayers: onLoad', query);
+    console.log('singleplayer: onLoad', query);
 
-    const cfg1 = query.cfg1 || '';
-    const cfg2 = query.cfg2 || '';
+    const cfg = query.cfg || query.mode || '';
     const onlyp2p = !!parseInt(query.onlyp2p, 10);
     const opts = {
       onlyp2p,
       showDebugInfo: this.data.showDebugInfo,
     };
 
-    const props1 = getPlayerProperties(`${this.data.playerIdPrefix}-1`, cfg1, opts);
-    const props2 = getPlayerProperties(`${this.data.playerIdPrefix}-2`, cfg2, opts);
+    const newData = getPlayerProperties(cfg, opts);
+    if (newData.mode === 'ipc') {
+      newData.playerTitle = `${newData.productId}/${newData.deviceName}`;
+    }
 
-    this.setData(
-      {
-        playerPropsList: [props1, props2],
-      },
-      () => {
-        console.log('multiplayers: now data', this.data);
-
-        const playerMap = {};
-        this.data.playerPropsList.forEach((props) => {
-          const { playerId } = props;
-          const player = this.selectComponent(`#${playerId}`);
-          if (player) {
-            playerMap[playerId] = player;
-          } else {
-            console.error('create player error', playerId);
-          }
-        });
-        this.setData(
-          {
-            playerMap,
-          },
-          () => {
-            console.log('now playerMap', this.data.playerMap);
-          },
-        );
-      },
-    );
+    console.log('singleplayer: setData', newData);
+    this.setData(newData, () => {
+      const player = this.selectComponent(`#${this.data.playerId}`);
+      if (player) {
+        this.setData({ player });
+      } else {
+        console.error('create player error', this.data.playerId);
+      }
+    });
   },
   onUnload() {
-    console.log('multiplayers: onUnload');
+    console.log('singleplayer: onUnload');
     this.hasExited = true;
 
     // 监控页关掉player就好，不用销毁 p2p 模块
-    Object.values(this.data.playerMap).forEach((player) => {
-      player.stopAll();
-    });
-
-    this.setData({ playerMap: {} });
+    if (this.data.player) {
+      this.data.player.stopAll();
+      this.setData({ player: null });
+    }
 
     if (xp2pManager.networkChanged) {
       try {
@@ -99,7 +88,7 @@ Page({
     }
   },
   onPlayError({ detail }) {
-    console.log('multiplayers: onPlayError', detail.errType, 'isFatalError', detail.isFatalError, detail);
+    console.log('singleplayer: onPlayError', detail.errType, 'isFatalError', detail.isFatalError, detail);
     const { playerId, errMsg, errDetail, isFatalError } = detail;
     wx.showModal({
       content: `${playerId}: ${errMsg || '播放失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常

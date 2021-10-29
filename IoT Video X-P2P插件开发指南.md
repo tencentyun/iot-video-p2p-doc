@@ -274,7 +274,7 @@ onLivePlayerStateChange({ detail }) {
       console.error('onLivePlayerStateChange', detail.code, detail);
       if (detail.message.indexOf('errCode:-1004 ') >= 0) {
         // 无法连接服务器，就是本地server连不上
-        this.setData({ needResetLocalServer: true });
+        xp2pManager.needResetLocalServer = true;
 
         // 这时其实网络状态应该也变了，但是网络状态变化事件延迟较大，networkChanged不一定为true，所以主动把 networkChanged 也设为true
         xp2pManager.networkChanged = true;
@@ -305,13 +305,13 @@ onUnload() {
     }
   }
 
-  if (this.data.needResetLocalServer) {
+  if (xp2pManager.needResetLocalServer) {
     // 如果本地Server出错，需要重置player插件
     try {
-      console.log('reset playerPlugin when exit');
-      playerPlugin.reset();
+      console.log('needResetLocalServer, resetLocalServer when exit');
+      xp2pManager.resetLocalServer();
     } catch (err) {
-      console.error('reset playerPlugin error', err);
+      console.error('resetLocalServer error', err);
     }
   }
 }

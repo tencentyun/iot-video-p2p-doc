@@ -1,0 +1,35 @@
+<view class="component">
+  <view wx:if="{{needPlayer}}" class="component-section">
+    <view class="player-container">
+      <p2p-player
+        wx:if="{{hasPlayer}}"
+        id="{{playerId}}"
+        autoPlay="{{autoPlay}}"
+        mode="live"
+        minCache="0.2"
+        maxCache="0.8"
+        bind:playerReady="onPlayerReady"
+        bind:playerStartPull="onPlayerStartPull"
+        bind:playerClose="onPlayerClose"
+        bind:playerError="onPlayerError"
+        bind:error="onLivePlayerError"
+        bind:statechange="onLivePlayerStateChange"
+        bind:netstatus="onLivePlayerNetStatusChange"
+      />
+      <view class="player-message">{{playerMsg}}</view>
+    </view>
+  </view>
+  <view wx:else class="component-section">
+    <view>playerMsg: {{playerMsg}}</view>
+  </view>
+  <view wx:if="{{showDebugInfo}}" class="component-section">
+    <view>
+      <view>flvFile: </view>
+      <view class="text-break" style="padding: 10rpx;">{{flvFilename}}?{{flvParams}}</view>
+    </view>
+    <view>playerState: {{playerState}}</view>
+    <view>p2pState: {{p2pState}}</view>
+    <view>streamState: {{streamState}}</view>
+    <view>totalBytes: {{totalBytes}}</view>
+  </view>
+</view>

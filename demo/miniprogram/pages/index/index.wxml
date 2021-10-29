@@ -9,19 +9,22 @@
   <view class="page-section">
     <button wx:for="{{listBtn}}" wx:key="cfg" type="primary" class="page-body-button"
       bindtap="gotoDemoPage"
-      data-url="/pages/xp2p-demo-1vN/demo?cfg={{item.cfg}}&reserve={{item.reserve?1:0}}"
+      data-url="/pages/xp2p-demo-1vN/demo?cfg={{item.cfg}}"
     >
-      {{item.productId}}/{{item.deviceName}}{{item.reserve?' (rsv)':''}}
+      {{item.productId}}/{{item.deviceName}}
     </button>
   </view>
   <view class="page-section">
     <view wx:for="{{listNav}}" wx:key="cfg">
-      <navigator url="/pages/xp2p-demo-1vN/demo?cfg={{item.cfg}}&reserve={{item.reserve?1:0}}" hover-class="navigator-hover">
-        跳转到 X-P2P 1v1 {{item.cfg}}{{item.reserve?'-reserve':''}}
+      <navigator url="/pages/xp2p-demo-1vN/demo?cfg={{item.cfg}}" hover-class="navigator-hover">
+        跳转到 X-P2P 1v1 {{item.cfg}}
       </navigator>
     </view>
   </view>
   <navigator url="/pages/xp2p-demo-1vN/demo?cfg=tcptest" hover-class="navigator-hover">跳转到 X-P2P Demo 1vN-tcptest</navigator>
-  <navigator url="/pages/xp2p-multiplayers/demo?cfg1=ipc1&cfg2=tcptest" hover-class="navigator-hover">跳转到 X-P2P Demo 多播放器 ipc1+tcptest</navigator>
+  <navigator url="/pages/xp2p-demo-1vN/demo?cfg=xntptest" hover-class="navigator-hover">跳转到 X-P2P Demo 1vN-xntptest</navigator>
+  <navigator url="/pages/xp2p-singleplayer/demo?cfg=tcptest" hover-class="navigator-hover">跳转到 X-P2P Demo 单播放器 tcptest</navigator>
+  <navigator url="/pages/xp2p-singleplayer/demo?cfg=judy3" hover-class="navigator-hover">跳转到 X-P2P Demo 单播放器 judy3</navigator>
+  <navigator url="/pages/xp2p-multiplayers/demo?cfg1=tcptest&cfg2=judy3" hover-class="navigator-hover">跳转到 X-P2P Demo 多播放器 tcptest+judy3</navigator>
 </view>
 

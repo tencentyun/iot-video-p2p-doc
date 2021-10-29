@@ -2,6 +2,7 @@
   "pages": [
     "pages/index/index",
     "pages/xp2p-demo-1vN/demo",
+    "pages/xp2p-singleplayer/demo",
     "pages/xp2p-multiplayers/demo"
   ],
   "plugins": {
@@ -16,8 +17,11 @@
   },
   "usingComponents": {
     "p2p-player": "plugin://wechat-p2p-player/p2p-player",
-    "iot-p2p-player": "components/iot-p2p-player/player",
-    "iot-p2p-control": "components/iot-p2p-control/control"
+    "iot-p2p-common-player": "components/iot-p2p-common-player/player",
+    "iot-p2p-player-ipc": "components/iot-p2p-player-ipc/player",
+    "iot-p2p-player-server": "components/iot-p2p-player-server/player",
+    "iot-p2p-control": "components/iot-p2p-control/control",
+    "iot-p2p-input": "components/iot-p2p-input/input"
   },
   "sitemapLocation": "sitemap.json"
 }
