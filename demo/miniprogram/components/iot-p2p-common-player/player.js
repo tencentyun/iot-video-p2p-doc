@@ -102,10 +102,13 @@ Component({
   },
   data: {
     // 这是onLoad时就固定的
-    flvFilename: '',
-    flvParams: '',
     streamExInfo: null,
     needPlayer: false,
+
+    // 当前flv
+    flvFile: '',
+    flvFilename: '',
+    flvParams: '',
 
     // player状态
     hasPlayer: false, // needPlayer时才有效，出错销毁时设为false
@@ -177,6 +180,7 @@ Component({
 
       this.changeState(
         {
+          flvFile,
           flvFilename,
           flvParams,
           streamExInfo: {
@@ -564,6 +568,7 @@ Component({
     changeFlv({ filename, params }) {
       this.setData(
         {
+          flvFile: `${filename}${params ? `?${params}` : ''}`,
           flvFilename: filename,
           flvParams: params,
         },

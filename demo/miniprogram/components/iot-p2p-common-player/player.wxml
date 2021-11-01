@@ -25,7 +25,7 @@
   <view wx:if="{{showDebugInfo}}" class="component-section">
     <view>
       <view>flvFile: </view>
-      <view class="text-break" style="padding: 10rpx;">{{flvFilename}}?{{flvParams}}</view>
+      <view class="text-break" style="padding: 10rpx;">{{flvFile}}</view>
     </view>
     <view>playerState: {{playerState}}</view>
     <view>p2pState: {{p2pState}}</view>

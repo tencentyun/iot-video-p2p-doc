@@ -1,4 +1,13 @@
 import devices from '../../config/devices';
+import streams from '../../config/streams';
+
+const getShortFlvName = (flvFile) => {
+  const filename = flvFile.split('.')[0];
+  if (filename.length > 10) {
+    return `${filename.substr(0, 4)}****${filename.substr(-4, 4)}`;
+  }
+  return filename;
+};
 
 Page({
   data: {
@@ -22,6 +31,18 @@ Page({
       const navItem = {
         mode: 'ipc',
         cfg: key,
+        title: `${item.productId}/${item.deviceName}`,
+        ...item,
+      };
+      item.showInHomePageBtn && listBtn.push(navItem);
+      item.showInHomePageNav && listNav.push(navItem);
+    }
+    for (const key in streams) {
+      const item = streams[key];
+      const navItem = {
+        mode: 'server',
+        cfg: key,
+        title: `1vN: ${item.serverName}/${getShortFlvName(item.flvFile)}`,
         ...item,
       };
       item.showInHomePageBtn && listBtn.push(navItem);

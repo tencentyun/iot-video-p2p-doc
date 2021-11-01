@@ -1,0 +1,12 @@
+<view class="page-body">
+  <view class="page-section" wx:if="{{cfg}}">
+    <iot-p2p-player-debug
+      id="{{playerId}}"
+      cfg="{{cfg}}"
+      onlyp2p="{{onlyp2p}}"
+      reserve="{{reserve}}"
+      bind:playError="onPlayError"
+      bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
+    />
+  </view>
+</view>

@@ -23,9 +23,10 @@ const devices = {
   },
   judy3: {
     showInHomePageBtn: true,
+    showInHomePageNav: true,
     productId: '9L1S66FZ3Q',
     deviceName: 'test_34683636_3',
-    xp2pInfo: 'XP2PcDd3JnloqQZgt7Kf8Ke8iSo0%2.3.5',
+    xp2pInfo: 'XP2PcDd3JnloqQZQj4XutqWsh0c8%2.3.5',
     flvFile: 'ipc.flv?action=live&channel=0&quality=super',
     command: 'action=user_define&cmd=xxx',
   },
