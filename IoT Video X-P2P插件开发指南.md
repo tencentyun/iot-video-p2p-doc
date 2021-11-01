@@ -39,6 +39,10 @@
 
 小程序后台添加插件，详见[官方文档](https://developers.weixin.qq.com/miniprogram/dev/framework/plugin/using.html)
 ``` js
+// p2p-player，负责提供数据给 live-player 播放
+appid: 'wx9e8fbc98ceac2628'
+
+// xp2p，负责从其他peer获取数据
 appid: 'wx1319af22356934bf'
 ```
 
@@ -48,15 +52,25 @@ appid: 'wx1319af22356934bf'
 // 在app.json里面引入插件，注意插件版本号
 {
   "plugins": {
-    "iotvideo-weapp-plugin": {
-      "version": "1.0.0", // 具体需要使用的版本号
-      "provider": "wx1319af22356934bf" // 插件的appid
+    "wechat-p2p-player": {
+      "version": "1.0.1",
+      "provider": "wx9e8fbc98ceac2628"
+    },
+    "xp2p": {
+      "version": "1.0.1",
+      "provider": "wx1319af22356934bf"
     }
   }
 }
 ```
 
 ### 3. 调用插件接口
+
+p2p监控需要2个插件配合使用，参考 demo 中的组件 [iot-p2p-common-player](https://github.com/tencentyun/iot-video-p2p-doc/tree/master/demo/miniprogram/components/iot-p2p-common-player)。
+
+1v1和1v多有各自的功能特性，参考 demo 中的组件 [iot-p2p-player-ipc](https://github.com/tencentyun/iot-video-p2p-doc/tree/master/demo/miniprogram/components/iot-p2p-player-ipc) 和 [iot-p2p-player-server](https://github.com/tencentyun/iot-video-p2p-doc/tree/master/demo/miniprogram/components/iot-p2p-player-server)，他们在 common-player 的基础上进行了简单扩展。
+
+具体调用流程如下：
 
 #### 3.1 1v多
 
