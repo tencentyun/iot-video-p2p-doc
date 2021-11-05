@@ -22,7 +22,7 @@
     </view>
   </view>
   <navigator url="/pages/xp2p-singleplayer/demo?cfg=tcptest" hover-class="navigator-hover">跳转到 X-P2P 单播放器 tcptest</navigator>
-  <navigator url="/pages/xp2p-singleplayer/demo?cfg=judy3" hover-class="navigator-hover">跳转到 X-P2P 单播放器 judy3</navigator>
-  <navigator url="/pages/xp2p-multiplayers/demo?cfg1=tcptest&cfg2=judy3" hover-class="navigator-hover">跳转到 X-P2P 多播放器 tcptest+judy3</navigator>
+  <navigator url="/pages/xp2p-singleplayer/demo?cfg=judy1" hover-class="navigator-hover">跳转到 X-P2P 单播放器 judy1</navigator>
+  <navigator url="/pages/xp2p-multiplayers/demo?cfg1=tcptest&cfg2=judy1" hover-class="navigator-hover">跳转到 X-P2P 多播放器 tcptest+judy1</navigator>
 </view>
 

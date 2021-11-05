@@ -272,21 +272,14 @@ Component({
       }
     },
     onPlayerReady({ detail }) {
-      console.log(`[${this.id}]`, '==== onPlayerReady', detail);
-      this.changeState(
-        {
-          playerState: PlayerStateEnum.PlayerReady,
-          playerComp: this.selectComponent(`#${this.data.playerId}`),
-          playerCtx: detail.livePlayerContext,
-        },
-        () => {
-          if (this.data.p2pState === P2PStateEnum.ServiceStarted) {
-            console.log(`[${this.id}]`, '==== set autoPlay true');
-            this.setData({ autoPlay: true });
-          }
-          this.tryTriggerPlay();
-        },
-      );
+      console.log(`[${this.id}]`, '==== onPlayerReady in', this.data.playerState, this.data.p2pState, detail);
+      const oldPlayerState = this.data.playerState;
+      this.changeState({
+        playerState: PlayerStateEnum.PlayerReady,
+        playerComp: this.selectComponent(`#${this.data.playerId}`),
+        playerCtx: detail.livePlayerContext,
+      });
+      this.tryTriggerPlay(`${oldPlayerState} -> ${this.data.playerState}`);
     },
     onPlayerStartPull({ detail }) {
       console.info(`[${this.id}]`, `==== onPlayerStartPull in p2pState ${this.data.p2pState}`, detail);
@@ -334,6 +327,7 @@ Component({
         // 已经停止p2pservice了，不再处理
         return;
       }
+      // code说明参考：https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html
       switch (detail.code) {
         case 2005: // 视频播放进度
           // 不处理
@@ -458,14 +452,11 @@ Component({
         .then((res) => {
           console.log(`[${this.id}]`, '==== startP2PService res', res);
           if (res === 0) {
-            this.changeState(
-              {
-                p2pState: P2PStateEnum.ServiceStarted,
-              },
-              () => {
-                this.tryTriggerPlay();
-              },
-            );
+            const oldP2PState = this.data.p2pState;
+            this.changeState({
+              p2pState: P2PStateEnum.ServiceStarted,
+            });
+            this.tryTriggerPlay(`${oldP2PState} -> ${this.data.p2pState}`);
           } else {
             this.stopAll(P2PStateEnum.ServiceError);
             this.handlePlayError(P2PStateEnum.ServiceError, res);
@@ -605,11 +596,14 @@ Component({
         }
       }
     },
-    tryTriggerPlay(isReplay = false) {
+    tryTriggerPlay(reason) {
+      const isReplay = reason === 'replay';
       console.log(
-        `[${this.id}]`, 'tryTriggerPlay',
-        'playerState', this.data.playerState, 'p2pState', this.data.p2pState, 'streamState', this.data.streamState,
-        'isReplay', isReplay,
+        `[${this.id}]`, '==== tryTriggerPlay',
+        '\n  reason', this.data.playerState,
+        '\n  playerState', this.data.playerState,
+        '\n  p2pState', this.data.p2pState,
+        '\n  streamState', this.data.streamState,
       );
 
       let isPlayerStateCanPlay = this.data.playerState === PlayerStateEnum.PlayerReady;
@@ -620,15 +614,21 @@ Component({
       }
       if (this.data.p2pState === P2PStateEnum.ServiceStarted && this.data.playerCtx && isPlayerStateCanPlay) {
         // 都准备好了，触发播放，这个会触发 onPlayerStartPull
-        console.log('==== trigger play');
-        this.data.playerCtx.play({
-          success: (res) => {
-            console.log('call play success', res);
-          },
-          fail: (res) => {
-            console.log('call play fail', res);
-          },
-        });
+        if (!this.data.autoPlay) {
+          // 用 autoPlay 是因为有时候成功调用了play，但是live-player实际并没有开始播放
+          console.log('==== trigger play by autoPlay');
+          this.setData({ autoPlay: true });
+        } else {
+          console.log('==== trigger play by playerCtx');
+          this.data.playerCtx.play({
+            success: (res) => {
+              console.log('call play success', res);
+            },
+            fail: (res) => {
+              console.log('call play fail', res);
+            },
+          });
+        }
       }
     },
     checkCanRetry(type, detail) {

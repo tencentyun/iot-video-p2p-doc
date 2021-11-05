@@ -80,8 +80,13 @@
       <button bindtap="sendInnerCommand" data-cmd="getVoiceStatus" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
         获取对讲状态
       </button>
+    </view>
+    <view class="group-button-area">
       <button bindtap="sendInnerCommand" data-cmd="getRecordDates" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
         获取录像日期
+      </button>
+      <button bindtap="sendInnerCommand" data-cmd="getRecordDates_202110" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+        获取录像日期(2021-10)
       </button>
     </view>
   </view>

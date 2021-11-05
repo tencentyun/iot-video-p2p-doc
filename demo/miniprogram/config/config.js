@@ -56,6 +56,12 @@ const config = {
         time: getThisMonth(), // yyyymm
       },
     },
+    getRecordDates_202110: {
+      cmd: 'get_month_record',
+      params: {
+        time: '202110', // yyyymm
+      },
+    },
   },
   appParams: {
     appid: 1253131157,
