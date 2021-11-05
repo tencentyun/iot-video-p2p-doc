@@ -47,6 +47,8 @@
 
 ###### https://github.com/tencentyun/iot-video-p2p-doc/tree/master/demo/miniprogram
 
+<img width="191" alt="wecom-temp-83974f15077a7ad3abf57b882c3239f1" src="https://user-images.githubusercontent.com/14867769/140460064-d663550b-00ca-410a-a845-f411082a1136.png">
+
 ###### Demo使用流程
 
 1）进入主页面
