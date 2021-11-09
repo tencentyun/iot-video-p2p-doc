@@ -1,4 +1,4 @@
-# 腾讯云IoT Video X-P2P插件P2P开发指南
+# 腾讯云物联网 IoT Video X-P2P 插件开发指南
 
 ## 插件CHANGELOG
 
@@ -226,7 +226,7 @@ p2pModule.sendCommand(ipcId, command);
 
 ``` js
 // 关闭p2p通信，如果正在拉流或者对讲，也会一起关闭
-p2pModule.stopServiceById(streamId);
+p2pModule.stopServiceById(ipcId);
 
 ```
 
@@ -573,7 +573,7 @@ res 的值
 | - | - | - |
 | id | string | 唯一id |
 | recorderManager | RecorderManager | 录音管理器 |
-| options | RecorderManagerStartOption | 录音参数 |
+| options | RecorderManagerStartOption | 录音参数，format 需设置为 PCM |
 | callbacks | Object | 各种回调函数 |
 
 ##### callbacks: Object

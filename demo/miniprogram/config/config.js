@@ -14,22 +14,24 @@ const getThisMonth = () => {
 // 这些是和设备无关的配置
 const config = {
   ipc: {
-    old: {
-      basePath: '/ipc.p2p.com/',
-      flvFile: 'ipc.flv?action=live',
-    },
+    // key是设备sdk所使用的eNet版本，与具体摄像头无关
+    // old: {
+    //   basePath: '/ipc.p2p.com/',
+    //   flvFile: 'ipc.flv?action=live',
+    // },
     'v1.3': {
       basePath: '/ipc.p2p.com/',
       flvFile: 'ipc.flv?action=live',
     },
   },
   server: {
-    xntp: {
+    // key是serverName，与具体视频流无关
+    xntpsvr: {
       host: '25QWpIISwMaH6wru24.xnet',
       basePath: '/iot.p2p.com/openlive/',
       // codeUrl: 'https://dev.ad.qvb.qcloud.com/code', // TODO 有问题，带code拉不到流
     },
-    tcp: {
+    tcpsvr: {
       host: 'dev.ad.qvb.qcloud.com:12680',
       // basePath: '/test-server/', // 这个不支持加密，后面都用 openlive
       basePath: '/openlive/',

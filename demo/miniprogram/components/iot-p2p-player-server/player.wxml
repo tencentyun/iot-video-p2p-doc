@@ -17,5 +17,7 @@
   <view wx:if="{{showDebugInfo}}" class="component-section">
     <view>peerlist:</view>
     <scroll-view scroll-y="true" style="height: 200rpx; padding: 10rpx; border: solid 1px #dddddd;">{{peerlist}}</scroll-view>
+    <view>subscribeLog:</view>
+    <scroll-view scroll-y="true" style="height: 200rpx; padding: 10rpx; border: solid 1px #dddddd;"><text>{{subscribeLog}}</text></scroll-view>
   </view>
 </view>

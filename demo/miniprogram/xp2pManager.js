@@ -79,7 +79,10 @@ class Xp2pManager {
     this._networkChanged = null;
     this._needResetLocalServer = false;
 
+    // 自定义信令用
     this._msgSeq = 0;
+
+    console.log('Xp2pManager: XP2PVersion', this.XP2PVersion);
 
     wx.getNetworkType({
       success: (res) => {

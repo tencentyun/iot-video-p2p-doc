@@ -19,6 +19,8 @@ Page({
     // 这些是监控页入口
     listBtn: [],
     listNav: [],
+    firstServerStream: null,
+    firstIPCStream: null,
   },
   onLoad() {
     const p2pControl = this.selectComponent(`#${this.data.controlId}`);
@@ -26,6 +28,8 @@ Page({
 
     const listBtn = [];
     const listNav = [];
+    let firstServerStream = null;
+    let firstIPCStream = null;
     for (const key in devices) {
       const item = devices[key];
       const navItem = {
@@ -34,7 +38,12 @@ Page({
         title: `${item.productId}/${item.deviceName}`,
         ...item,
       };
-      item.showInHomePageBtn && listBtn.push(navItem);
+      if (item.showInHomePageBtn) {
+        listBtn.push(navItem);
+        if (!firstIPCStream) {
+          firstIPCStream = navItem;
+        }
+      }
       item.showInHomePageNav && listNav.push(navItem);
     }
     for (const key in streams) {
@@ -45,10 +54,15 @@ Page({
         title: `1vN: ${item.serverName}/${getShortFlvName(item.flvFile)}`,
         ...item,
       };
-      item.showInHomePageBtn && listBtn.push(navItem);
+      if (item.showInHomePageBtn) {
+        listBtn.push(navItem);
+        if (!firstServerStream) {
+          firstServerStream = navItem;
+        }
+      }
       item.showInHomePageNav && listNav.push(navItem);
     }
-    this.setData({ listBtn, listNav });
+    this.setData({ listBtn, listNav, firstServerStream, firstIPCStream });
   },
   onUnload() {},
   onShow() {

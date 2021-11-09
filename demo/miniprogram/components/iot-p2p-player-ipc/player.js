@@ -106,7 +106,7 @@ Component({
     },
     // 以下是 common-player 的事件
     onP2PStateChange(e) {
-      console.log('ipcplayer: onP2PStateChange', e.detail.p2pState);
+      console.log(`[${this.id}]`, 'onP2PStateChange', e.detail.p2pState);
       const p2pReady = e.detail.p2pState === 'ServiceStarted';
       this.setData({ p2pReady });
       this.passEvent(e);

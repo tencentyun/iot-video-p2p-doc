@@ -32,6 +32,9 @@ Component({
 
     // 节点列表
     peerlist: '',
+
+    // 订阅记录
+    subscribeLog: '',
   },
   lifetimes: {
     created() {
@@ -80,11 +83,14 @@ Component({
     },
     // 以下是 common-player 的事件
     onP2PStateChange(e) {
-      console.log('ipcplayer: onP2PStateChange', e.detail.p2pState);
+      console.log(`[${this.id}]`, 'onP2PStateChange', e.detail.p2pState);
       const p2pReady = e.detail.p2pState === 'ServiceStarted';
       this.setData({ p2pReady });
       if (!p2pReady) {
-        this.setData({ peerlist: '' });
+        this.setData({
+          peerlist: '',
+          subscribeLog: '',
+        });
       }
       this.passEvent(e);
     },
@@ -95,6 +101,10 @@ Component({
       switch (detail.type) {
         case XP2PDevNotify_SubType.Peerlist:
           this.setData({ peerlist: `${Date.now()} - ${detail.detail}` });
+          break;
+        case XP2PDevNotify_SubType.Subscribe:
+          console.log(`[${this.id}]`, 'onP2PDevNotify', detail.type, detail.detail);
+          this.setData({ subscribeLog: `${this.data.subscribeLog}${Date.now()} - ${detail.detail}\n` });
           break;
       }
     },

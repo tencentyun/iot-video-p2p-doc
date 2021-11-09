@@ -137,7 +137,7 @@ Component({
       // 在组件实例进入页面节点树时执行
       console.log(`[${this.id}]`, '==== attached', this.id, this.properties);
       const flvFile = this.properties.flvUrl.split('/').pop();
-      const [flvFilename, flvParams] = flvFile.split('?');
+      const [flvFilename = '', flvParams = ''] = flvFile.split('?');
       const onlyp2p = this.properties.onlyp2p || false;
       const needPlayer = !onlyp2p;
       const hasPlayer = needPlayer && canUseP2P;
@@ -396,14 +396,10 @@ Component({
         .then((res) => {
           console.log(`[${this.id}]`, '==== initModule res', res, 'in p2pState', this.data.p2pState);
           if (res === 0) {
-            this.changeState(
-              {
-                p2pState: P2PStateEnum.P2PInited,
-              },
-              () => {
-                this.prepare();
-              },
-            );
+            this.changeState({
+              p2pState: P2PStateEnum.P2PInited,
+            });
+            this.prepare();
           } else {
             xp2pManager.destroyModule();
             this.changeState({
@@ -556,7 +552,7 @@ Component({
 
       xp2pManager.stopStream(this.properties.targetId);
     },
-    changeFlv({ filename, params }) {
+    changeFlv({ filename = '', params = '' }) {
       this.setData(
         {
           flvFile: `${filename}${params ? `?${params}` : ''}`,
@@ -614,7 +610,7 @@ Component({
       }
       if (this.data.p2pState === P2PStateEnum.ServiceStarted && this.data.playerCtx && isPlayerStateCanPlay) {
         // 都准备好了，触发播放，这个会触发 onPlayerStartPull
-        if (!this.data.autoPlay) {
+        if (this.data.needPlayer && !this.data.autoPlay) {
           // 用 autoPlay 是因为有时候成功调用了play，但是live-player实际并没有开始播放
           console.log('==== trigger play by autoPlay');
           this.setData({ autoPlay: true });

@@ -14,13 +14,6 @@
 
 // 这些是预置的ipc设备
 const devices = {
-  jlfeng: {
-    showInHomePageBtn: true,
-    productId: 'LYEOZCNW0U',
-    deviceName: '1_49822230_1',
-    xp2pInfo: '',
-    command: 'action=user_define&cmd=xxx',
-  },
   judy1: {
     showInHomePageBtn: true,
     productId: '9L1S66FZ3Q',
@@ -36,6 +29,13 @@ const devices = {
     deviceName: 'test_34683636_3',
     xp2pInfo: 'XP2PcDd3JnloqQZQtI/ozae38SBW%2.3.5',
     flvFile: 'ipc.flv?action=live&channel=0&quality=super',
+    command: 'action=user_define&cmd=xxx',
+  },
+  jlfeng: {
+    showInHomePageBtn: true,
+    productId: 'LYEOZCNW0U',
+    deviceName: '1_49822230_1',
+    xp2pInfo: '',
     command: 'action=user_define&cmd=xxx',
   },
 };

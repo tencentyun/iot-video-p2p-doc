@@ -23,7 +23,7 @@
     "iot-p2p-player-server": "components/iot-p2p-player-server/player",
     "iot-p2p-control": "components/iot-p2p-control/control",
     "iot-p2p-input": "components/iot-p2p-input/input",
-    "iot-p2p-player-debug": "components/iot-p2p-player/player"
+    "iot-p2p-player-debug": "components/iot-p2p-player-debug/player"
   },
   "sitemapLocation": "sitemap.json"
 }
