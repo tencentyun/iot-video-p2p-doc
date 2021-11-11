@@ -26,7 +26,7 @@ Component({
   },
   data: {
     // 这些是控制player和p2p的
-    playerId: 'iot-p2p-player-server',
+    playerId: 'iot-p2p-common-player',
     player: null,
     p2pReady: false,
 

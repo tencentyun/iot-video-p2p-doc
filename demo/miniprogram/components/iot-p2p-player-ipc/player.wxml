@@ -8,6 +8,7 @@
       productId="{{productId}}"
       deviceName="{{deviceName}}"
       xp2pInfo="{{xp2pInfo}}"
+      checkFunctions="{{checkFunctions}}"
       onlyp2p="{{onlyp2p}}"
       showDebugInfo="{{showDebugInfo}}"
       bind:p2pStateChange="onP2PStateChange"
@@ -74,19 +75,31 @@
   <view class="component-section">
     <view class="component-section-title">内置信令</view>
     <view class="group-button-area">
-      <button bindtap="sendInnerCommand" data-cmd="getLiveStatus" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+      <button bindtap="sendInnerCommand" data-cmd-name="getLiveStatus" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
         获取拉流状态
       </button>
-      <button bindtap="sendInnerCommand" data-cmd="getVoiceStatus" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+      <button bindtap="sendInnerCommand" data-cmd-name="getVoiceStatus" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
         获取对讲状态
       </button>
     </view>
+    <view>
+      <view>date:</view>
+      <view class="weui-cells weui-cells_after-title">
+        <view class="weui-cell weui-cell_input">
+          <picker class="weui-input" mode="date" value="{{inputDate}}" bindchange="pickDate">
+            <view class="weui-input">
+              当前选择: {{inputDate}}
+            </view>
+          </picker>
+        </view>
+      </view>
+    </view>
     <view class="group-button-area">
-      <button bindtap="sendInnerCommand" data-cmd="getRecordDates" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
-        获取录像日期
+      <button bindtap="sendInnerCommandWithDate" data-cmd-name="getRecordDates" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+        获取该月录像日期
       </button>
-      <button bindtap="sendInnerCommand" data-cmd="getRecordDates_202110" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
-        获取录像日期(2021-10)
+      <button bindtap="sendInnerCommandWithDate" data-cmd-name="getRecordVideos" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+        获取该日录像列表
       </button>
     </view>
   </view>

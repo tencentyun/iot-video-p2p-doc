@@ -326,7 +326,7 @@ class Xp2pManager {
   }
 
   // 内部信令，参考 https://cloud.tencent.com/document/product/1131/61744
-  sendInnerCommand(targetId, { channel, cmd, params }) {
+  sendInnerCommand(targetId, { channel = 0, cmd, params }) {
     console.log('Xp2pManager: sendInnerCommand', targetId, channel, cmd, params);
 
     let cmdStr = `action=inner_define&channel=${channel || 0}&cmd=${cmd}`;
@@ -354,7 +354,7 @@ class Xp2pManager {
   }
 
   // 用户自定义信令
-  sendUserCommand(targetId, { channel, cmd }) {
+  sendUserCommand(targetId, { channel = 0, cmd }) {
     console.log('Xp2pManager: sendUserCommand', targetId, channel, cmd);
 
     this._msgSeq++;

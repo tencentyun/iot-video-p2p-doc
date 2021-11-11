@@ -25,3 +25,15 @@ export function compareVersion(ver1, ver2) {
 }
 
 export const canUseP2P = compareVersion(wx.getSystemInfoSync().SDKVersion, '2.19.3') >= 0;
+
+export const getParamValue = (params, key) => {
+  const reg = new RegExp(`(^|&)${key}=([^&]*)(&|$)`);
+  const result = params.match(reg);
+  if (result) {
+    return decodeURIComponent(result[2]);
+  }
+  return null;
+};
+
+// 不同系统的原生 toLocaleDateString 实现不一致，统一
+export const toLocaleDateString = (date) => `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;

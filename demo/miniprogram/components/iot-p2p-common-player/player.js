@@ -26,6 +26,8 @@ const P2PStateEnum = {
 };
 const StreamStateEnum = {
   StreamIdle: 'StreamIdle',
+  StreamChecking: 'StreamChecking',
+  StreamCheckError: 'StreamCheckError',
   StreamPreparing: 'StreamPreparing',
   StreamStarted: 'StreamStarted',
   StreamError: 'StreamError',
@@ -51,6 +53,8 @@ const totalMsgMap = {
   [P2PStateEnum.ServiceStarted]: '启动p2p服务完成',
   [P2PStateEnum.ServiceError]: '连接失败或断开',
 
+  [StreamStateEnum.StreamChecking]: '加载中...',
+  [StreamStateEnum.StreamCheckError]: '设备正忙，请稍后重试',
   [StreamStateEnum.StreamPreparing]: '加载中...',
   [StreamStateEnum.StreamStarted]: '加载中...',
   [StreamStateEnum.StreamError]: '播放失败',
@@ -89,6 +93,11 @@ Component({
     codeUrl: {
       type: String,
       value: '',
+    },
+    // 不能直接传函数，只能在数据中包含函数，所以放在 checkFunctions 里
+    // checkFunctions: { checkCanStartStream: ({ filename, params }) => Promise }
+    checkFunctions: {
+      type: Object,
     },
     // 以下仅供调试，正式组件不需要
     onlyp2p: {
@@ -141,7 +150,7 @@ Component({
       const onlyp2p = this.properties.onlyp2p || false;
       const needPlayer = !onlyp2p;
       const hasPlayer = needPlayer && canUseP2P;
-      const playerId = `${this.id || `iot-p2p-player-${Date.now()}-${Math.floor(Math.random() * 1000)}`}-player`;
+      const playerId = `${this.id || `common-player-${Date.now()}-${Math.floor(Math.random() * 1000)}`}-player`;
       let p2pState, playerState, playerComp, playerCtx, playerMsg;
       if (canUseP2P) {
         p2pState = P2PStateEnum.P2PIdle;
@@ -475,6 +484,57 @@ Component({
         return;
       }
 
+      const checkCanStartStream = this.properties.checkFunctions && this.properties.checkFunctions.checkCanStartStream;
+      console.log('need checkCanStartStream', !!checkCanStartStream);
+
+      if (!checkCanStartStream) {
+        // 不检查，直接拉流
+        this.doStartStream();
+        return;
+      }
+
+      // 先检查能否拉流
+      this.changeState({
+        streamState: StreamStateEnum.StreamChecking,
+        playing: true,
+        totalBytes: 0,
+      });
+
+      checkCanStartStream({ filename: this.data.flvFilename, params: this.data.flvParams })
+        .then(() => {
+          if (!this.data.playing) {
+            // 已经stop了
+            return;
+          }
+          // 检查通过，开始拉流
+          console.log(`[${this.id}]`, '==== checkCanStartStream success');
+          this.doStartStream();
+        })
+        .catch((errmsg) => {
+          if (!this.data.playing) {
+            // 已经stop了
+            return;
+          }
+          // 检查失败，前面已经弹过提示了
+          console.log(`[${this.id}]`, '==== checkCanStartStream fail', errmsg);
+          this.changeState({
+            streamState: StreamStateEnum.StreamCheckError,
+            playing: false,
+            totalBytes: 0,
+          });
+          if (errmsg) {
+            this.setData({ playerMsg: errmsg });
+          }
+          if (this.data.playerCtx) {
+            try {
+              this.data.playerCtx.stop();
+            } catch (err) {
+              // 重复stop可能会报错，不用处理
+            }
+          }
+        });
+    },
+    doStartStream() {
       console.log(`[${this.id}]`, 'do startStream', this.properties.targetId, this.data.flvFilename, this.data.flvParams);
 
       let dataCallback;
@@ -484,7 +544,7 @@ Component({
         chunkCount++;
         totalBytes += data.byteLength;
         if (chunkCount === 1) {
-          console.log(`[${this.id}]`, 'firstChunk', data.byteLength);
+          console.log(`[${this.id}]`, '==== firstChunk', data.byteLength);
           this.changeState({
             streamState: StreamStateEnum.StreamDataReceived,
           });
@@ -533,6 +593,13 @@ Component({
             playing: false,
             totalBytes: 0,
           });
+          if (this.data.playerCtx) {
+            try {
+              this.data.playerCtx.stop();
+            } catch (err) {
+              // 重复stop可能会报错，不用处理
+            }
+          }
         });
     },
     stopStream(newStreamState = StreamStateEnum.StreamIdle) {

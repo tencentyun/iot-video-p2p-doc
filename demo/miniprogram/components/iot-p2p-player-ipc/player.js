@@ -1,4 +1,5 @@
 import config from '../../config/config';
+import { getParamValue, toLocaleDateString } from '../../utils';
 import { getXp2pManager, Xp2pManagerErrorEnum } from '../../xp2pManager';
 
 const xp2pManager = getXp2pManager();
@@ -33,9 +34,10 @@ Component({
   },
   data: {
     // 这些是控制player和p2p的
-    playerId: 'iot-p2p-player-ipc',
+    playerId: 'iot-p2p-common-player',
     player: null,
     p2pReady: false,
+    checkFunctions: null,
 
     // 语音对讲
     voiceState: '',
@@ -52,10 +54,18 @@ Component({
     ],
     ptzCmd: '',
     releasePTZTimer: null,
+
+    // 选择录像日期
+    inputDate: toLocaleDateString(new Date()).replace(/\//g, '-'),
   },
   lifetimes: {
     created() {
       // 在组件实例刚刚被创建时执行
+      this.setData({
+        checkFunctions: {
+          checkCanStartStream: this.checkCanStartStream.bind(this),
+        },
+      });
     },
     attached() {
       // 在组件实例进入页面节点树时执行
@@ -128,17 +138,128 @@ Component({
       console.log(`[${this.id}]`, 'call changeFlv', filename, params);
       this.data.player.changeFlv({ filename, params });
     },
+    checkCanStartStream({ filename, params = '' }) {
+      console.log(`[${this.id}]`, 'checkCanStartStream', filename, params);
+      return new Promise((resolve, reject) => {
+        xp2pManager
+          .sendInnerCommand(this.properties.targetId, {
+            cmd: 'get_device_st',
+            params: {
+              type: getParamValue(params, 'action') || 'live',
+              quality: getParamValue(params, 'quality') || '',
+            },
+          })
+          .then((res) => {
+            let canStart = false;
+            let errMsg = '';
+            const data = res[0]; // 返回的 res 是数组
+            const status = parseInt(data?.status, 10); // 有的设备返回的 status 是字符串，兼容一下
+            console.log(`[${this.id}]`, 'checkCanStartStream status', status);
+            switch (status) {
+              case 0:
+                canStart = true;
+                break;
+              case 1:
+                errMsg = '设备正忙，请稍后重试';
+                break;
+              case 405:
+                errMsg = '当前连接人数超过限制，请稍后重试';
+                break;
+              default:
+                console.error('check can start stream, unknown status', status);
+            }
+            if (canStart) {
+              resolve();
+            } else {
+              this.showToast(errMsg || '获取设备状态失败');
+              reject(errMsg || '获取设备状态失败');
+            }
+          })
+          .catch((errmsg) => {
+            console.log(`[${this.id}]`, 'checkCanStartStream err', errmsg);
+            this.showToast('获取设备状态失败');
+            reject('获取设备状态失败');
+          });
+      });
+    },
+    checkCanStartVoice() {
+      console.log(`[${this.id}]`, 'checkCanStartVoice');
+      return new Promise((resolve, reject) => {
+        xp2pManager
+          .sendInnerCommand(this.properties.targetId, {
+            cmd: 'get_device_st',
+            params: {
+              type: 'voice',
+            },
+          })
+          .then((res) => {
+            let canStart = false;
+            let errMsg = '';
+            const data = res[0]; // 返回的 res 是数组
+            const status = parseInt(data?.status, 10); // 有的设备返回的 status 是字符串，兼容一下
+            console.log(`[${this.id}]`, 'checkCanStartVoice status', status);
+            switch (status) {
+              case 0:
+                canStart = true;
+                break;
+              case 1:
+                errMsg = '设备正忙，请稍后重试';
+                break;
+              case 405:
+                errMsg = '当前连接人数超过限制，请稍后重试';
+                break;
+              default:
+                console.error('check can start voice, unknown status', status);
+            }
+            if (canStart) {
+              resolve();
+            } else {
+              this.showToast(errMsg || '获取设备状态失败');
+              reject(errMsg || '获取设备状态失败');
+            }
+          })
+          .catch((errmsg) => {
+            console.log(`[${this.id}]`, 'checkCanStartVoice err', errmsg);
+            this.showToast('获取设备状态失败');
+            reject('获取设备状态失败');
+          });
+      });
+    },
     startVoice(e) {
       console.log(`[${this.id}]`, 'startVoice');
       if (!this.data.p2pReady) {
         console.log('p2p not ready');
         return;
       }
-      if (this.data.voiceState === 'starting' || this.data.voiceState === 'sending') {
+      if (this.data.voiceState) {
         console.log(`can not start voice in voiceState ${this.data.voiceState}`);
         return;
       }
 
+      // 先检查能否对讲
+      this.setData({ voiceState: 'checking' });
+
+      this.checkCanStartVoice()
+        .then(() => {
+          if (!this.data.voiceState) {
+            // 已经stop了
+            return;
+          }
+          // 检查通过，开始对讲
+          console.log(`[${this.id}]`, '==== checkCanStartVoice success');
+          this.doStartVoice(e);
+        })
+        .catch((errmsg) => {
+          if (!this.data.voiceState) {
+            // 已经stop了
+            return;
+          }
+          // 检查失败，前面已经弹过提示了
+          console.log(`[${this.id}]`, '==== checkCanStartVoice fail', errmsg);
+          this.setData({ voiceState: '' });
+        });
+    },
+    doStartVoice(e) {
       // 每种采样率有对应的编码码率范围有效值，设置不合法的采样率或编码码率会导致录音失败
       // 具体参考 https://developers.weixin.qq.com/miniprogram/dev/api/media/recorder/RecorderManager.start.html
       const [numberOfChannels, sampleRate, encodeBitRate] = e.currentTarget.dataset.recorderCfg
@@ -194,27 +315,50 @@ Component({
       this.setData({ voiceState: '' });
       xp2pManager.stopVoice(this.properties.targetId);
     },
-    sendInnerCommand(e) {
+    pickDate(e) {
+      this.setData({
+        inputDate: e.detail.value,
+      });
+    },
+    sendInnerCommandWithDate(e) {
+      const date = new Date(this.data.inputDate.replace(/-/g, '/'));
+      if (!this.data.inputDate) {
+        this.showToast('sendCommand: please select date');
+        return;
+      }
+      this.sendInnerCommand(e, date);
+    },
+    sendInnerCommand(e, inputParams = undefined) {
       console.log(`[${this.id}]`, 'sendInnerCommand');
       if (!this.data.p2pReady) {
         console.log('p2p not ready');
         return;
       }
 
-      const { cmd } = e.currentTarget.dataset;
-      if (!cmd || !commandMap[cmd]) {
-        this.showToast(`sendInnerCommand: invalid cmd ${cmd}`);
+      const { cmdName } = e.currentTarget.dataset;
+      if (!cmdName || !commandMap[cmdName]) {
+        this.showToast(`sendInnerCommand: invalid cmdName ${cmdName}`);
         return;
       }
 
-      const cmdDetail = commandMap[cmd];
-      console.log(`[${this.id}]`, 'do sendInnerCommand', this.properties.targetId, cmdDetail);
+      const { cmd, params, dataHandler } = commandMap[cmdName];
+      let realParams = params;
+      if (typeof params === 'function') {
+        realParams = params(inputParams);
+      }
+      console.log(`[${this.id}]`, 'do sendInnerCommand', this.properties.targetId, cmd, realParams);
       xp2pManager
-        .sendInnerCommand(this.properties.targetId, cmdDetail)
+        .sendInnerCommand(this.properties.targetId, { cmd, params: realParams })
         .then((res) => {
           console.log(`[${this.id}]`, 'sendInnerCommand res', res);
+          let content = `sendInnerCommand\ncmd: ${cmd}\nres: ${JSON.stringify(res)}`;
+          if (dataHandler) {
+            const parsedRes = dataHandler(res);
+            console.log(`[${this.id}]`, 'parsedRes', parsedRes);
+            content += `\nparsedRes: ${JSON.stringify(parsedRes)}`;
+          }
           wx.showModal({
-            content: `sendInnerCommand res: ${JSON.stringify(res, null, 2)}`,
+            content,
             showCancel: false,
           });
         })
