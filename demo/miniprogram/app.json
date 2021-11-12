@@ -4,7 +4,8 @@
     "pages/xp2p-demo-1vN/demo",
     "pages/xp2p-demo-debug/demo",
     "pages/xp2p-singleplayer/demo",
-    "pages/xp2p-multiplayers/demo"
+    "pages/xp2p-multiplayers/demo",
+    "pages/test-video/test"
   ],
   "plugins": {
     "wechat-p2p-player": {

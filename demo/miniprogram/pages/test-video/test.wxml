@@ -1,0 +1,30 @@
+<view class="page-body">
+  <view class="page-section">
+    <video id="player" src="{{src}}" autoplay
+      bindplay="statechange"
+      bindpause="statechange"
+      bindended="statechange"
+      bindwaiting="statechange"
+      bindloadedmetadata="statechange"
+      binderror="error"
+    />
+    <view class="input-item">
+      <view>src:</view>
+      <view class="weui-cells weui-cells_after-title">
+        <view class="weui-cell weui-cell_input">
+          <input class="weui-input" type="text" value="{{inputSrc}}" disabled="{{src}}" placeholder="请输入src" placeholder-class="placeholder" bindinput="bindInputSrc" />
+        </view>
+      </view>
+    </view>
+    <view class="group-button-area">
+      <button bindtap="bindSetSrc" class="group-button" type="primary" size="mini" disabled="{{src}}">SetSrc</button>
+      <button bindtap="bindClearSrc" class="group-button" type="primary" size="mini" disabled="{{!src}}">ClearSrc</button>
+    </view>
+    <view class="group-button-area">
+      <button bindtap="bindPlay" class="group-button" type="primary" size="mini" disabled="{{!src || errMsg}}">播放</button>
+      <button bindtap="bindPause" class="group-button" type="primary" size="mini" disabled="{{!src || errMsg}}">暂停</button>
+      <button bindtap="bindStop" class="group-button" type="primary" size="mini" disabled="{{!src || errMsg}}">停止</button>
+    </view>
+    <view wx:if="{{src}}">errMsg: {{errMsg}}</view>
+  </view>
+</view>
