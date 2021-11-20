@@ -1,5 +1,5 @@
 import config from '../../config/config';
-import { canUseP2P } from '../../utils';
+import { canUseP2P, adjustXp2pInfo } from '../../utils';
 import { getXp2pManager, Xp2pManagerErrorEnum } from '../../xp2pManager';
 
 const xp2pManager = getXp2pManager();
@@ -62,7 +62,7 @@ Component({
     inputProductId: '',
     inputDeviceName: '',
     inputXp2pInfo: '',
-    inputFlvFile: '',
+    inputFlvParams: '',
     inputCommand: '',
 
     // 1v多用
@@ -108,8 +108,6 @@ Component({
         ? `${this.id || `iot-p2p-player-${Date.now()}-${Math.floor(Math.random() * 1000)}`}-player`
         : '';
       const playerMsg = needPlayer && !canUseP2P ? '您的微信基础库版本过低，请升级后再使用' : '';
-      const realHost = data.host || this.getHostFromPeername(data.xp2pInfo || data.peername);
-      const flvFile = data.flvFile || '';
       this.setData(
         {
           mode: data.mode,
@@ -122,10 +120,10 @@ Component({
           inputProductId: data.productId || '',
           inputDeviceName: data.deviceName || '',
           inputXp2pInfo: data.xp2pInfo || data.peername || '',
-          inputFlvFile: flvFile || '',
+          inputFlvParams: data.liveParams || '',
           inputCommand: data.command || '',
           inputCodeUrl: data.codeUrl || '',
-          inputUrl: `http://${realHost}${data.basePath}${flvFile}`,
+          inputUrl: data.flvUrl || '',
           state: needPlayer ? '' : PlayStateEnum.playerReady,
         },
         () => {
@@ -155,13 +153,6 @@ Component({
     };
   },
   methods: {
-    isPeername(peername) {
-      return /^\w+$/.test(peername) && !/^XP2P/.test(peername);
-    },
-    getHostFromPeername(peername) {
-      // 如果是加密过的xp2pInfo，里面有/等字符，不是合法的host，用 XP2P_INFO 占个位
-      return this.isPeername(peername) ? `${peername}.xnet` : 'XP2P_INFO.xnet';
-    },
     showToast(content) {
       wx.showToast({
         title: content,
@@ -202,11 +193,12 @@ Component({
 
       // 之前的信息显示出来
       const { streamInfo } = nowService;
-      // 解析flvFile
-      let flvFile = this.data.inputFlvFile;
+      // 解析flvParams
+      let flvParams = this.data.inputFlvParams;
       const index = streamInfo.url.lastIndexOf('/');
       if (index >= 0) {
-        flvFile = streamInfo.url.substr(index + 1) || flvFile;
+        const flvFile = streamInfo.url.substr(index + 1) || '';
+        flvParams = flvFile.split('?')[1] || '';
       }
       this.setData(
         {
@@ -216,7 +208,7 @@ Component({
           inputProductId: streamInfo.productId || '',
           inputDeviceName: streamInfo.deviceName || '',
           inputXp2pInfo: streamInfo.xp2pInfo || '',
-          inputFlvFile: flvFile || '',
+          inputFlvParams: flvParams || '',
           inputCodeUrl: streamInfo.codeUrl || '',
           streamExInfo: {
             productId: streamInfo.productId,
@@ -351,9 +343,9 @@ Component({
         inputXp2pInfo: e.detail.value,
       });
     },
-    inputIPCFlvFile(e) {
+    inputIPCFlvParams(e) {
       this.setData({
-        inputFlvFile: e.detail.value,
+        inputFlvParams: e.detail.value,
       });
     },
     inputIPCCommand(e) {
@@ -398,8 +390,8 @@ Component({
           this.showToast('please input xp2pInfo');
           return;
         }
-        if (!this.data.inputFlvFile) {
-          this.showToast('please input flvFile');
+        if (!this.data.inputFlvParams) {
+          this.showToast('please input live params');
           return;
         }
       } else {
@@ -409,20 +401,11 @@ Component({
         }
       }
 
-      let flvUrl = this.data.inputUrl;
-      let xp2pInfo = '';
+      let flvUrl = '';
       if (this.data.mode === 'ipc') {
-        // 替换url里的host
-        flvUrl = flvUrl.replace(/^http:\/\/(\w+).xnet/, `http://${this.getHostFromPeername(this.data.inputXp2pInfo)}`);
-        xp2pInfo = this.isPeername(this.data.inputXp2pInfo)
-          ? `XP2P${this.data.inputXp2pInfo}`
-          : this.data.inputXp2pInfo;
-
-        // 替换flvFile
-        const index = flvUrl.lastIndexOf('/');
-        if (index >= 0) {
-          flvUrl = flvUrl.substr(0, index + 1) + this.data.inputFlvFile;
-        }
+        flvUrl = `http://XP2P_INFO.xnet/ipc.p2p.com/ipc.flv?${this.data.inputFlvParams}`;
+      } else {
+        flvUrl = this.data.inputUrl;
       }
 
       return {
@@ -432,7 +415,7 @@ Component({
         streamExInfo: {
           productId: this.data.inputProductId,
           deviceName: this.data.inputDeviceName,
-          xp2pInfo,
+          xp2pInfo: adjustXp2pInfo(this.data.inputXp2pInfo), // 兼容直接填 peername 的情况
           codeUrl: this.data.inputCodeUrl,
         },
       };
@@ -810,9 +793,16 @@ Component({
           return;
         }
 
-        const [filename, params] = this.data.inputFlvFile.split('?');
-
-        this.addLog(`start stream: ${filename} ${params || ''}`);
+        let flv = null;
+        if (this.data.mode === 'ipc') {
+          flv = {
+            filename: 'ipc.flv',
+            params: this.data.inputFlvParams,
+          };
+          this.addLog(`start stream: ${flv.filename}?${flv.params || ''}`);
+        } else {
+          this.addLog('start stream');
+        }
 
         const newTimestamps = this.clearStreamTimestamps();
         newTimestamps.streamPreparing = Date.now();
@@ -825,7 +815,7 @@ Component({
 
         xp2pManager
           .startStream(this.data.targetId, {
-            flv: { filename, params },
+            flv,
             // msgCallback, // 不传 msgCallback 就是保持之前设置的
             dataCallback,
           })

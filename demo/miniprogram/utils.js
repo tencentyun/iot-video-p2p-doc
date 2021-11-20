@@ -1,3 +1,5 @@
+import config from './config/config';
+
 export function compareVersion(ver1, ver2) {
   const v1 = ver1.split('.');
   const v2 = ver2.split('.');
@@ -27,7 +29,7 @@ export function compareVersion(ver1, ver2) {
 export const canUseP2P = compareVersion(wx.getSystemInfoSync().SDKVersion, '2.19.3') >= 0;
 
 export const getParamValue = (params, key) => {
-  const reg = new RegExp(`(^|&)${key}=([^&]*)(&|$)`);
+  const reg = new RegExp(`(^|\\?|&)${key}=([^&]*)(&|$)`);
   const result = params.match(reg);
   if (result) {
     return decodeURIComponent(result[2]);
@@ -35,5 +37,43 @@ export const getParamValue = (params, key) => {
   return null;
 };
 
-// 不同系统的原生 toLocaleDateString 实现不一致，统一
-export const toLocaleDateString = (date) => `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+function pad(v, l) {
+  let val = String(v);
+  const len = l || 2;
+  while (val.length < len) {
+    val = `0${val}`;
+  }
+  return val;
+}
+export const toDateString = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+export const toTimeString = (date) => `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+
+export const isPeername = (xp2pInfo) => /^\w+$/.test(xp2pInfo) && !/^XP2P/.test(xp2pInfo);
+
+// 兼容直接填 peername 的情况
+export const adjustXp2pInfo = (xp2pInfo) => (isPeername(xp2pInfo) ? `XP2P${xp2pInfo}` : xp2pInfo);
+
+export const getPlayerProperties = (cfg, opts) => {
+  const cfgData = cfg && config.totalData[cfg];
+  if (!cfgData) {
+    return null;
+  }
+
+  let flvUrl = '';
+  if (cfgData.mode === 'ipc') {
+    flvUrl = `http://XP2P_INFO.xnet/ipc.p2p.com/ipc.flv?${cfgData.liveParams}`;
+  } else {
+    flvUrl = cfgData.flvUrl;
+  }
+
+  return {
+    mode: cfgData.mode,
+    targetId: cfgData.targetId,
+    flvUrl: flvUrl || '',
+    productId: cfgData.productId || '',
+    deviceName: cfgData.deviceName || '',
+    xp2pInfo: adjustXp2pInfo(cfgData.xp2pInfo || cfgData.peername || ''),
+    codeUrl: cfgData.codeUrl || '',
+    ...opts,
+  };
+};

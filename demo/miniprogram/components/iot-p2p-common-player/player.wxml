@@ -25,11 +25,20 @@
   <view wx:if="{{showDebugInfo}}" class="component-section">
     <view>
       <view>flvFile: </view>
-      <view class="text-break" style="padding: 10rpx;">{{flvFile}}</view>
+      <view class="text-box">
+        <text class="text-break">{{flvFile}}</text>
+      </view>
     </view>
     <view>playerState: {{playerState}}</view>
     <view>p2pState: {{p2pState}}</view>
     <view>streamState: {{streamState}}</view>
     <view>totalBytes: {{totalBytes}}</view>
+    <view>firstChunkTime: {{firstChunkTime}}</view>
+    <view>
+      <view>livePlayerInfo: </view>
+      <view class="text-box" style="height: 120rpx;">
+        <text class="text-break">{{livePlayerInfo}}</text>
+      </view>
+    </view>
   </view>
 </view>

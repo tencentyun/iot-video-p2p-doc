@@ -1,25 +1,7 @@
-import config from '../../config/config';
+import { getPlayerProperties } from '../../utils';
 import { getXp2pManager } from '../../xp2pManager';
 
 const xp2pManager = getXp2pManager();
-
-const getPlayerProperties = (playerId, cfg, opts) => {
-  const { totalData } = config;
-  const cfgData = (cfg && totalData[cfg]) || totalData.tcptest;
-  const realHost = cfgData.mode === 'server' ? cfgData.host : 'XP2P_INFO.xnet';
-
-  return {
-    playerId,
-    mode: cfgData.mode,
-    targetId: cfgData.targetId,
-    flvUrl: `http://${realHost}${cfgData.basePath}${cfgData.flvFile}`,
-    productId: cfgData.productId || '',
-    deviceName: cfgData.deviceName || '',
-    xp2pInfo: cfgData.xp2pInfo || cfgData.peername || '',
-    codeUrl: cfgData.codeUrl || '',
-    ...opts,
-  };
-};
 
 Page({
   data: {
@@ -42,8 +24,22 @@ Page({
       showDebugInfo: this.data.showDebugInfo,
     };
 
-    const props1 = getPlayerProperties(`${this.data.playerIdPrefix}-1`, cfg1, opts);
-    const props2 = getPlayerProperties(`${this.data.playerIdPrefix}-2`, cfg2, opts);
+    const props1 = getPlayerProperties(cfg1, { playerId: `${this.data.playerIdPrefix}-1`, ...opts });
+    const props2 = getPlayerProperties(cfg2, { playerId: `${this.data.playerIdPrefix}-2`, ...opts });
+    if (!props1) {
+      wx.showModal({
+        content: `invalid cfg ${cfg1}`,
+        showCancel: false,
+      });
+      return;
+    }
+    if (!props2) {
+      wx.showModal({
+        content: `invalid cfg ${cfg2}`,
+        showCancel: false,
+      });
+      return;
+    }
 
     this.setData(
       {

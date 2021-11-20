@@ -1,4 +1,5 @@
 import config from '../../config/config';
+import { adjustXp2pInfo } from '../../utils';
 
 Component({
   behaviors: ['wx://component-export'],
@@ -19,13 +20,14 @@ Component({
     inputProductId: '',
     inputDeviceName: '',
     inputXp2pInfo: '',
-    inputFlvFile: '',
+    inputLiveParams: '',
+    inputPlaybackParams: '',
 
     // 1v多用
     inputCodeUrl: '',
 
     // 调试用
-    onlyp2pChecked: false,
+    onlyp2pChecked: wx.getSystemInfoSync().platform === 'devtools', // 开发者工具里不支持 live-player 和 TCPServer，默认勾选 onlyp2p
     showDebugInfoChecked: true,
 
     // 这些是p2p状态
@@ -40,21 +42,26 @@ Component({
       // 在组件实例进入页面节点树时执行
       console.log(`[${this.id}]`, 'attached', this.id, this.properties);
       const { totalData } = config;
-      const data = (this.properties.cfg && totalData[this.properties.cfg]) || totalData.tcptest;
-      const realHost = data.host || this.getHostFromPeername(data.xp2pInfo || data.peername);
-      const flvFile = data.flvFile || '';
+      const data = this.properties.cfg && totalData[this.properties.cfg];
+      if (!data) {
+        console.log(`[${this.id}]`, 'invalid cfg');
+        return;
+      }
 
       console.log(`[${this.id}]`, 'setData from cfg data', data);
       this.setData(
         {
           mode: data.mode,
           inputTargetId: data.targetId || '',
+          // 1v1用
           inputProductId: data.productId || '',
           inputDeviceName: data.deviceName || '',
           inputXp2pInfo: data.xp2pInfo || data.peername || '',
-          inputFlvFile: flvFile || '',
+          inputLiveParams: data.liveParams || 'action=live&channel=0&quality=super',
+          inputPlaybackParams: data.playbackParams || 'action=playback&channel=0',
+          // 1v多用
           inputCodeUrl: data.codeUrl || '',
-          inputUrl: `http://${realHost}${data.basePath}${flvFile}`,
+          inputUrl: data.flvUrl || '',
         },
         () => {
           console.log(`[${this.id}]`, 'now data', this.data);
@@ -73,13 +80,6 @@ Component({
   },
   export() {},
   methods: {
-    isPeername(peername) {
-      return /^\w+$/.test(peername) && !/^XP2P/.test(peername);
-    },
-    getHostFromPeername(peername) {
-      // 如果是加密过的xp2pInfo，里面有/等字符，不是合法的host，用 XP2P_INFO 占个位
-      return this.isPeername(peername) ? `${peername}.xnet` : 'XP2P_INFO.xnet';
-    },
     showToast(content) {
       wx.showToast({
         title: content,
@@ -106,9 +106,14 @@ Component({
         inputXp2pInfo: e.detail.value,
       });
     },
-    inputIPCFlvFile(e) {
+    inputIPCLiveParams(e) {
       this.setData({
-        inputFlvFile: e.detail.value,
+        inputLiveParams: e.detail.value,
+      });
+    },
+    inputIPCPlaybackParams(e) {
+      this.setData({
+        inputPlaybackParams: e.detail.value,
       });
     },
     inputServerCodeUrl(e) {
@@ -131,7 +136,7 @@ Component({
         showDebugInfoChecked: e.detail.value,
       });
     },
-    getStreamData() {
+    getStreamData(type) {
       if (!this.data.inputTargetId) {
         this.showToast('please input targetId');
         return;
@@ -142,8 +147,12 @@ Component({
           this.showToast('please input xp2pInfo');
           return;
         }
-        if (!this.data.inputFlvFile) {
-          this.showToast('please input flvFile');
+        if (type === 'live' && !this.data.inputLiveParams) {
+          this.showToast('please input live params');
+          return;
+        }
+        if (type === 'playback' && !this.data.inputPlaybackParams) {
+          this.showToast('please input playback params');
           return;
         }
       } else {
@@ -153,36 +162,32 @@ Component({
         }
       }
 
-      let flvUrl = this.data.inputUrl;
-      let xp2pInfo = '';
+      let flvUrl = '';
       if (this.data.mode === 'ipc') {
-        // 替换url里的host
-        flvUrl = flvUrl.replace(/^http:\/\/(\w+).xnet/, `http://${this.getHostFromPeername(this.data.inputXp2pInfo)}`);
-        xp2pInfo = this.isPeername(this.data.inputXp2pInfo)
-          ? `XP2P${this.data.inputXp2pInfo}`
-          : this.data.inputXp2pInfo;
-
-        // 替换flvFile
-        const index = flvUrl.lastIndexOf('/');
-        if (index >= 0) {
-          flvUrl = flvUrl.substr(0, index + 1) + this.data.inputFlvFile;
+        let flvParams = '';
+        if (type === 'live') {
+          flvParams = this.data.inputLiveParams;
+        } else if (type === 'playback') {
+          flvParams = this.data.inputPlaybackParams;
         }
+        flvUrl = `http://XP2P_INFO.xnet/ipc.p2p.com/ipc.flv?${flvParams}`;
+      } else {
+        flvUrl = this.data.inputUrl;
       }
 
       return {
         targetId: this.data.inputTargetId,
-        inputUrl: flvUrl,
         flvUrl,
         streamExInfo: {
           productId: this.data.inputProductId,
           deviceName: this.data.inputDeviceName,
-          xp2pInfo,
+          xp2pInfo: adjustXp2pInfo(this.data.inputXp2pInfo), // 兼容直接填 peername 的情况
           codeUrl: this.data.inputCodeUrl,
         },
       };
     },
-    startPlayer() {
-      const streamData = this.getStreamData();
+    startPlayer(e) {
+      const streamData = this.getStreamData(e.currentTarget.dataset.type || 'live');
       if (!streamData) {
         return;
       }

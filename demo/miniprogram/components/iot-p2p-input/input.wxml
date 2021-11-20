@@ -38,10 +38,18 @@
           </view>
         </view>
         <view class="input-item">
-          <view>flvFile:</view>
+          <view>liveParams:</view>
           <view class="weui-cells weui-cells_after-title">
             <view class="weui-cell weui-cell_input">
-              <input class="weui-input" type="text" value="{{inputFlvFile}}" disabled="{{targetId}}" placeholder="请输入flvFile" placeholder-class="placeholder" bindinput="inputIPCFlvFile" />
+              <input class="weui-input" type="text" value="{{inputLiveParams}}" disabled="{{targetId}}" placeholder="请输入liveParams" placeholder-class="placeholder" bindinput="inputIPCLiveParams" />
+            </view>
+          </view>
+        </view>
+        <view class="input-item">
+          <view>playbackParams:</view>
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_input">
+              <input class="weui-input" type="text" value="{{inputPlaybackParams}}" disabled="{{targetId}}" placeholder="请输入playbackParams" placeholder-class="placeholder" bindinput="inputIPCPlaybackParams" />
             </view>
           </view>
         </view>
@@ -72,8 +80,11 @@
     <view class="input-item"><label><switch type="checkbox" checked="{{showDebugInfoChecked}}" bindchange="switchShowDebugInfo"/>showDebugInfo</label></view>
   </view>
   <view class="component-section">
-    <button bindtap="startPlayer" type="primary">
-      开始
+    <button bindtap="startPlayer" data-type="live" type="primary" class="primary-button">
+      直播
+    </button>
+    <button wx:if="{{mode==='ipc'}}" bindtap="startPlayer" data-type="playback" type="primary" class="primary-button">
+      回放
     </button>
   </view>
 </view>

@@ -13,6 +13,7 @@ const { appParams } = config;
 
 const xp2pPlugin = requirePlugin('xp2p');
 const p2pExports = xp2pPlugin.p2p;
+const p2pTimeout = 6000;
 
 const playerPlugin = requirePlugin('wechat-p2p-player');
 
@@ -22,7 +23,7 @@ const parseCommandResData = (data) => {
   if (pos >= 0) {
     // 兼容有 \0 结束符的情况
     jsonStr = jsonStr.substr(0, pos);
-    console.log(`data length: ${data.length}, fixed length: ${jsonStr.length}\n`, jsonStr);
+    console.log(`data length: ${data.length}, fixed length: ${jsonStr.length}`);
   }
   return JSON.parse(jsonStr);
 };
@@ -145,7 +146,7 @@ class Xp2pManager {
 
         this.destroyModule();
         return reject(Xp2pManagerErrorEnum.Timeout);
-      }, 3000);
+      }, p2pTimeout);
 
       p2pExports
         .init({
@@ -219,7 +220,7 @@ class Xp2pManager {
 
         this.destroyModule();
         return reject(Xp2pManagerErrorEnum.Timeout);
-      }, 3000);
+      }, p2pTimeout);
 
       p2pExports
         .resetP2P()
@@ -336,18 +337,26 @@ class Xp2pManager {
       }
     }
 
+    const start = Date.now();
     return new Promise((resolve, reject) => {
       this.sendCommand(targetId, cmdStr)
         .then((res) => {
+          console.log(`Xp2pManager: sendInnerCommand res ${res.type} ${res.data && res.data.length}, delay`, Date.now() - start);
           if (res.type === 'success') {
-            console.log(`sendInnerCommand success, length: ${res.data.length}\n`, res.data);
-            resolve(parseCommandResData(res.data));
+            try {
+              const obj = parseCommandResData(res.data);
+              resolve(obj);
+            } catch (error) {
+              console.error('Xp2pManager: parseCommandResData err', res.data);
+              reject(`解析信令失败：${error}`);
+            }
             return;
           }
 
           reject(res.errmsg || `发送信令失败：${res.status} ${res.errcode}`);
         })
         .catch((error) => {
+          console.error('Xp2pManager: sendInnerCommand err, delay', Date.now() - start);
           reject(`发送信令失败：${error}`);
         });
     });
@@ -360,18 +369,26 @@ class Xp2pManager {
     this._msgSeq++;
     const cmdObj = { ...cmd, message_id: this._msgSeq };
 
+    const start = Date.now();
     return new Promise((resolve, reject) => {
       this.sendCommand(targetId, `action=user_define&channel=${channel || 0}&cmd=${JSON.stringify(cmdObj)}`)
         .then((res) => {
+          console.log(`Xp2pManager: sendUserCommand res ${res.type} ${res.data && res.data.length}, delay`, Date.now() - start);
           if (res.type === 'success') {
-            console.log(`sendUserCommand success, length: ${res.data.length}\n`, res.data);
-            resolve(parseCommandResData(res.data));
+            try {
+              const obj = parseCommandResData(res.data);
+              resolve(obj);
+            } catch (error) {
+              console.error('Xp2pManager: parseCommandResData err', res.data);
+              reject(`解析信令失败：${error}`);
+            }
             return;
           }
 
           reject(res.errmsg || `发送信令失败：${res.status} ${res.errcode}`);
         })
         .catch((error) => {
+          console.error('Xp2pManager: sendUserCommand err, delay', Date.now() - start);
           reject(`发送信令失败：${error}`);
         });
     });

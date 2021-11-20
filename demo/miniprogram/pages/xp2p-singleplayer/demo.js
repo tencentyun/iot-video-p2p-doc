@@ -1,24 +1,7 @@
-import config from '../../config/config';
+import { getPlayerProperties } from '../../utils';
 import { getXp2pManager } from '../../xp2pManager';
 
 const xp2pManager = getXp2pManager();
-
-const getPlayerProperties = (cfg, opts) => {
-  const { totalData } = config;
-  const cfgData = (cfg && totalData[cfg]) || totalData.tcptest;
-  const realHost = cfgData.mode === 'server' ? cfgData.host : 'XP2P_INFO.xnet';
-
-  return {
-    mode: cfgData.mode,
-    targetId: cfgData.targetId,
-    flvUrl: `http://${realHost}${cfgData.basePath}${cfgData.flvFile}`,
-    productId: cfgData.productId || '',
-    deviceName: cfgData.deviceName || '',
-    xp2pInfo: cfgData.xp2pInfo || cfgData.peername || '',
-    codeUrl: cfgData.codeUrl || '',
-    ...opts,
-  };
-};
 
 Page({
   data: {
@@ -41,7 +24,7 @@ Page({
   onLoad(query) {
     console.log('singleplayer: onLoad', query);
 
-    const cfg = query.cfg || query.mode || '';
+    const cfg = query.cfg || '';
     const onlyp2p = !!parseInt(query.onlyp2p, 10);
     const opts = {
       onlyp2p,
@@ -49,6 +32,14 @@ Page({
     };
 
     const newData = getPlayerProperties(cfg, opts);
+    if (!newData) {
+      wx.showModal({
+        content: `invalid cfg ${cfg}`,
+        showCancel: false,
+      });
+      return;
+    }
+
     if (newData.mode === 'ipc') {
       newData.playerTitle = `${newData.productId}/${newData.deviceName}`;
     }

@@ -7,3 +7,6 @@
 .input-item {
   margin-bottom: 10rpx;
 }
+.primary-button {
+  margin-bottom: 30rpx;
+}

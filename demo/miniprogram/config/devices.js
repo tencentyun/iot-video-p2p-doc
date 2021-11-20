@@ -1,15 +1,15 @@
 /**
- * 属性说明：
+ * device属性说明：
  * showInHomePageBtn: boolean 是否显示在首页大按钮，产品用
  * showInHomePageNav: boolean 是否显示在首页导航，有onlyp2p入口，开发用
- * reserve: boolean 退出监控页时是否保留p2p连接
  *
  * 下面这些会自动填到player组件的输入框里，也可以手动修改
  * productId: string 摄像头的 productId
  * deviceName: string 摄像头的 deviceName
- * xp2pInfo: string 摄像头的 peername 或加密后的 xp2pInfo
- * flvFile: string 摄像头的 flvFile，默认 ipc.flv?action=live
- * command: string 摄像头的 command
+ * xp2pInfo: string 摄像头的 xp2pInfo
+ * liveParams: string 摄像头的直播参数，默认 action=live&channel=0&quality=super
+ * playbackParams: string 摄像头的回放参数，默认 action=playback&channel=0
+ * command: string 摄像头的自定义信令
  */
 
 // 这些是预置的ipc设备
@@ -19,7 +19,8 @@ const devices = {
     productId: '9L1S66FZ3Q',
     deviceName: 'test_34683636_1',
     xp2pInfo: 'XP2PbO/R01VuHltKhYmkE7EZ/Kns%2.3.5',
-    flvFile: 'ipc.flv?action=live&channel=0&quality=super',
+    liveParams: 'action=live&channel=0&quality=super',
+    playbackParams: 'action=playback&channel=0',
     command: 'action=user_define&cmd=xxx',
   },
   judy3: {
@@ -27,8 +28,18 @@ const devices = {
     showInHomePageNav: true,
     productId: '9L1S66FZ3Q',
     deviceName: 'test_34683636_3',
-    xp2pInfo: 'XP2PcDd3JlQPiXxzzaK3xoCcoFUH%2.3.5',
-    flvFile: 'ipc.flv?action=live&channel=0&quality=super',
+    xp2pInfo: 'XP2PcDd3JnloqQZgj4GK5J64o1kR%2.3.5',
+    liveParams: 'action=live&channel=0&quality=super',
+    playbackParams: 'action=playback&channel=0',
+    command: 'action=user_define&cmd=xxx',
+  },
+  judy6: {
+    showInHomePageBtn: true,
+    productId: '9L1S66FZ3Q',
+    deviceName: 'test_34683636_6',
+    xp2pInfo: 'XP2Pm/unjGIab/hGyNk+32bos1wK%2.3.7',
+    liveParams: 'action=live&channel=0&quality=super',
+    playbackParams: 'action=playback&channel=0',
     command: 'action=user_define&cmd=xxx',
   },
   jlfeng: {

@@ -1,5 +1,5 @@
 import config from '../../config/config';
-import { getParamValue, toLocaleDateString } from '../../utils';
+import { getParamValue, toDateString } from '../../utils';
 import { getXp2pManager, Xp2pManagerErrorEnum } from '../../xp2pManager';
 
 const xp2pManager = getXp2pManager();
@@ -39,6 +39,9 @@ Component({
     p2pReady: false,
     checkFunctions: null,
 
+    // live / playback
+    type: '',
+
     // 语音对讲
     voiceState: '',
 
@@ -50,19 +53,24 @@ Component({
       { name: 'up', cmd: 'ptz_up_press' },
       { name: 'down', cmd: 'ptz_down_press' },
       { name: 'left', cmd: 'ptz_left_press' },
-      { name: 'right', cmd: 'ptz_right_press' }
+      { name: 'right', cmd: 'ptz_right_press' },
     ],
     ptzCmd: '',
     releasePTZTimer: null,
 
     // 选择录像日期
-    inputDate: toLocaleDateString(new Date()).replace(/\//g, '-'),
+    inputDate: toDateString(new Date()),
+
+    // 录像时段
+    inputPlaybackTime: '',
+    playerPlaybackTime: '',
   },
   lifetimes: {
     created() {
       // 在组件实例刚刚被创建时执行
       this.setData({
         checkFunctions: {
+          checkIsFlvValid: this.checkIsFlvValid.bind(this),
           checkCanStartStream: this.checkCanStartStream.bind(this),
         },
       });
@@ -70,6 +78,11 @@ Component({
     attached() {
       // 在组件实例进入页面节点树时执行
       console.log(`[${this.id}]`, '==== attached', this.id, this.properties);
+
+      const type = getParamValue(this.properties.flvUrl, 'action') || 'live';
+      console.log('type', type);
+      this.setData({ type });
+
       const player = this.selectComponent(`#${this.data.playerId}`);
       if (player) {
         this.setData({ player });
@@ -138,20 +151,43 @@ Component({
       console.log(`[${this.id}]`, 'call changeFlv', filename, params);
       this.data.player.changeFlv({ filename, params });
     },
+    checkIsFlvValid({ filename, params = '' }) {
+      console.log(`[${this.id}]`, 'checkIsFlvValid', filename, params);
+      const newType = getParamValue(params, 'action') || '';
+      if (newType !== this.data.type) {
+        // 不改变type
+        return false;
+      }
+      if (this.data.type === 'playback') {
+        const start = parseInt(getParamValue(params, 'start_time'), 10);
+        const end = parseInt(getParamValue(params, 'end_time'), 10);
+        return start > 0 && end - start >= 5;
+      }
+      return true;
+    },
     checkCanStartStream({ filename, params = '' }) {
       console.log(`[${this.id}]`, 'checkCanStartStream', filename, params);
+
+      let errMsg = '';
+
+      if (!this.checkIsFlvValid({ filename, params })) {
+        // flv参数错误
+        errMsg = 'flv参数错误';
+        this.showToast(errMsg);
+        return Promise.reject(errMsg);
+      }
+
       return new Promise((resolve, reject) => {
         xp2pManager
           .sendInnerCommand(this.properties.targetId, {
             cmd: 'get_device_st',
             params: {
-              type: getParamValue(params, 'action') || 'live',
+              type: this.data.type,
               quality: getParamValue(params, 'quality') || '',
             },
           })
           .then((res) => {
             let canStart = false;
-            let errMsg = '';
             const data = res[0]; // 返回的 res 是数组
             const status = parseInt(data?.status, 10); // 有的设备返回的 status 是字符串，兼容一下
             console.log(`[${this.id}]`, 'checkCanStartStream status', status);
@@ -171,14 +207,16 @@ Component({
             if (canStart) {
               resolve();
             } else {
-              this.showToast(errMsg || '获取设备状态失败');
-              reject(errMsg || '获取设备状态失败');
+              errMsg = errMsg || '获取设备状态失败';
+              this.showToast(errMsg);
+              reject(errMsg);
             }
           })
           .catch((errmsg) => {
             console.log(`[${this.id}]`, 'checkCanStartStream err', errmsg);
-            this.showToast('获取设备状态失败');
-            reject('获取设备状态失败');
+            errMsg = '获取设备状态失败';
+            this.showToast(errMsg);
+            reject(errMsg);
           });
       });
     },
@@ -320,15 +358,78 @@ Component({
         inputDate: e.detail.value,
       });
     },
-    sendInnerCommandWithDate(e) {
+    inputIPCPlaybackTime(e) {
+      this.setData({
+        inputPlaybackTime: e.detail.value,
+      });
+    },
+    getRecordDates(e) {
       const date = new Date(this.data.inputDate.replace(/-/g, '/'));
       if (!this.data.inputDate) {
-        this.showToast('sendCommand: please select date');
+        this.showToast('please select date');
         return;
       }
       this.sendInnerCommand(e, date);
     },
-    sendInnerCommand(e, inputParams = undefined) {
+    getRecordVideos(e) {
+      const date = new Date(this.data.inputDate.replace(/-/g, '/'));
+      if (!this.data.inputDate) {
+        this.showToast('please select date');
+        return;
+      }
+      this.sendInnerCommand(e, date, ({ video_list = [] } = {}) => {
+        if (video_list.length > 0) {
+          // 更新 inputPlaybackTime
+          const item = video_list[0];
+          this.setData({ inputPlaybackTime: `start_time=${item.start_time}&end_time=${item.end_time}` });
+        }
+      });
+    },
+    startPlayback() {
+      console.log(`[${this.id}]`, 'startPlayback');
+      if (!this.data.p2pReady) {
+        console.log('p2p not ready');
+        return;
+      }
+      if (!this.data.player) {
+        console.log('no player');
+        return;
+      }
+      if (!this.data.inputPlaybackTime) {
+        this.showToast('please input playback time');
+        return;
+      }
+
+      this.setData({
+        playerPlaybackTime: this.data.inputPlaybackTime,
+      });
+
+      const filename = 'ipc.flv';
+      const params = `action=playback&channel=0&${this.data.inputPlaybackTime}`;
+      console.log(`[${this.id}]`, 'call changeFlv', filename, params);
+      this.data.player.changeFlv({ filename, params });
+    },
+    stopPlayback() {
+      console.log(`[${this.id}]`, 'stopPlayback');
+      if (!this.data.p2pReady) {
+        console.log('p2p not ready');
+        return;
+      }
+      if (!this.data.player) {
+        console.log('no player');
+        return;
+      }
+
+      this.setData({
+        playerPlaybackTime: '',
+      });
+
+      const filename = 'ipc.flv';
+      const params = 'action=playback&channel=0';
+      console.log(`[${this.id}]`, 'call changeFlv', filename, params);
+      this.data.player.changeFlv({ filename, params });
+    },
+    sendInnerCommand(e, inputParams = undefined, callback = undefined) {
       console.log(`[${this.id}]`, 'sendInnerCommand');
       if (!this.data.p2pReady) {
         console.log('p2p not ready');
@@ -352,8 +453,9 @@ Component({
         .then((res) => {
           console.log(`[${this.id}]`, 'sendInnerCommand res', res);
           let content = `sendInnerCommand\ncmd: ${cmd}\nres: ${JSON.stringify(res)}`;
+          let parsedRes;
           if (dataHandler) {
-            const parsedRes = dataHandler(res);
+            parsedRes = dataHandler(res);
             console.log(`[${this.id}]`, 'parsedRes', parsedRes);
             content += `\nparsedRes: ${JSON.stringify(parsedRes)}`;
           }
@@ -361,6 +463,10 @@ Component({
             content,
             showCancel: false,
           });
+
+          if (callback) {
+            callback(dataHandler ? parsedRes : res);
+          }
         })
         .catch((errmsg) => {
           console.error(`[${this.id}]`, 'sendInnerCommand error', errmsg);

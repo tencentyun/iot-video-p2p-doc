@@ -243,10 +243,10 @@ p2pModule.destroy();
 #### 4.1 进入监控页，第一次触发播放，有时live-player并没有开始播放，没收到 playerStartPull 事件
 
 通过代码 playerCtx.play() 来触发播放，有时候 live-player 并没有真正开始播放，建议按这个流程处理：
-- 进入监控页，启动p2p和创建player并行
-- 收到 playerReady 时
-  - 如果 startP2PService 已经完成，把 p2p-player 组件的 autoplay 属性设为 true
-  - 如果 startP2PService 还没有完成，等待完成后再调用 playerCtx.play()
+- 进入监控页，启动p2p和创建player并行，初始 autoplay 为 false
+- playerReady 并且 startP2PService 成功（注意要2个都完成）
+  - 如果 autoplay 为 false，把它设为 true
+  - 如果 autoplay 已经是 true（比如p2p连接断开后重连），调用 playerCtx.play()
 
 #### 4.2 播放一段时间之后，收到xp2p插件的连接断开事件
 

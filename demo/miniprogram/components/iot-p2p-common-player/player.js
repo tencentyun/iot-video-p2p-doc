@@ -1,4 +1,4 @@
-import { canUseP2P } from '../../utils';
+import { canUseP2P, toTimeString } from '../../utils';
 import { getXp2pManager } from '../../xp2pManager';
 
 const xp2pManager = getXp2pManager();
@@ -61,7 +61,7 @@ const totalMsgMap = {
   [StreamStateEnum.StreamRequest]: '加载中...',
   [StreamStateEnum.StreamHeaderParsed]: '加载中...',
   [StreamStateEnum.StreamDataReceived]: '',
-  [StreamStateEnum.StreamDataEnd]: '播放停止',
+  [StreamStateEnum.StreamDataEnd]: '播放结束',
 };
 
 Component({
@@ -75,6 +75,10 @@ Component({
     },
     flvUrl: {
       type: String,
+    },
+    autoReplay: {
+      type: Boolean,
+      value: false,
     },
     // 以下 ipc 模式用
     productId: {
@@ -95,7 +99,12 @@ Component({
       value: '',
     },
     // 不能直接传函数，只能在数据中包含函数，所以放在 checkFunctions 里
-    // checkFunctions: { checkCanStartStream: ({ filename, params }) => Promise }
+    /*
+     checkFunctions: {
+       checkIsFlvValid: ({ filename, params }) => boolean,
+       checkCanStartStream: ({ filename, params }) => Promise,
+     }
+    */
     checkFunctions: {
       type: Object,
     },
@@ -136,7 +145,9 @@ Component({
     playing: false,
     totalBytes: 0,
 
-    // 这些是控制player和p2p的
+    // 这些是播放相关信息，清空时机同 totalBytes
+    firstChunkTime: '',
+    livePlayerInfo: '',
   },
   lifetimes: {
     created() {
@@ -233,13 +244,6 @@ Component({
     };
   },
   methods: {
-    isPeername(peername) {
-      return /^\w+$/.test(peername) && !/^XP2P/.test(peername);
-    },
-    getHostFromPeername(peername) {
-      // 如果是加密过的xp2pInfo，里面有/等字符，不是合法的host，用 XP2P_INFO 占个位
-      return this.isPeername(peername) ? `${peername}.xnet` : 'XP2P_INFO.xnet';
-    },
     getPlayerMessage(overrideData) {
       if (!canUseP2P) {
         return '您的微信基础库版本过低，请升级后再使用';
@@ -371,13 +375,23 @@ Component({
           break;
         default:
           // 这些不特别处理，打个log
-          console.log('==== onLivePlayerStateChange', detail.code, detail);
+          console.log('onLivePlayerStateChange', detail.code, detail);
           break;
       }
     },
     // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     onLivePlayerNetStatusChange({ detail }) {
-      // console.log(`[${this.id}]`, '==== onLivePlayerNetStatusChange', detail.info);
+      // console.log(`[${this.id}]`, 'onLivePlayerNetStatusChange', detail.info);
+      if (!detail.info) {
+        return;
+      }
+      this.setData({
+        livePlayerInfo: [
+          `size: ${detail.info.videoWidth}x${detail.info.videoHeight}`,
+          `cache: video ${detail.info.videoCache}, audio ${detail.info.audioCache}`,
+          `fps: ${detail.info.videoFPS}`,
+        ].join('\n'),
+      });
     },
     resetServiceData(newP2PState) {
       this.changeState({
@@ -385,6 +399,8 @@ Component({
         streamState: StreamStateEnum.StreamIdle,
         playing: false,
         totalBytes: 0,
+        firstChunkTime: '',
+        livePlayerInfo: '',
       });
     },
     initP2P() {
@@ -498,6 +514,8 @@ Component({
         streamState: StreamStateEnum.StreamChecking,
         playing: true,
         totalBytes: 0,
+        firstChunkTime: '',
+        livePlayerInfo: '',
       });
 
       checkCanStartStream({ filename: this.data.flvFilename, params: this.data.flvParams })
@@ -521,6 +539,8 @@ Component({
             streamState: StreamStateEnum.StreamCheckError,
             playing: false,
             totalBytes: 0,
+            firstChunkTime: '',
+            livePlayerInfo: '',
           });
           if (errmsg) {
             this.setData({ playerMsg: errmsg });
@@ -545,8 +565,10 @@ Component({
         totalBytes += data.byteLength;
         if (chunkCount === 1) {
           console.log(`[${this.id}]`, '==== firstChunk', data.byteLength);
+          const date = new Date();
           this.changeState({
             streamState: StreamStateEnum.StreamDataReceived,
+            firstChunkTime: `${date.getTime()} ${toTimeString(date)}`,
           });
         }
         this.setData({
@@ -569,6 +591,8 @@ Component({
         streamState: StreamStateEnum.StreamPreparing,
         playing: true,
         totalBytes: 0,
+        firstChunkTime: '',
+        livePlayerInfo: '',
       });
 
       xp2pManager
@@ -592,6 +616,8 @@ Component({
             streamState: StreamStateEnum.StreamError,
             playing: false,
             totalBytes: 0,
+            firstChunkTime: '',
+            livePlayerInfo: '',
           });
           if (this.data.playerCtx) {
             try {
@@ -615,11 +641,14 @@ Component({
         streamState: newStreamState,
         playing: false,
         totalBytes: 0,
+        firstChunkTime: '',
+        livePlayerInfo: '',
       });
 
       xp2pManager.stopStream(this.properties.targetId);
     },
     changeFlv({ filename = '', params = '' }) {
+      console.log(`[${this.id}]`, 'changeFlv', filename, params);
       this.setData(
         {
           flvFile: `${filename}${params ? `?${params}` : ''}`,
@@ -627,7 +656,20 @@ Component({
           flvParams: params,
         },
         () => {
+          const checkIsFlvValid = this.properties.checkFunctions && this.properties.checkFunctions.checkIsFlvValid;
+          if (checkIsFlvValid && !checkIsFlvValid({ filename: this.data.flvFilename, params: this.data.flvParams })) {
+            console.log('flv invalid, stopStream');
+            // 无效，停止播放
+            this.stopStream();
+            if (this.data.playerCtx) {
+              try {
+                this.data.playerCtx.stop();
+              } catch (err) {}
+            }
+            return;
+          }
           if (!this.data.playing) {
+            this.tryTriggerPlay('changeFlv');
             return;
           }
           this.stopStream();
@@ -668,6 +710,12 @@ Component({
         '\n  p2pState', this.data.p2pState,
         '\n  streamState', this.data.streamState,
       );
+
+      const checkIsFlvValid = this.properties.checkFunctions && this.properties.checkFunctions.checkIsFlvValid;
+      if (checkIsFlvValid && !checkIsFlvValid({ filename: this.data.flvFilename, params: this.data.flvParams })) {
+        console.log('flv invalid, return');
+        return;
+      }
 
       let isPlayerStateCanPlay = this.data.playerState === PlayerStateEnum.PlayerReady;
       if (!isPlayerStateCanPlay && isReplay) {
@@ -757,6 +805,19 @@ Component({
         errDetail: detail,
       });
     },
+    // 处理播放结束
+    handlePlayEnd(newStreamState) {
+      if (this.properties.autoReplay) {
+        this.checkNetworkAndReplay(newStreamState);
+      } else {
+        this.stopStream(newStreamState);
+        if (this.data.playerCtx) {
+          try {
+            this.data.playerCtx.stop();
+          } catch (err) {}
+        }
+      }
+    },
     onP2PMessage(targetId, event, subtype, detail) {
       if (targetId !== this.properties.targetId) {
         console.warn(
@@ -805,12 +866,14 @@ Component({
           break;
         case XP2PNotify_SubType.Success:
         case XP2PNotify_SubType.Eof:
-          // 数据传输正常结束，尝试重播
-          this.checkNetworkAndReplay(StreamStateEnum.StreamDataEnd);
+          // 数据传输正常结束
+          console.log(`[${this.id}]`, `==== Notify ${type} in p2pState ${this.data.p2pState}`);
+          this.handlePlayEnd(StreamStateEnum.StreamDataEnd);
           break;
         case XP2PNotify_SubType.Fail:
-          // 数据传输出错，尝试重播
-          this.checkNetworkAndReplay(StreamStateEnum.StreamError);
+          // 数据传输出错
+          console.error(`[${this.id}]`, `==== Notify ${type} in p2pState ${this.data.p2pState}`, detail);
+          this.handlePlayEnd(StreamStateEnum.StreamError);
           break;
         case XP2PNotify_SubType.Close:
           // 用户主动关闭
