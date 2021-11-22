@@ -10,7 +10,6 @@
       deviceName="{{item.deviceName}}" 
       xp2pInfo="{{item.xp2pInfo}}" 
       onlyp2p="{{item.onlyp2p}}"
-      showDebugInfo="{{item.showDebugInfo}}"
       bind:playError="onPlayError"
       bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
     />
@@ -21,7 +20,6 @@
       flvUrl="{{item.flvUrl}}" 
       codeUrl="{{item.codeUrl}}" 
       onlyp2p="{{item.onlyp2p}}"
-      showDebugInfo="{{item.showDebugInfo}}"
       bind:playError="onPlayError"
       bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
     />

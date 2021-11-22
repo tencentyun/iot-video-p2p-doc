@@ -9,7 +9,6 @@
  * xp2pInfo: string 摄像头的 xp2pInfo
  * liveParams: string 摄像头的直播参数，默认 action=live&channel=0&quality=super
  * playbackParams: string 摄像头的回放参数，默认 action=playback&channel=0
- * command: string 摄像头的自定义信令
  */
 
 // 这些是预置的ipc设备
@@ -21,17 +20,15 @@ const devices = {
     xp2pInfo: 'XP2PbO/R01VuHltKhYmkE7EZ/Kns%2.3.5',
     liveParams: 'action=live&channel=0&quality=super',
     playbackParams: 'action=playback&channel=0',
-    command: 'action=user_define&cmd=xxx',
   },
   judy3: {
     showInHomePageBtn: true,
     showInHomePageNav: true,
     productId: '9L1S66FZ3Q',
     deviceName: 'test_34683636_3',
-    xp2pInfo: 'XP2PcDd3JnloqQZgj4GK5J64o1kR%2.3.5',
+    xp2pInfo: 'XP2PcDd3JlQPiXxXzYyo9NSCoHdW%2.3.5',
     liveParams: 'action=live&channel=0&quality=super',
     playbackParams: 'action=playback&channel=0',
-    command: 'action=user_define&cmd=xxx',
   },
   judy6: {
     showInHomePageBtn: true,
@@ -40,14 +37,12 @@ const devices = {
     xp2pInfo: 'XP2Pm/unjGIab/hGyNk+32bos1wK%2.3.7',
     liveParams: 'action=live&channel=0&quality=super',
     playbackParams: 'action=playback&channel=0',
-    command: 'action=user_define&cmd=xxx',
   },
   jlfeng: {
     showInHomePageBtn: true,
     productId: 'LYEOZCNW0U',
     deviceName: '1_49822230_1',
     xp2pInfo: '',
-    command: 'action=user_define&cmd=xxx',
   },
 };
 

@@ -71,7 +71,8 @@
   color: rgba(0,0,0,0.3);
 }
 .text-box {
-  width: 100%;
+  box-sizing: border-box;
+  padding: 10rpx;
   min-height: 80rpx;
 }
 .text-break {

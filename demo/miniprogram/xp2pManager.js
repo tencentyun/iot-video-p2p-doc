@@ -21,7 +21,7 @@ const parseCommandResData = (data) => {
   let jsonStr = data;
   const pos = jsonStr.search(/\0/);
   if (pos >= 0) {
-    // 兼容有 \0 结束符的情况
+    // 兼容有 \0 结束符的情况，1.0.1之前需要，1.0.2开始已在插件内处理
     jsonStr = jsonStr.substr(0, pos);
     console.log(`data length: ${data.length}, fixed length: ${jsonStr.length}`);
   }
@@ -321,9 +321,9 @@ class Xp2pManager {
     return p2pExports.stopVoiceService(targetId);
   }
 
-  sendCommand(targetId, command) {
-    console.log('Xp2pManager: sendCommand', targetId, command);
-    return p2pExports.sendCommand(targetId, command);
+  sendCommand(targetId, command, options = { responseType: 'text' }) {
+    console.log('Xp2pManager: sendCommand', targetId, command, options);
+    return p2pExports.sendCommand(targetId, command, options);
   }
 
   // 内部信令，参考 https://cloud.tencent.com/document/product/1131/61744

@@ -113,10 +113,6 @@ Component({
       type: Boolean,
       value: false,
     },
-    showDebugInfo: {
-      type: Boolean,
-      value: false,
-    },
   },
   data: {
     // 这是onLoad时就固定的
@@ -148,6 +144,9 @@ Component({
     // 这些是播放相关信息，清空时机同 totalBytes
     firstChunkTime: '',
     livePlayerInfo: '',
+
+    // debug用
+    showDebugInfo: false,
   },
   lifetimes: {
     created() {
@@ -886,6 +885,9 @@ Component({
           this.handlePlayError(P2PStateEnum.ServiceError, detail);
           break;
       }
+    },
+    toggleDebugInfo() {
+      this.setData({ showDebugInfo: !this.data.showDebugInfo });
     },
   },
 });

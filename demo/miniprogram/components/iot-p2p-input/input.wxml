@@ -77,7 +77,6 @@
   <view class="component-section">
     <view class="component-section-title">调试用</view>
     <view class="input-item"><label><switch type="checkbox" checked="{{onlyp2pChecked}}" bindchange="switchOnlyP2P"/>onlyp2p</label></view>
-    <view class="input-item"><label><switch type="checkbox" checked="{{showDebugInfoChecked}}" bindchange="switchShowDebugInfo"/>showDebugInfo</label></view>
   </view>
   <view class="component-section">
     <button bindtap="startPlayer" data-type="live" type="primary" class="primary-button">

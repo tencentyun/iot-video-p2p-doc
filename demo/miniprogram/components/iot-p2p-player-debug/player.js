@@ -121,7 +121,7 @@ Component({
           inputDeviceName: data.deviceName || '',
           inputXp2pInfo: data.xp2pInfo || data.peername || '',
           inputFlvParams: data.liveParams || '',
-          inputCommand: data.command || '',
+          inputCommand: 'action=inner_define&channel=0&cmd=get_device_st&type=playback',
           inputCodeUrl: data.codeUrl || '',
           inputUrl: data.flvUrl || '',
           state: needPlayer ? '' : PlayStateEnum.playerReady,

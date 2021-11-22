@@ -7,14 +7,13 @@
       flvUrl="{{flvUrl}}"
       codeUrl="{{codeUrl}}"
       onlyp2p="{{onlyp2p}}"
-      showDebugInfo="{{showDebugInfo}}"
       bind:p2pStateChange="onP2PStateChange"
       bind:p2pDevNotify="onP2PDevNotify"
       bind:playError="passEvent"
       bind:systemPermissionDenied="passEvent"
     />
   </view>
-  <view wx:if="{{showDebugInfo}}" class="component-section">
+  <view class="component-section">
     <view>peerlist:</view>
     <scroll-view scroll-y="true" style="height: 200rpx; padding: 10rpx; border: solid 1px #dddddd;">{{peerlist}}</scroll-view>
     <view>subscribeLog:</view>

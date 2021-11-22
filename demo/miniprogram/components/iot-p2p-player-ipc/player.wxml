@@ -11,7 +11,6 @@
       xp2pInfo="{{xp2pInfo}}"
       checkFunctions="{{checkFunctions}}"
       onlyp2p="{{onlyp2p}}"
-      showDebugInfo="{{showDebugInfo}}"
       bind:p2pStateChange="onP2PStateChange"
       bind:playError="passEvent"
       bind:systemPermissionDenied="passEvent"
@@ -74,6 +73,28 @@
     </view>
   </view>
   <view class="component-section" wx:if="{{type === 'playback'}}">
+    <view class="component-section-title">当前录像</view>
+    <view class="text-box">
+      <text class="text-break">{{playerPlaybackTimeLocaleStr}}</text>
+    </view>
+  </view>
+  <view class="component-section" wx:if="{{type === 'playback'}}">
+    <view class="component-section-title">播放录像</view>
+    <view class="weui-cells weui-cells_after-title">
+      <view class="weui-cell weui-cell_input">
+        <input class="weui-input" type="text" value="{{inputPlaybackTime}}" placeholder="获取有效录像列表后自动填入" placeholder-class="placeholder" bindinput="inputIPCPlaybackTime" />
+      </view>
+    </view>
+    <view class="group-button-area">
+      <button bindtap="startPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !inputPlaybackTime}}">
+        播放
+      </button>
+      <button bindtap="stopPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime}}">
+        停止
+      </button>
+    </view>
+  </view>
+  <view class="component-section" wx:if="{{type === 'playback'}}">
     <view class="component-section-title">查询录像</view>
     <view>
       <view>date:</view>
@@ -93,22 +114,6 @@
       </button>
       <button bindtap="getRecordVideos" data-cmd-name="getRecordVideos" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
         获取该日录像列表
-      </button>
-    </view>
-  </view>
-  <view class="component-section" wx:if="{{type === 'playback'}}">
-    <view class="component-section-title">播放录像</view>
-    <view class="weui-cells weui-cells_after-title">
-      <view class="weui-cell weui-cell_input">
-        <input class="weui-input" type="text" value="{{inputPlaybackTime}}" placeholder="请输入录像时段" placeholder-class="placeholder" bindinput="inputIPCPlaybackTime" />
-      </view>
-    </view>
-    <view class="group-button-area">
-      <button bindtap="startPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !inputPlaybackTime}}">
-        播放
-      </button>
-      <button bindtap="stopPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime}}">
-        停止
       </button>
     </view>
   </view>
@@ -143,6 +148,17 @@
       <view class="weui-cell weui-cell_input">
         <input class="weui-input" type="text" value="{{inputCommand}}" placeholder="请输入command" placeholder-class="placeholder" bindinput="inputIPCCommand" />
       </view>
+    </view>
+    <view>
+      responseType:
+      <radio-group bindchange="commandResponseTypeChanged">
+        <label class="radio">
+          <radio value="text" checked="{{inputCommandResponseType === 'text'}}"/>text
+        </label>
+        <label class="radio">
+          <radio value="arraybuffer" checked="{{inputCommandResponseType === 'arraybuffer'}}" />arraybuffer
+        </label>
+      </radio-group>
     </view>
     <view class="group-button-area">
       <button bindtap="sendCommand" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">

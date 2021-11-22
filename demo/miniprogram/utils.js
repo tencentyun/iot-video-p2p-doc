@@ -47,6 +47,7 @@ function pad(v, l) {
 }
 export const toDateString = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 export const toTimeString = (date) => `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+export const toDateTimeString = (date) => `${toDateString(date)} ${toTimeString(date)}`;
 
 export const isPeername = (xp2pInfo) => /^\w+$/.test(xp2pInfo) && !/^XP2P/.test(xp2pInfo);
 
@@ -72,7 +73,7 @@ export const getPlayerProperties = (cfg, opts) => {
     flvUrl: flvUrl || '',
     productId: cfgData.productId || '',
     deviceName: cfgData.deviceName || '',
-    xp2pInfo: adjustXp2pInfo(cfgData.xp2pInfo || cfgData.peername || ''),
+    xp2pInfo: adjustXp2pInfo(cfgData.xp2pInfo || cfgData.peername || ''), // 兼容直接填 peername 的情况
     codeUrl: cfgData.codeUrl || '',
     ...opts,
   };

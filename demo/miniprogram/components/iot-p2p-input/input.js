@@ -28,7 +28,6 @@ Component({
 
     // 调试用
     onlyp2pChecked: wx.getSystemInfoSync().platform === 'devtools', // 开发者工具里不支持 live-player 和 TCPServer，默认勾选 onlyp2p
-    showDebugInfoChecked: true,
 
     // 这些是p2p状态
     targetId: '',
@@ -131,11 +130,6 @@ Component({
         onlyp2pChecked: e.detail.value,
       });
     },
-    switchShowDebugInfo(e) {
-      this.setData({
-        showDebugInfoChecked: e.detail.value,
-      });
-    },
     getStreamData(type) {
       if (!this.data.inputTargetId) {
         this.showToast('please input targetId');
@@ -200,7 +194,6 @@ Component({
         flvUrl: streamData.flvUrl,
         ...streamData.streamExInfo,
         onlyp2p: this.data.onlyp2pChecked,
-        showDebugInfo: this.data.showDebugInfoChecked,
       });
     },
   },

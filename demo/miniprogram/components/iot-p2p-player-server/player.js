@@ -20,9 +20,6 @@ Component({
     onlyp2p: {
       type: Boolean,
     },
-    showDebugInfo: {
-      type: Boolean,
-    },
   },
   data: {
     // 这些是控制player和p2p的

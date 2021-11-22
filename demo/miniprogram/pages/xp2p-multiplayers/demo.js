@@ -7,7 +7,6 @@ Page({
   data: {
     // 这是onLoad时就固定的
     playerIdPrefix: 'iot-p2p-player',
-    showDebugInfo: false,
     playerPropsList: [],
 
     // 这些是控制player和p2p的
@@ -21,7 +20,6 @@ Page({
     const onlyp2p = !!parseInt(query.onlyp2p, 10);
     const opts = {
       onlyp2p,
-      showDebugInfo: this.data.showDebugInfo,
     };
 
     const props1 = getPlayerProperties(cfg1, { playerId: `${this.data.playerIdPrefix}-1`, ...opts });

@@ -14,7 +14,6 @@ Page({
     xp2pInfo: '',
     codeUrl: '',
     onlyp2p: false,
-    showDebugInfo: false,
 
     // 这些是控制player和p2p的
     playerId: 'iot-p2p-player',
@@ -28,7 +27,6 @@ Page({
     const onlyp2p = !!parseInt(query.onlyp2p, 10);
     const opts = {
       onlyp2p,
-      showDebugInfo: this.data.showDebugInfo,
     };
 
     const newData = getPlayerProperties(cfg, opts);

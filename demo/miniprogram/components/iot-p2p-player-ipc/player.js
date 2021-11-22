@@ -1,5 +1,5 @@
 import config from '../../config/config';
-import { getParamValue, toDateString } from '../../utils';
+import { getParamValue, toDateString, toDateTimeString } from '../../utils';
 import { getXp2pManager, Xp2pManagerErrorEnum } from '../../xp2pManager';
 
 const xp2pManager = getXp2pManager();
@@ -28,9 +28,6 @@ Component({
     onlyp2p: {
       type: Boolean,
     },
-    showDebugInfo: {
-      type: Boolean,
-    },
   },
   data: {
     // 这些是控制player和p2p的
@@ -46,7 +43,8 @@ Component({
     voiceState: '',
 
     // 自定义信令
-    inputCommand: 'action=user_define&cmd=xxx',
+    inputCommand: 'action=inner_define&channel=0&cmd=get_device_st&type=playback',
+    inputCommandResponseType: 'text',
 
     // 搞个方便操作的面板
     ptzBtns: [
@@ -64,6 +62,7 @@ Component({
     // 录像时段
     inputPlaybackTime: '',
     playerPlaybackTime: '',
+    playerPlaybackTimeLocaleStr: '',
   },
   lifetimes: {
     created() {
@@ -400,8 +399,11 @@ Component({
         return;
       }
 
+      const startDate = new Date(parseInt(getParamValue(this.data.inputPlaybackTime, 'start_time'), 10) * 1000);
+      const endDate = new Date(parseInt(getParamValue(this.data.inputPlaybackTime, 'end_time'), 10) * 1000);
       this.setData({
         playerPlaybackTime: this.data.inputPlaybackTime,
+        playerPlaybackTimeLocaleStr: `${toDateTimeString(startDate)} ~ ${toDateTimeString(endDate)}`,
       });
 
       const filename = 'ipc.flv';
@@ -422,6 +424,7 @@ Component({
 
       this.setData({
         playerPlaybackTime: '',
+        playerPlaybackTimeLocaleStr: '',
       });
 
       const filename = 'ipc.flv';
@@ -481,6 +484,11 @@ Component({
         inputCommand: e.detail.value,
       });
     },
+    commandResponseTypeChanged(e) {
+      this.setData({
+        inputCommandResponseType: e.detail.value,
+      });
+    },
     sendCommand() {
       console.log(`[${this.id}]`, 'sendCommand');
       if (!this.data.p2pReady) {
@@ -494,11 +502,22 @@ Component({
       }
 
       xp2pManager
-        .sendCommand(this.properties.targetId, this.data.inputCommand)
+        .sendCommand(this.properties.targetId, this.data.inputCommand, {
+          responseType: this.data.inputCommandResponseType || 'text',
+        })
         .then((res) => {
           console.log(`[${this.id}]`, 'sendCommand res', res);
+          let content = `sendCommand res: type=${res.type}, status=${res.status}`;
+          if (res.type === 'success') {
+            const type = typeof res.data;
+            if (type === 'string') {
+              content += `, data=${res.data}`;
+            } else if (res.data && res.data.toString() === '[object ArrayBuffer]') {
+              content += `, data=ArrayBuffer(${res.data.byteLength})`;
+            }
+          }
           wx.showModal({
-            content: `sendCommand res: type=${res.type}, status=${res.status}, data=${res.data}`,
+            content,
             showCancel: false,
           });
         })
