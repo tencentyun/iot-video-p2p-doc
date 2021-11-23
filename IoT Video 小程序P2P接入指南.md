@@ -13,8 +13,7 @@
 
 ## 微信版本限制
 
-微信 8.0.10 以上
-基础库 2.19.3 以上
+微信 8.0.10 以上，基础库 2.19.3 以上
 
 ## 接入指引
 
@@ -94,5 +93,5 @@
 ### 开发说明
 
 参考:
-[IoT Video X-P2P插件](./IoT%20Video%20X-P2P%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
-[IoT Video P2P-Player插件](./IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
+- [IoT Video X-P2P插件](./IoT%20Video%20X-P2P%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
+- [IoT Video P2P-Player插件](./IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)

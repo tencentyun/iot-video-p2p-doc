@@ -28,8 +28,7 @@
 
 ## 微信版本限制
 
-微信 8.0.10 以上
-基础库 2.19.3 以上
+微信 8.0.10 以上，基础库 2.19.3 以上
 
 ## 使用方法
 
@@ -93,8 +92,9 @@ appid: 'wx9e8fbc98ceac2628'
 |  参数    | 类型   |  默认值  | 是否必填 |  说明   |
 |  ----   | ----   | ----    | ----   | ----  |
 | id  | string | 无 | 必填 | player id为唯一标示 |
-| bind:playerReady  | Function | 无 | 必填 | 本地`http-server`初始化完的回调，将返回`livePlayerContext` 可以直接对`live-player`的context进行操作，具体见`live-player`小程序文档 |
-| bind:playerStartPull  | Function | 无 | 必填 | `live-player`开始播放之后，开始拉流的回调，这个时候可以开始触发addChunk的方法，进行吐流 |
+| bind:playerReady  | Function | 无 | 必填 | 本地`http-server`初始化完的回调，将返回`livePlayerContext`，可以直接对`live-player`的context进行操作，具体见`live-player`小程序文档 |
+| bind:playerError  | Function | 无 | 非必填 | 本地`http-server`初始化失败的回调 |
+| bind:playerStartPull  | Function | 无 | 必填 | `live-player`开始播放之后，本地server收到拉流请求的回调，这个时候可以开始调用addChunk进行吐流 |
 | bind:playerClose  | Function | 无 | 非必填 | `live-player`停止或者暂停之后的回调 |
 | 其他  | 无 | 无 | 非必填 | `live-player`的其他非必填参数的透传，具体见`live-player`小程序文档|
 
