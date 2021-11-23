@@ -332,6 +332,10 @@ onUnload() {
 ```
 
 
+
+### 5. 代码示例
+
+见 [小程序demo](./demo/miniprogram)
 ## API 说明
 
 ### p2pModule.init(object) => Promise\<res\>
@@ -669,7 +673,3 @@ type 的值
 | -2501 | 数据加密失败 |
 | -2502 | 数据解密失败 |
 | -2601 | 启动语音对讲失败 |
-
-## 示例
-
-见 [小程序demo](./demo/miniprogram)

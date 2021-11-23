@@ -83,7 +83,7 @@ appid: 'wx9e8fbc98ceac2628'
 />
 ```
 
-## 4. 代码示例
+### 4. 代码示例
 
 见 [小程序demo](./demo/miniprogram)
 
