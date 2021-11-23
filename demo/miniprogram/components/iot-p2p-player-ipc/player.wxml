@@ -149,6 +149,7 @@
         <input class="weui-input" type="text" value="{{inputCommand}}" placeholder="请输入command" placeholder-class="placeholder" bindinput="inputIPCCommand" />
       </view>
     </view>
+    <!-- 1.0.2 暂未发布
     <view>
       responseType:
       <radio-group bindchange="commandResponseTypeChanged">
@@ -160,6 +161,7 @@
         </label>
       </radio-group>
     </view>
+    -->
     <view class="group-button-area">
       <button bindtap="sendCommand" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
         sendCommand

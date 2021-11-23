@@ -2,20 +2,25 @@
 
 ## 介绍
 
-通过腾讯云IoT Video小程序P2P服务，引入IoT Video P2P插件和P2P-Player插件，可实现摄像头和小程序直接打洞传输视频流；配合云端的server SDK，可实现小程序和小程序，小程序和APP之间的数据共享。
+通过腾讯云IoT Video小程序P2P服务，引入IoT Video X-P2P插件和P2P-Player插件，可实现摄像头和小程序直接打洞传输视频流；配合云端的Server SDK，可实现小程序和小程序，小程序和APP之间的数据共享。
 
-## 前提条件
+## 准备工作
 
 - 申请腾讯云 IoT Video P2P 服务，获取访问密钥（联调阶段可直接使用demo里的密钥，正式发布时请使用我们邮件提供给您的正式密钥）
 - 有使用 live-player 的权限，详见 [官方文档](https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html)
-- 微信 8.0.7以上 基础库 2.18.0以上
-- 向腾讯云IoT Video团队申请 [IoT Video P2P插件](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20X-P2P%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md) 和 [IoT Video P2P-Player插件](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
+- 向腾讯云IoT Video团队申请使用 [IoT Video X-P2P插件](./IoT%20Video%20X-P2P%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md) 和 [IoT Video P2P-Player插件](./IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
+- 如果使用 1v多 模式，需要将flv流的域名加到小程序的 `request合法域名` 和 `tcp合法域名` 配置中，详见 [服务器域名配置官方文档](https://developers.weixin.qq.com/miniprogram/dev/framework/ability/network.html#1.%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%9F%9F%E5%90%8D%E9%85%8D%E7%BD%AE)
+
+## 微信版本限制
+
+微信 8.0.10 以上
+基础库 2.19.3 以上
 
 ## 接入指引
 
 ### 接入流程图
 
-![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/%E5%B0%8F%E7%A8%8B%E5%BA%8FP2P%E6%9E%B6%E6%9E%84%E5%9B%BE.png)
+![](./pic/miniprogram/%E5%B0%8F%E7%A8%8B%E5%BA%8FP2P%E6%9E%B6%E6%9E%84%E5%9B%BE.png)
 
 - 1、初始化阶段：
 
@@ -29,7 +34,7 @@
 
   3-1：P2P-Player插件抛出拉流事件给小程序应用
   
-  3-2：小程序应用在拉流回调中，调用XP2P插件的startP2PService接口，传入需要播放的摄像头ID或播放URL，并设置消息接收和数据接收回调
+  3-2：小程序应用在拉流回调中，调用XP2P插件的 startP2PService、startStream 接口，传入需要播放的摄像头ID或播放URL，并设置消息接收回调和数据接收回调
 
 - 4、数据流会通过第3步设置的数据接收回调，传递给P2P-Player插件播放
 
@@ -37,47 +42,57 @@
 
 - 6、插件终止播放：
 
-  6-1：小程序Demo或自有小程序调用P2P插件的stopServiceById终止传输数据
+  6-1：小程序Demo或自有小程序调用P2P插件的 stopStream、stopServiceById 终止传输数据
 
   6-2：小程序Demo或自有小程序操作live-player的context，停止播放
 
-### 小程序Demo和代码示例
+### 小程序Demo
 
-###### Demo源码
+#### Demo地址
 
-###### https://github.com/tencentyun/iot-video-p2p-doc/tree/master/demo/miniprogram
+- [源码](./demo/miniprogram)
 
-<img width="191" alt="wecom-temp-83974f15077a7ad3abf57b882c3239f1" src="https://user-images.githubusercontent.com/14867769/140460064-d663550b-00ca-410a-a845-f411082a1136.png">
+- 体验二维码
+<img width="191" alt="Demo 二维码" src="./pic/miniprogram/demo-qrcode.png">
 
-###### Demo使用流程
+#### Demo使用
 
-1）进入主页面
+注意：Demo UI交互可能更新，但主要流程不变
 
-![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/demo-v1.0.0.png)
+##### 1）进入主页面
 
-”X-P2P Demo IPC“  演示1V1 P2P直连摄像头场景，”X-P2P Demo 1vN-xntp“ 和 ”X-P2P Demo 1vN-tcp“ 演示1V多 P2P场景，“多播放器”示例多播放器的调用。
+<img width="360" src="./pic/miniprogram/demo-v1.0.0.png">
 
-2）1V1 P2P 直连摄像头场景：
+- “X-P2P Demo IPC” 演示1V1 P2P直连摄像头场景
+- “X-P2P Demo 1vN-xntp” 和 “X-P2P Demo 1vN-tcp” 演示1V多 P2P场景
+- “多播放器” 演示多播放器的调用。
 
-![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/1v1-1-v1.0.0.png)
+##### 2）1V1 P2P 直连摄像头场景：
 
-点击“initModule”，填写“productId”、“deviceName”，通过获取设备属性数据API（ https://cloud.tencent.com/document/product/1131/53100 ) 获取"sys_p2p_info" 字段填入”xp2pInfo“中。点击“prepare”和“startPlay”即可开始播放。
-“flvFile”字段可设置播放清晰度，信令交互参考：
-https://github.com/tencentyun/iot-link-android/blob/master/sdk/video-link-android/doc/%E8%AE%BE%E5%A4%87%E4%B8%8EAPP%E4%BA%A4%E4%BA%92%E6%8C%87%E5%BC%95.md 。
+![](./pic/miniprogram/demo-1v1-1-v1.0.0.png)
+![](./pic/miniprogram/demo-1v1-2-v1.0.0.png)
 
-![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/1v1-2-v1.0.0.png)
+- 如果x-p2p插件还未初始化，先点击“initModule”初始化
+- 填写“productId”、“deviceName”、“xp2pInfo”，xp2pInfo即设备属性中的 "sys_p2p_info" 字段，可通过 [获取设备属性数据的API](https://cloud.tencent.com/document/product/1131/53100) 获取
+- “flvFile”字段可设置播放清晰度，取值参考 [信令交互文档](https://docs.qq.com/doc/DUUhFVlZkc2poUHNl)
+- 点击“prepare”和“startPlay”即可开始播放
+- 点击“不加密对讲”和“加密对讲”可演示小程序语音对讲，点击“挂断”停止对讲。
+- 修改信令command的"cmd=xxx“可演示自定义信令。
 
-点击“不加密对讲”和“加密对讲”可演示小程序语音对讲，点击“挂断”停止对讲。
-修改信令command的"cmd=xxx“可演示自定义信令。
+##### 3）1V多 P2P 直连场景
 
-3）1V多 P2P 直连场景
+![](./pic/miniprogram/demo-1vN-v1.0.0.png)
 
-![](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/pic/1vN-v1.0.0.png)
+- 如果x-p2p插件还未初始化，先点击“initModule”初始化
+- 填写“codeUrl”，这是获取密钥的url
+- 填写“streamUrl”，这是支持1v多的http-flv视频流
+- 点击“startPlay”即可播放视频流
 
-目前微信iOS客户端体验需要进入”X-P2P Demo 1vN-xntp“完成体验，Android客户端均可支持，但体验”X-P2P Demo 1vN-tcp“请联系腾讯云IoT Video团队获取新微信客户端版本，关掉微信自动更新，再进入”X-P2P Demo 1vN-tcp“体验。
-进入体验页后，支持输入"codeUrl"为部署的密钥服务模块的接入层，点击”initModule“，再点击”startPlay“，即可播放视频流。（！注：正式上线时为了server端不暴露UDP端口，请使用1vN-tcp的调用方式。）
+（！注：正式上线时为了server端不暴露UDP端口，请使用1vN-tcp的调用方式。）
 
 
-###### 代码示例
+### 开发说明
 
-参考 [IoT Video P2P插件](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20X-P2P%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md) 和 [IoT Video P2P-Player插件](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
+参考:
+[IoT Video X-P2P插件](./IoT%20Video%20X-P2P%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
+[IoT Video P2P-Player插件](./IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)

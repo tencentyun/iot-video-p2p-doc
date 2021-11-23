@@ -7,10 +7,10 @@
 | 1.0.0.beta | 2021.7.19 | 支持小程序P2P初版，支持1V多P2P和1V1P2P观看摄像头实时监控流的内测beta版本 |
 | 1.0.0 | 2021.8.10 | 增加加密和支持1V1 P2P 语音对讲和自定义信令 |
 
-## 介绍
+## 插件介绍
 ### 1V多P2P
 
-传统的多人观看场景，观看端向云端发送HTTP请求获取数据。在腾讯云IoT Video 1V多 P2P服务中，观看端和云端建立一个共享P2P网络，本插件就是这个P2P网络的一个小程序Peer，客户小程序利用 [P2P-Player插件](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md) 将live-player的请求发送至本插件，本插件从云端或其他P2P节点获取数据并持续返回，客户小程序再将数据持续推送至 P2P-Player插件，就能实现P2P直播功能。通过P2P，客户可以互相分享数据，从而大幅降低云端流量，节省相关成本。
+传统的多人观看场景，观看端向云端发送HTTP请求获取数据。在腾讯云IoT Video 1V多 P2P服务中，观看端和云端建立一个共享P2P网络，本插件就是这个P2P网络的一个小程序Peer，客户小程序利用 [P2P-Player插件](./IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md) 将live-player的请求发送至本插件，本插件从云端或其他P2P节点获取数据并持续返回，客户小程序再将数据持续推送至 P2P-Player插件，就能实现P2P直播功能。通过P2P，客户可以互相分享数据，从而大幅降低云端流量，节省相关成本。
 
 支持的流媒体：http-flv。
 
@@ -33,7 +33,7 @@
 
 ## 使用方法
 
-本插件需配合 [P2P-Player插件](https://github.com/tencentyun/iot-video-p2p-doc/blob/master/IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md) 使用，请先引用 *P2P-Player插件*
+本插件需配合 [P2P-Player插件](./IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md) 使用，请先引用 *P2P-Player插件*
 
 ### 1. 申请使用插件
 
@@ -46,7 +46,7 @@ appid: 'wx9e8fbc98ceac2628'
 appid: 'wx1319af22356934bf'
 ```
 
-### 2. 引入插件代码包
+### 2. 在配置中引入插件
 
 ``` js
 // 在app.json里面引入插件，注意插件版本号
@@ -64,17 +64,17 @@ appid: 'wx1319af22356934bf'
 }
 ```
 
-### 3. 调用插件接口
+### 3. 使用插件
 
-p2p监控需要2个插件配合使用，参考 demo 中的组件 [iot-p2p-common-player](https://github.com/tencentyun/iot-video-p2p-doc/tree/master/demo/miniprogram/components/iot-p2p-common-player)。
+p2p监控需要2个插件配合使用，参考 demo 中的组件 [iot-p2p-common-player](./demo/miniprogram/components/iot-p2p-common-player)。
 
-1v1和1v多有各自的功能特性，参考 demo 中的组件 [iot-p2p-player-ipc](https://github.com/tencentyun/iot-video-p2p-doc/tree/master/demo/miniprogram/components/iot-p2p-player-ipc) 和 [iot-p2p-player-server](https://github.com/tencentyun/iot-video-p2p-doc/tree/master/demo/miniprogram/components/iot-p2p-player-server)，他们在 common-player 的基础上进行了简单扩展。
+1v1和1v多有各自的功能特性，参考 demo 中的组件 [iot-p2p-player-ipc](./demo/miniprogram/components/iot-p2p-player-ipc) 和 [iot-p2p-player-server](./demo/miniprogram/components/iot-p2p-player-server)，他们在 common-player 的基础上进行了简单扩展。
 
-具体调用流程如下：
+具体流程如下：
 
 #### 3.1 1v多
 
-<img width="700" src="./pic/plugin-p2p/1vN.png"/>
+<img width="700" src="./pic/plugin-xp2p/1vN.png"/>
 
 初始化时会用到接入腾讯云 IOT Video P2P 服务时收到的 `appParams`
 
@@ -133,7 +133,7 @@ p2pModule.destroy();
 
 #### 3.2 1v1
 
-<img width="700" src="./pic/plugin-p2p/1v1.png"/>
+<img width="700" src="./pic/plugin-xp2p/1v1.png"/>
 
 基本流程和1v多类似，初始化时也会用到接入腾讯云 IOT Video P2P 服务时收到的 `appParams`
 
@@ -669,3 +669,7 @@ type 的值
 | -2501 | 数据加密失败 |
 | -2502 | 数据解密失败 |
 | -2601 | 启动语音对讲失败 |
+
+## 示例
+
+见 [小程序demo](./demo/miniprogram)
