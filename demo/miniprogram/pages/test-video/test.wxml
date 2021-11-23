@@ -12,7 +12,7 @@
       <view>src:</view>
       <view class="weui-cells weui-cells_after-title">
         <view class="weui-cell weui-cell_input">
-          <input class="weui-input" type="text" value="{{inputSrc}}" disabled="{{src}}" placeholder="请输入src" placeholder-class="placeholder" bindinput="bindInputSrc" />
+          <input class="weui-input" type="text" maxlength="-1" value="{{inputSrc}}" disabled="{{src}}" placeholder="请输入src" placeholder-class="placeholder" bindinput="bindInputSrc" />
         </view>
       </view>
     </view>
