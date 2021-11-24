@@ -26,7 +26,7 @@ const devices = {
     showInHomePageNav: true,
     productId: '9L1S66FZ3Q',
     deviceName: 'test_34683636_3',
-    xp2pInfo: 'XP2PcDd3JlQPiXxXzYyo9NSCoHdW%2.3.5',
+    xp2pInfo: 'XP2PcDd3JlQPiXxDzaKo4YvCqnUq%2.3.5',
     liveParams: 'action=live&channel=0&quality=super',
     playbackParams: 'action=playback&channel=0',
   },
