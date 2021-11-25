@@ -310,7 +310,7 @@ Component({
             this.handlePlayError(PlayErrorEnum.localServerError, detail);
           }
           break;
-        case -2301: // live-player断连，且经多次重连抢救无效，更多重试请自行重启播放
+        case -2301: // live-player断连，且经多次重连抢救无效，需要提示出错，由用户手动重试
           console.error('==== onLivePlayerStateChange', detail.code, detail);
           // 到这里应该已经触发过 onPlayerClose 了
           this.addLog('==== onLivePlayerStateChange -2301 多次重连抢救无效');
