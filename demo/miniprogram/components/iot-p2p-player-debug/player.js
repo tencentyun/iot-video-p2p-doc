@@ -1,5 +1,5 @@
 import config from '../../config/config';
-import { canUseP2P, adjustXp2pInfo } from '../../utils';
+import { canUseP2PIPCMode, canUseP2PServerMode, adjustXp2pInfo } from '../../utils';
 import { getXp2pManager, Xp2pManagerErrorEnum } from '../../xp2pManager';
 
 const xp2pManager = getXp2pManager();
@@ -25,12 +25,14 @@ const PlayStateEnum = {
 const PlayErrorEnum = {
   localServerError: 'localServerError',
   p2pDisconnect: 'p2pDisconnect',
+  p2pPlayerError: 'p2pPlayerError',
   livePlayerError: 'livePlayerError',
   livePlayerStateChange: 'livePlayerStateChange',
 };
 const errMsgMap = {
   [PlayErrorEnum.localServerError]: '本地连接失败',
   [PlayErrorEnum.p2pDisconnect]: '连接失败或断开',
+  [PlayErrorEnum.p2pPlayerError]: '播放器错误',
   [PlayErrorEnum.livePlayerError]: '播放器错误',
   [PlayErrorEnum.livePlayerStateChange]: '播放失败',
 };
@@ -51,6 +53,7 @@ Component({
   data: {
     // 这是onLoad时就固定的
     mode: '',
+    canUseP2P: false,
     needPlayer: false,
     realReserve: false,
 
@@ -86,7 +89,7 @@ Component({
     // 这些是控制player和p2p的
     hasPlayer: false, // needPlayer时才有效，出错销毁时设为false
     playerId: '',
-    player: null,
+    playerComp: null,
     playerCtx: null,
     playerMsg: '',
   },
@@ -98,7 +101,12 @@ Component({
       // 在组件实例进入页面节点树时执行
       console.log(`[${this.id}]`, 'attached', this.id, this.properties);
       const { totalData } = config;
-      const data = (this.properties.cfg && totalData[this.properties.cfg]) || totalData.tcptest;
+      const data = this.properties.cfg && totalData[this.properties.cfg];
+      if (!data) {
+        this.setData({ playerMsg: `无效的配置 ${this.properties.cfg}` });
+        return;
+      }
+      const canUseP2P = (data.mode === 'ipc' && canUseP2PIPCMode) || (data.mode === 'server' && canUseP2PServerMode);
       const onlyp2p = this.properties.onlyp2p || false;
       const reserve = this.properties.reserve || false;
       const realReserve = data.mode === 'ipc' && reserve;
@@ -111,6 +119,7 @@ Component({
       this.setData(
         {
           mode: data.mode,
+          canUseP2P,
           needPlayer,
           realReserve,
           hasPlayer,
@@ -229,7 +238,7 @@ Component({
       this.setData(
         {
           state: PlayStateEnum.playerReady,
-          player: this.selectComponent(`#${this.data.playerId}`),
+          playerComp: this.selectComponent(`#${this.data.playerId}`),
           playerCtx: detail.livePlayerContext,
         },
         () => {
@@ -264,10 +273,7 @@ Component({
         state: PlayStateEnum.playerError,
       });
       this.stopPlay();
-      wx.showModal({
-        content: `player error: ${detail.error && detail.error.code}`,
-        showCancel: false,
-      });
+      this.handlePlayError(PlayErrorEnum.PlayerError, { msg: `p2pPlayerError: ${detail.error.code}` });
     },
     // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     onLivePlayerError({ detail }) {
@@ -284,7 +290,7 @@ Component({
       // TODO 什么情况会走到这里？
       this.stopPlay();
 
-      this.handlePlayError(PlayErrorEnum.livePlayerError, detail);
+      this.handlePlayError(PlayErrorEnum.livePlayerError, { msg: `livePlayerError: ${detail.errMsg}` });
     },
     // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     onLivePlayerStateChange({ detail }) {
@@ -296,8 +302,10 @@ Component({
       switch (detail.code) {
         case 2103: // 网络断连, 已启动自动重连
           console.error('==== onLivePlayerStateChange', detail.code, detail);
-          if (detail.message.indexOf('errCode:-1004 ') >= 0) {
-            // 无法连接服务器，就是本地server连不上
+          if (/errCode:(-1004|-1)(\D|$)/.test(detail.message)) {
+            // -1004 无法连接服务器
+            // -1 各种Exception
+            // 都当做本地server出错
             xp2pManager.needResetLocalServer = true;
 
             // 这时其实网络状态应该也变了，但是网络状态变化事件延迟较大，networkChanged不一定为true
@@ -307,7 +315,7 @@ Component({
             this.addLog('==== onLivePlayerStateChange 2103 无法连接本地server');
             this.stopAll();
             this.setData({ hasPlayer: false });
-            this.handlePlayError(PlayErrorEnum.localServerError, detail);
+            this.handlePlayError(PlayErrorEnum.localServerError, { msg: `livePlayerStateChange: ${detail.code} ${detail.message}` });
           }
           break;
         case -2301: // live-player断连，且经多次重连抢救无效，需要提示出错，由用户手动重试
@@ -315,7 +323,7 @@ Component({
           // 到这里应该已经触发过 onPlayerClose 了
           this.addLog('==== onLivePlayerStateChange -2301 多次重连抢救无效');
           this.stopPlay();
-          this.handlePlayError(PlayErrorEnum.livePlayerStateChange, detail);
+          this.handlePlayError(PlayErrorEnum.livePlayerStateChange, { msg: `livePlayerStateChange: ${detail.code} ${detail.message}` });
           break;
       }
     },
@@ -481,7 +489,7 @@ Component({
         xp2pManager.stopP2PService(targetId);
       }
 
-      if (this.data.player || !this.data.needPlayer) {
+      if (this.data.playerComp || !this.data.needPlayer) {
         this.setData({
           state: PlayStateEnum.playerReady,
         });
@@ -778,10 +786,10 @@ Component({
       };
       if (this.data.needPlayer) {
         // 用player触发请求时
-        const { player } = this.data;
+        const { playerComp } = this.data;
         dataCallback = (data) => {
           onlyDataCallback(data);
-          player.addChunk(data);
+          playerComp.addChunk(data);
         };
       } else {
         // 只拉数据时
@@ -968,7 +976,7 @@ Component({
           // p2p链路断开
           console.error(`[${this.id}]`, `XP2PNotify_SubType.Disconnect in state ${this.data.state}`, detail);
           this.stopAll();
-          this.handlePlayError(PlayErrorEnum.p2pDisconnect, detail);
+          this.handlePlayError(PlayErrorEnum.p2pDisconnect, { msg: `p2pNotify: ${type} ${detail}` });
           break;
       }
     },

@@ -15,7 +15,7 @@ const xp2pPlugin = requirePlugin('xp2p');
 const p2pExports = xp2pPlugin.p2p;
 const p2pTimeout = 6000;
 
-const playerPlugin = requirePlugin('wechat-p2p-player');
+let playerPlugin;
 
 const parseCommandResData = (data) => {
   let jsonStr = data;
@@ -43,6 +43,10 @@ class Xp2pManager {
 
   get XP2PDevNotify_SubType() {
     return p2pExports?.XP2PDevNotify_SubType;
+  }
+
+  get uuid() {
+    return p2pExports?.getUUID();
   }
 
   get promise() {
@@ -107,10 +111,13 @@ class Xp2pManager {
     this._needResetLocalServer = false;
 
     try {
+      if (!playerPlugin) {
+        playerPlugin = requirePlugin('wechat-p2p-player');
+      }
       playerPlugin.reset();
     } catch (err) {
       // 低版本插件没有 reset，保护一下
-      console.log('playerPlugin.reset error', err);
+      console.error('playerPlugin.reset error', err);
     }
   }
   initModule() {
@@ -127,6 +134,7 @@ class Xp2pManager {
       return Promise.resolve(0);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-misused-promises
     if (this._promise) {
       // 正在初始化
       return this._promise;

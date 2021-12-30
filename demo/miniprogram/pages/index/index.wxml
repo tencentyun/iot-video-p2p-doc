@@ -1,5 +1,10 @@
 <view class="page-body">
   <view class="page-section page-section-gap">
+    <view>WXVersion: {{wxVersion}}</view>
+    <view>WXSDKVersion: {{wxSDKVersion}}</view>
+    <view>XP2PVersion: {{xp2pVersion}}</view>
+  </view>
+  <view class="page-section page-section-gap">
     <iot-p2p-control
       id="{{controlId}}"
       show-destroy

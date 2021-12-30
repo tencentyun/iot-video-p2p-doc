@@ -14,6 +14,16 @@
     />
   </view>
   <view class="component-section">
+    <view>localPeername: {{localPeername}}</view>
+    <view>logVersion: {{logVersion}}</view>
+    <view>p2pBytes: {{p2pBytes}}</view>
+    <view>standbySize: {{standbySize}}</view>
+    <view>candidateSize: {{candidateSize}}</view>
+    <view>childrenSize: {{childrenSize}}</view>
+    <view>childrenStr: {{childrenStr}}</view>
+    <view>parent: {{parent}}</view>
+    <view>errlog:</view>
+    <scroll-view scroll-y="true" style="height: 200rpx; padding: 10rpx; border: solid 1px #dddddd;">{{errLog}}</scroll-view>
     <view>peerlist:</view>
     <scroll-view scroll-y="true" style="height: 200rpx; padding: 10rpx; border: solid 1px #dddddd;">{{peerlist}}</scroll-view>
     <view>subscribeLog:</view>

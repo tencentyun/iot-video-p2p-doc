@@ -1,5 +1,5 @@
 <view class="component">
-  <view wx:if="{{needPlayer}}" class="component-section tc">
+  <view wx:if="{{needPlayer}}" class="component-section">
     <view class="player-container">
       <p2p-player
         wx:if="{{hasPlayer}}"
@@ -18,6 +18,12 @@
       <view class="player-message">{{playerMsg}}</view>
     </view>
     <view>playState: {{state}}</view>
+  </view>
+  <view wx:else class="component-section">
+    <view class="empty-player-container">
+      <view>totalBytes: {{totalBytes}}</view>
+      <view>playerMsg: {{playerMsg}}</view>
+    </view>
   </view>
   <view class="component-section">
     <view class="component-section-title">模式: {{mode}}</view>

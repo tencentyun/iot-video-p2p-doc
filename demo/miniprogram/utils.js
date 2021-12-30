@@ -26,7 +26,9 @@ export function compareVersion(ver1, ver2) {
   return 0;
 }
 
-export const canUseP2P = compareVersion(wx.getSystemInfoSync().SDKVersion, '2.19.3') >= 0;
+const sysInfo = wx.getSystemInfoSync();
+export const canUseP2PIPCMode = compareVersion(sysInfo.SDKVersion, '2.19.3') >= 0;
+export const canUseP2PServerMode = compareVersion(sysInfo.SDKVersion, '2.20.2') >= 0;
 
 export const getParamValue = (params, key) => {
   const reg = new RegExp(`(^|\\?|&)${key}=([^&]*)(&|$)`);

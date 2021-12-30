@@ -11,7 +11,10 @@
         destroyModule
       </button>
     </view>
-    <view bindtap="printData">moduleState: {{state}}</view>
-    <view>localPeername: {{localPeername}}</view>
+    <view bindtap="printData">
+      <view>uuid: {{uuid}}</view>
+      <view>moduleState: {{state}}</view>
+      <view>localPeername: {{localPeername}}</view>
+    </view>
   </view>
 </view>

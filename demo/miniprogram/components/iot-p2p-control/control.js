@@ -11,6 +11,7 @@ Component({
   },
   data: {
     // 这些是p2p状态
+    uuid: '',
     state: '',
     localPeername: '',
   },
@@ -23,6 +24,7 @@ Component({
       console.log(`[${this.id}]`, 'attached', this.id, this.properties);
       // 自动 initModule
       this.initModule();
+      this.setData({ uuid: xp2pManager.uuid });
     },
     ready() {
       // 在组件在视图层布局完成后执行

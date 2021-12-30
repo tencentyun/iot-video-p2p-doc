@@ -84,6 +84,8 @@ Page({
       showCancel: false,
       complete: () => {
         if (isFatalError) {
+          // demo简单点，直接退出，注意 onUnload 时可能需要reset插件
+          // 如果不想退出，在这里reset插件（如果需要的话），然后重新创建player组件
           !this.hasExited && wx.navigateBack();
         }
       },

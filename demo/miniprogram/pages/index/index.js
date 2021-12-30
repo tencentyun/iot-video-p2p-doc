@@ -1,6 +1,12 @@
 import devices from '../../config/devices';
 import streams from '../../config/streams';
 
+const sysInfo = wx.getSystemInfoSync();
+
+// 不用 xp2pManager 是因为它引用了wechat-p2p-player插件，release版没配置这个插件，会报错
+const xp2pPlugin = requirePlugin('xp2p');
+const p2pExports = xp2pPlugin.p2p;
+
 const getShortFlvName = (flvFile) => {
   const filename = flvFile.split('.')[0];
   if (filename.length > 10) {
@@ -11,6 +17,10 @@ const getShortFlvName = (flvFile) => {
 
 Page({
   data: {
+    wxVersion: sysInfo.version,
+    wxSDKVersion: sysInfo.SDKVersion,
+    xp2pVersion: p2pExports.XP2PVersion,
+
     // 这些控制p2p的
     controlId: 'iot-p2p-main-control',
     p2pControl: null,

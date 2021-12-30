@@ -1,4 +1,4 @@
-import { canUseP2P, toTimeString } from '../../utils';
+import { canUseP2PIPCMode, canUseP2PServerMode, toTimeString } from '../../utils';
 import { getXp2pManager } from '../../xp2pManager';
 
 const xp2pManager = getXp2pManager();
@@ -21,6 +21,7 @@ const P2PStateEnum = {
   P2PInited: 'P2PInited',
   P2PInitError: 'P2PInitError',
   ServicePreparing: 'ServicePreparing',
+  ServiceStartError: 'ServiceStartError',
   ServiceStarted: 'ServiceStarted',
   ServiceError: 'ServiceError',
 };
@@ -51,6 +52,7 @@ const totalMsgMap = {
   [P2PStateEnum.P2PInitError]: '初始化p2p模块失败',
   [P2PStateEnum.ServicePreparing]: '正在启动p2p服务...',
   [P2PStateEnum.ServiceStarted]: '启动p2p服务完成',
+  [P2PStateEnum.ServiceStartError]: '启动p2p服务失败',
   [P2PStateEnum.ServiceError]: '连接失败或断开',
 
   [StreamStateEnum.StreamChecking]: '加载中...',
@@ -117,6 +119,7 @@ Component({
   data: {
     // 这是onLoad时就固定的
     streamExInfo: null,
+    canUseP2P: false,
     needPlayer: false,
 
     // 当前flv
@@ -139,6 +142,7 @@ Component({
     // stream状态
     streamState: StreamStateEnum.StreamIdle,
     playing: false,
+    chunkCount: 0,
     totalBytes: 0,
 
     // 这些是播放相关信息，清空时机同 totalBytes
@@ -155,13 +159,15 @@ Component({
     attached() {
       // 在组件实例进入页面节点树时执行
       console.log(`[${this.id}]`, '==== attached', this.id, this.properties);
+      const canUseP2P = (this.properties.mode === 'ipc' && canUseP2PIPCMode) || (this.properties.mode === 'server' && canUseP2PServerMode);
       const flvFile = this.properties.flvUrl.split('/').pop();
       const [flvFilename = '', flvParams = ''] = flvFile.split('?');
       const onlyp2p = this.properties.onlyp2p || false;
       const needPlayer = !onlyp2p;
       const hasPlayer = needPlayer && canUseP2P;
       const playerId = `${this.id || `common-player-${Date.now()}-${Math.floor(Math.random() * 1000)}`}-player`;
-      let p2pState, playerState, playerComp, playerCtx, playerMsg;
+      let p2pState, playerState;
+      let playerComp = null, playerCtx = null, playerMsg = '';
       if (canUseP2P) {
         p2pState = P2PStateEnum.P2PIdle;
         if (needPlayer) {
@@ -208,6 +214,7 @@ Component({
             xp2pInfo: this.properties.xp2pInfo,
             codeUrl: this.properties.codeUrl,
           },
+          canUseP2P,
           needPlayer,
           hasPlayer,
           playerId,
@@ -244,7 +251,7 @@ Component({
   },
   methods: {
     getPlayerMessage(overrideData) {
-      if (!canUseP2P) {
+      if (!this.data.canUseP2P) {
         return '您的微信基础库版本过低，请升级后再使用';
       }
 
@@ -316,7 +323,7 @@ Component({
       this.changeState({
         playerState: PlayerStateEnum.PlayerError,
       });
-      this.handlePlayError(PlayerStateEnum.PlayerError, detail);
+      this.handlePlayError(PlayerStateEnum.PlayerError, { msg: `p2pPlayerError: ${detail.error.code}` });
     },
     // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     onLivePlayerError({ detail }) {
@@ -330,7 +337,7 @@ Component({
         return;
       }
       // TODO 什么情况会走到这里？
-      this.handlePlayError(PlayerStateEnum.LivePlayerError, detail);
+      this.handlePlayError(PlayerStateEnum.LivePlayerError, { msg: `livePlayerError: ${detail.errMsg}` });
     },
     // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     onLivePlayerStateChange({ detail }) {
@@ -346,8 +353,10 @@ Component({
           break;
         case 2103: // 网络断连, 已启动自动重连
           console.error('==== onLivePlayerStateChange', detail.code, detail);
-          if (detail.message.indexOf('errCode:-1004 ') >= 0) {
-            // 无法连接服务器，就是本地server连不上
+          if (/errCode:(-1004|-1)(\D|$)/.test(detail.message)) {
+            // -1004 无法连接服务器
+            // -1 各种Exception
+            // 都当做本地server出错
             xp2pManager.needResetLocalServer = true;
 
             // 这时其实网络状态应该也变了，但是网络状态变化事件延迟较大，networkChanged不一定为true
@@ -359,7 +368,7 @@ Component({
               hasPlayer: false,
               playerState: PlayerStateEnum.LocalServerError,
             });
-            this.handlePlayError(PlayerStateEnum.LocalServerError, detail);
+            this.handlePlayError(PlayerStateEnum.LocalServerError, { msg: `livePlayerStateChange: ${detail.code} ${detail.message}` });
           }
           break;
         case -2301: // live-player断连，且经多次重连抢救无效，需要提示出错，由用户手动重试
@@ -370,7 +379,7 @@ Component({
               ? PlayerStateEnum.LocalServerError
               : PlayerStateEnum.LivePlayerStateError,
           });
-          this.handlePlayError(PlayerStateEnum.LivePlayerStateError, detail);
+          this.handlePlayError(PlayerStateEnum.LivePlayerStateError, { msg: `livePlayerStateChange: ${detail.code} ${detail.message}` });
           break;
         default:
           // 这些不特别处理，打个log
@@ -397,6 +406,7 @@ Component({
         p2pState: newP2PState,
         streamState: StreamStateEnum.StreamIdle,
         playing: false,
+        chunkCount: 0,
         totalBytes: 0,
         firstChunkTime: '',
         livePlayerInfo: '',
@@ -429,16 +439,16 @@ Component({
             this.changeState({
               p2pState: P2PStateEnum.P2PInitError,
             });
-            this.handlePlayError(P2PStateEnum.P2PInitError, res);
+            this.handlePlayError(P2PStateEnum.P2PInitError, { msg: `initModule res ${res}` });
           }
         })
-        .catch((err) => {
-          console.error(`[${this.id}]`, '==== initModule error', err, 'in p2pState', this.data.p2pState);
+        .catch((errcode) => {
+          console.error(`[${this.id}]`, '==== initModule error', errcode, 'in p2pState', this.data.p2pState);
           xp2pManager.destroyModule();
           this.changeState({
             p2pState: P2PStateEnum.P2PInitError,
           });
-          this.handlePlayError(P2PStateEnum.P2PInitError, err);
+          this.handlePlayError(P2PStateEnum.P2PInitError, { msg: `initModule err ${errcode}` });
         });
     },
     prepare() {
@@ -478,14 +488,14 @@ Component({
             });
             this.tryTriggerPlay(`${oldP2PState} -> ${this.data.p2pState}`);
           } else {
-            this.stopAll(P2PStateEnum.ServiceError);
-            this.handlePlayError(P2PStateEnum.ServiceError, res);
+            this.stopAll(P2PStateEnum.ServiceStartError);
+            this.handlePlayError(P2PStateEnum.ServiceStartError, { msg: `startP2PService res ${res}` });
           }
         })
         .catch((errcode) => {
           console.error(`[${this.id}]`, '==== startP2PService error', errcode);
-          this.stopAll(P2PStateEnum.ServiceError);
-          this.handlePlayError(P2PStateEnum.ServiceError, errcode);
+          this.stopAll(P2PStateEnum.ServiceStartError);
+          this.handlePlayError(P2PStateEnum.ServiceStartError, { msg: `startP2PService err ${errcode}` });
         });
     },
     startStream() {
@@ -512,6 +522,7 @@ Component({
       this.changeState({
         streamState: StreamStateEnum.StreamChecking,
         playing: true,
+        chunkCount: 0,
         totalBytes: 0,
         firstChunkTime: '',
         livePlayerInfo: '',
@@ -537,6 +548,7 @@ Component({
           this.changeState({
             streamState: StreamStateEnum.StreamCheckError,
             playing: false,
+            chunkCount: 0,
             totalBytes: 0,
             firstChunkTime: '',
             livePlayerInfo: '',
@@ -571,6 +583,7 @@ Component({
           });
         }
         this.setData({
+          chunkCount,
           totalBytes,
         });
       };
@@ -589,6 +602,7 @@ Component({
       this.changeState({
         streamState: StreamStateEnum.StreamPreparing,
         playing: true,
+        chunkCount: 0,
         totalBytes: 0,
         firstChunkTime: '',
         livePlayerInfo: '',
@@ -614,6 +628,7 @@ Component({
           this.changeState({
             streamState: StreamStateEnum.StreamError,
             playing: false,
+            chunkCount: 0,
             totalBytes: 0,
             firstChunkTime: '',
             livePlayerInfo: '',
@@ -639,6 +654,7 @@ Component({
       this.changeState({
         streamState: newStreamState,
         playing: false,
+        chunkCount: 0,
         totalBytes: 0,
         firstChunkTime: '',
         livePlayerInfo: '',
@@ -882,7 +898,7 @@ Component({
           // p2p链路断开
           console.error(`[${this.id}]`, `XP2PNotify_SubType.Disconnect in p2pState ${this.data.p2pState}`, detail);
           this.stopAll(P2PStateEnum.ServiceError);
-          this.handlePlayError(P2PStateEnum.ServiceError, detail);
+          this.handlePlayError(P2PStateEnum.ServiceError, { msg: `p2pNotify: ${type} ${detail}` });
           break;
       }
     },

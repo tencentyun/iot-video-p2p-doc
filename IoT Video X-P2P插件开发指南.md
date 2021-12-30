@@ -6,6 +6,10 @@
 | ------ | --------- | -------------------------------- |
 | 1.0.0.beta | 2021.7.19 | 支持小程序P2P初版，支持1V多P2P和1V1P2P观看摄像头实时监控流的内测beta版本 |
 | 1.0.0 | 2021.8.10 | 增加加密和支持1V1 P2P 语音对讲和自定义信令 |
+| 1.0.1 | 2021.10.21 | 增加限制设备端版本，最低2.3.0 |
+| 1.0.2 | 2021.11.24 | stunServer支持DNS |
+| 1.0.3 | 2021.12.16 | 开发版小程序支持关闭流加密 |
+| 1.1.0 | 2021.12.27 | 优化1v多，server端提供https流，不用另外部署code服务 |
 
 ## 插件介绍
 
@@ -29,7 +33,8 @@
 
 ## 微信版本限制
 
-微信 8.0.10 以上，基础库 2.19.3 以上
+- 1v1: 微信 8.0.10 以上，基础库 2.19.3 以上
+- 1v多：微信 8.0.14 以上，基础库 2.20.2 以上
 
 ## 使用方法
 
@@ -286,8 +291,10 @@ onLivePlayerStateChange({ detail }) {
   switch (detail.code) {
     case 2103: // 网络断连, 已启动自动重连
       console.error('onLivePlayerStateChange', detail.code, detail);
-      if (detail.message.indexOf('errCode:-1004 ') >= 0) {
-        // 无法连接服务器，就是本地server连不上
+      if (/errCode:(-1004|-1)(\D|$)/.test(detail.message)) {
+        // -1004 无法连接服务器
+        // -1 各种Exception
+        // 都当做本地server出错
         xp2pManager.needResetLocalServer = true;
 
         // 这时其实网络状态应该也变了，但是网络状态变化事件延迟较大，networkChanged不一定为true，所以主动把 networkChanged 也设为true
@@ -391,6 +398,14 @@ res 的值
 
 --------
 
+### p2pModule.getUUID() => string
+
+获取UUID，可以用来查XP2P的log
+
+init 之后调用，初始化失败也能获取到
+
+--------
+
 ### p2pModule.startP2PService(id, streamInfo, callbacks) => Promise\<res\>
 
 开始指定id的xp2p服务
@@ -409,8 +424,7 @@ res 的值
 
 | 属性 | 类型 | 默认值 | 必填 | 说明 |
 | - | - | - | - | - |
-| url | string | - | 是 | 源流的地址 |
-| codeUrl | string | '' | 否 | 1v多时需要，获取1v多加密code的url |
+| url | string | - | 是 | 源流的地址<br/>1vN时：要求https，支持 [wx.request 开启 enableChunked](https://developers.weixin.qq.com/miniprogram/dev/api/network/request/wx.request.html) 访问<br/>1v1时：`http://XP2P_INFO.xnet/ipc.p2p.com/ipc.flv?${flvParams}` |
 | productId | string | '' | 否 | 1v1时需要，目标摄像头的 productId |
 | deviceName | string | '' | 否 | 1v1时需要，目标摄像头的 deviceName |
 | xp2pInfo | string | '' | 否 | 1v1时需要，目标摄像头的 xp2pInfo |
@@ -662,6 +676,7 @@ type 的值
 | -2001 | 解析xp2pInfo错误 |
 | -2002 | 模块尚未初始化 |
 | -2003 | 模块重复启动 |
+| -2004 | 不支持的操作 |
 | -2005 | 设备版本过低 |
 | -2201 | XNTP模块重复启动 |
 | -2202 | 探测错误 |
@@ -669,6 +684,7 @@ type 的值
 | -2401 | 重复启动p2p服务 |
 | -2402 | 启动拉流失败 |
 | -2403 | p2p服务尚未启动 |
+| -2404 | 当前环境不支持p2p服务 |
 | -2501 | 数据加密失败 |
 | -2502 | 数据解密失败 |
 | -2601 | 启动语音对讲失败 |

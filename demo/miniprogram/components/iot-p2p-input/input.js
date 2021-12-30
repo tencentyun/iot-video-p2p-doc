@@ -1,5 +1,9 @@
 import config from '../../config/config';
-import { adjustXp2pInfo } from '../../utils';
+import { adjustXp2pInfo, compareVersion } from '../../utils';
+import { getXp2pManager } from '../../xp2pManager';
+
+const xp2pManager = getXp2pManager();
+const { XP2PVersion } = xp2pManager;
 
 Component({
   behaviors: ['wx://component-export'],
@@ -14,7 +18,6 @@ Component({
 
     // 这些是不同的流，注意改变输入值不应该改变已经启动的p2p服务
     inputTargetId: '',
-    inputUrl: '',
 
     // 1v1用
     inputProductId: '',
@@ -24,7 +27,9 @@ Component({
     inputPlaybackParams: '',
 
     // 1v多用
+    inputUrl: '',
     inputCodeUrl: '',
+    needCode: false,
 
     // 调试用
     onlyp2pChecked: wx.getSystemInfoSync().platform === 'devtools', // 开发者工具里不支持 live-player 和 TCPServer，默认勾选 onlyp2p
@@ -59,8 +64,9 @@ Component({
           inputLiveParams: data.liveParams || 'action=live&channel=0&quality=super',
           inputPlaybackParams: data.playbackParams || 'action=playback&channel=0',
           // 1v多用
-          inputCodeUrl: data.codeUrl || '',
           inputUrl: data.flvUrl || '',
+          inputCodeUrl: data.codeUrl || '',
+          needCode: /^http:/.test(data.flvUrl),
         },
         () => {
           console.log(`[${this.id}]`, 'now data', this.data);
@@ -152,6 +158,15 @@ Component({
       } else {
         if (!this.data.inputUrl) {
           this.showToast('please input url');
+          return;
+        }
+        const supportHttps = compareVersion(XP2PVersion, '1.1.0') >= 0;
+        if (supportHttps && !/^https:/.test(this.data.inputUrl)) {
+          this.showToast('only support https url');
+          return;
+        }
+        if (!supportHttps && !/^http:/.test(this.data.inputUrl)) {
+          this.showToast('only support http url');
           return;
         }
       }

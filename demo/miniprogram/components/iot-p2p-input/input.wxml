@@ -56,18 +56,18 @@
       </view>
       <view wx:if="{{mode==='server'}}" class="info-inputs">
         <view class="input-item">
-          <view>codeUrl:</view>
-          <view class="weui-cells weui-cells_after-title">
-            <view class="weui-cell weui-cell_input">
-              <input class="weui-input" type="text" value="{{inputCodeUrl}}" disabled="{{targetId}}" placeholder="请输入codeUrl" placeholder-class="placeholder" bindinput="inputServerCodeUrl" />
-            </view>
-          </view>
-        </view>
-        <view class="input-item">
           <view>streamUrl:</view>
           <view class="weui-cells weui-cells_after-title">
             <view class="weui-cell weui-cell_input">
               <input class="weui-input" type="text" value="{{inputUrl}}" disabled="{{targetId}}" placeholder="请输入streamUrl" placeholder-class="placeholder" bindinput="inputStreamUrl" />
+            </view>
+          </view>
+        </view>
+        <view wx:if="{{needCode}}" class="input-item">
+          <view>codeUrl:</view>
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_input">
+              <input class="weui-input" type="text" value="{{inputCodeUrl}}" disabled="{{targetId}}" placeholder="请输入codeUrl" placeholder-class="placeholder" bindinput="inputServerCodeUrl" />
             </view>
           </view>
         </view>

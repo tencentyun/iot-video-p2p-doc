@@ -31,6 +31,8 @@
 }
 
 .empty-player-container {
+  background-color: black;
+  color: white;
   padding: 20rpx;
 }
 
