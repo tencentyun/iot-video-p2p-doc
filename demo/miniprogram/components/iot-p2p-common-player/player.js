@@ -369,6 +369,17 @@ Component({
               playerState: PlayerStateEnum.LocalServerError,
             });
             this.handlePlayError(PlayerStateEnum.LocalServerError, { msg: `livePlayerStateChange: ${detail.code} ${detail.message}` });
+          } else {
+            // 这里一般是一段时间没收到数据，或者数据不是有效的视频流导致的
+            /*
+             这里可以区分1v1/1v多做不同处理：
+             - 1v1：网络变化后就不能再次连接上ipc，所以需要调用 checkCanRetry 检查，不能重试的就算播放失败
+             - 1v多：网络变化但还是有连接时（比如 wifi->4g），重试可以成功，只是后续会一直从server拉流，无法切换到从其他节点拉流
+               - 为了省流量，可以和1v1一样，调用 checkCanRetry 检查
+               - 为了体验稳定，可以不特别处理，live-player 会继续重试
+             这里为了简单统一处理
+             */
+            this.checkCanRetry();
           }
           break;
         case -2301: // live-player断连，且经多次重连抢救无效，需要提示出错，由用户手动重试
@@ -891,8 +902,12 @@ Component({
           this.handlePlayEnd(StreamStateEnum.StreamError);
           break;
         case XP2PNotify_SubType.Close:
-          // 用户主动关闭
-          this.stopStream(StreamStateEnum.StreamIdle);
+          if (!this.data.playing) {
+            // 用户主动关闭，或者因为隐藏等原因挂起了，都会收到 onPlayerClose
+            return;
+          }
+          // 播放中收到了Close，当作播放失败
+          this.handlePlayError(StreamStateEnum.StreamError, { msg: `p2pNotify: ${type} ${detail}` });
           break;
         case XP2PNotify_SubType.Disconnect:
           // p2p链路断开
