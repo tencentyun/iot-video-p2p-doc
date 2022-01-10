@@ -53,6 +53,9 @@
             </view>
           </view>
         </view>
+        <view class="input-item">
+          <label><switch type="checkbox" checked="{{needCheckStreamChecked}}" bindchange="switchNeedCheckStream"/>播放前先检查能否拉流</label>
+        </view>
       </view>
       <view wx:if="{{mode==='server'}}" class="info-inputs">
         <view class="input-item">

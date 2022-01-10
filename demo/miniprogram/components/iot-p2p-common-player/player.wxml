@@ -1,8 +1,8 @@
 <view class="component">
-  <view wx:if="{{needPlayer}}" class="component-section">
+  <view class="component-section">
     <view class="player-container">
       <p2p-player
-        wx:if="{{hasPlayer}}"
+        wx:if="{{needPlayer && hasPlayer}}"
         id="{{playerId}}"
         autoPlay="{{autoPlay}}"
         mode="live"
@@ -16,18 +16,14 @@
         bind:statechange="onLivePlayerStateChange"
         bind:netstatus="onLivePlayerNetStatusChange"
       />
+      <view wx:if="{{!needPlayer}}" class="mock-player">
+        <view>chunkCount: {{chunkCount}}</view>
+        <view>totalBytes: {{totalBytes}}</view>
+      </view>
       <view class="player-message">{{playerMsg}}</view>
       <view class="debug-info-switch-container">
         <view class="debug-info-switch" bindtap="toggleDebugInfo">打开/关闭调试信息</view>
       </view>
-    </view>
-  </view>
-  <view wx:else class="component-section">
-    <view class="empty-player-container">
-      <view>chunkCount: {{chunkCount}}</view>
-      <view>totalBytes: {{totalBytes}}</view>
-      <view>playerMsg: {{playerMsg}}</view>
-      <view bindtap="toggleDebugInfo">打开/关闭调试信息</view>
     </view>
   </view>
   <view wx:if="{{showDebugInfo}}" class="debug-info-container">
@@ -41,13 +37,18 @@
       <view>playerState: {{playerState}}</view>
       <view>p2pState: {{p2pState}}</view>
       <view>streamState: {{streamState}}</view>
-      <view>chunkCount: {{chunkCount}}</view>
+      <!-- <view>chunkCount: {{chunkCount}}</view> -->
       <view>totalBytes: {{totalBytes}}</view>
-      <view>firstChunkTime: {{firstChunkTime}}</view>
       <view>
         <view>livePlayerInfo: </view>
-        <view class="text-box" style="height: 180rpx;">
+        <view class="text-box" style="height: 120rpx;">
           <text class="text-break">{{livePlayerInfo}}</text>
+        </view>
+      </view>
+      <view>
+        <view>playResult: </view>
+        <view class="text-box" style="height: 800rpx;">
+          <text class="text-break">{{playResultStr}}</text>
         </view>
       </view>
     </view>

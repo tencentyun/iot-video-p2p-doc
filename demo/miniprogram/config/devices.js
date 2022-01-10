@@ -13,11 +13,11 @@
 
 // 这些是预置的ipc设备
 const devices = {
-  judy1: {
+  ipc0: {
     showInHomePageBtn: true,
     productId: '9L1S66FZ3Q',
-    deviceName: 'test_34683636_1',
-    xp2pInfo: 'XP2PbO/R01VuHltKhYmkE7EZ/Kns%2.3.5',
+    deviceName: 'test_34683636_6',
+    xp2pInfo: 'XP2Pm/vMj3MOMr58iOs7o1jdjl4R%2.3.5',
     liveParams: 'action=live&channel=0&quality=super',
     playbackParams: 'action=playback&channel=0',
   },

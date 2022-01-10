@@ -14,6 +14,7 @@
         productId="{{productId}}" 
         deviceName="{{deviceName}}" 
         xp2pInfo="{{xp2pInfo}}" 
+        needCheckStream="{{needCheckStream}}"
         onlyp2p="{{onlyp2p}}"
         bind:playError="onPlayError"
         bind:systemPermissionDenied="onPlayerSystemPermissionDenied"

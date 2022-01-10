@@ -25,6 +25,7 @@ Component({
     inputXp2pInfo: '',
     inputLiveParams: '',
     inputPlaybackParams: '',
+    needCheckStreamChecked: true,
 
     // 1v多用
     inputUrl: '',
@@ -63,6 +64,7 @@ Component({
           inputXp2pInfo: data.xp2pInfo || data.peername || '',
           inputLiveParams: data.liveParams || 'action=live&channel=0&quality=super',
           inputPlaybackParams: data.playbackParams || 'action=playback&channel=0',
+          needCheckStreamChecked: typeof data.needCheckStream === 'boolean' ? data.needCheckStream : true,
           // 1v多用
           inputUrl: data.flvUrl || '',
           inputCodeUrl: data.codeUrl || '',
@@ -119,6 +121,11 @@ Component({
     inputIPCPlaybackParams(e) {
       this.setData({
         inputPlaybackParams: e.detail.value,
+      });
+    },
+    switchNeedCheckStream(e) {
+      this.setData({
+        needCheckStreamChecked: e.detail.value,
       });
     },
     inputServerCodeUrl(e) {
@@ -208,6 +215,7 @@ Component({
         targetId: streamData.targetId,
         flvUrl: streamData.flvUrl,
         ...streamData.streamExInfo,
+        needCheckStream: this.data.needCheckStreamChecked,
         onlyp2p: this.data.onlyp2pChecked,
       });
     },

@@ -1,15 +1,5 @@
+@import '../../common.wxss';
 @import '../../input.wxss';
-
-.component-section {
-  margin-bottom: 20rpx;
-}
-.component-section-gap {
-  margin-bottom: 40rpx;
-}
-.component-section-title {
-  padding-bottom: 10rpx;
-  font-size: 18px;
-}
 
 .player-container {
   position: relative;

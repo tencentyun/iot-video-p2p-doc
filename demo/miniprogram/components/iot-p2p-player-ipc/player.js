@@ -24,6 +24,10 @@ Component({
     xp2pInfo: {
       type: String,
     },
+    needCheckStream: {
+      type: Boolean,
+      value: true,
+    },
     // 以下仅供调试，正式组件不需要
     onlyp2p: {
       type: Boolean,
@@ -176,6 +180,11 @@ Component({
         return Promise.reject(errMsg);
       }
 
+      if (!this.properties.needCheckStream) {
+        // 不用检查设备状态
+        return Promise.resolve(true);
+      }
+
       return new Promise((resolve, reject) => {
         xp2pManager
           .sendInnerCommand(this.properties.targetId, {
@@ -204,7 +213,7 @@ Component({
                 console.error('check can start stream, unknown status', status);
             }
             if (canStart) {
-              resolve();
+              resolve(true);
             } else {
               errMsg = errMsg || '获取设备状态失败';
               this.showToast(errMsg);

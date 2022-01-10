@@ -302,10 +302,8 @@ Component({
       switch (detail.code) {
         case 2103: // 网络断连, 已启动自动重连
           console.error('==== onLivePlayerStateChange', detail.code, detail);
-          if (/errCode:(-1004|-1)(\D|$)/.test(detail.message)) {
+          if (/errCode:-1004(\D|$)/.test(detail.message)) {
             // -1004 无法连接服务器
-            // -1 各种Exception
-            // 都当做本地server出错
             xp2pManager.needResetLocalServer = true;
 
             // 这时其实网络状态应该也变了，但是网络状态变化事件延迟较大，networkChanged不一定为true
