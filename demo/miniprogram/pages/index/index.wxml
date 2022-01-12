@@ -29,6 +29,7 @@
   <navigator wx:if="{{firstServerStream}}" url="/pages/xp2p-singleplayer/demo?cfg={{firstServerStream.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 单播放器 {{firstServerStream.cfg}}</navigator>
   <navigator wx:if="{{firstIPCStream}}" url="/pages/xp2p-singleplayer/demo?cfg={{firstIPCStream.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 单播放器 {{firstIPCStream.cfg}}</navigator>
   <navigator wx:if="{{firstServerStream && firstIPCStream}}" url="/pages/xp2p-multiplayers/demo?cfg1={{firstServerStream.cfg}}&cfg2={{firstIPCStream.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 多播放器 {{firstServerStream.cfg}}+{{firstIPCStream.cfg}}</navigator>
+  <navigator url="/pages/test-live-player/test" hover-class="navigator-hover">跳转到 LivePlayer 测试页</navigator>
   <navigator url="/pages/test-video/test" hover-class="navigator-hover">跳转到 Video 测试页</navigator>
 </view>
 

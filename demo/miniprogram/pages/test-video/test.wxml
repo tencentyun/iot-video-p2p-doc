@@ -1,12 +1,15 @@
 <view class="page-body">
   <view class="page-section">
-    <video id="player" src="{{src}}" autoplay
-      bindplay="statechange"
-      bindpause="statechange"
-      bindended="statechange"
-      bindwaiting="statechange"
-      bindloadedmetadata="statechange"
-      binderror="error"
+    <video
+      id="player"
+      src="{{src}}"
+      autoplay
+      bindplay="onVideoEvent"
+      bindpause="onVideoEvent"
+      bindended="onVideoEvent"
+      bindwaiting="onVideoEvent"
+      bindloadedmetadata="onVideoEvent"
+      binderror="onVideoError"
     />
     <view class="input-item">
       <view>src:</view>
@@ -25,6 +28,6 @@
       <button bindtap="bindPause" class="group-button" type="primary" size="mini" disabled="{{!src || errMsg}}">暂停</button>
       <button bindtap="bindStop" class="group-button" type="primary" size="mini" disabled="{{!src || errMsg}}">停止</button>
     </view>
-    <view wx:if="{{src}}">errMsg: {{errMsg}}</view>
+    <view wx:if="{{src || errMsg}}">errMsg: {{errMsg}}</view>
   </view>
 </view>

@@ -11,15 +11,15 @@ Page({
       ctx: wx.createVideoContext('player'),
     });
   },
-  statechange(e) {
-    console.log('video statechange:', e.type, e.detail);
+  onVideoEvent(e) {
+    console.log('video event:', e.type, e.detail);
   },
-  error(e) {
+  onVideoError(e) {
     console.error('video error:', e.detail);
-    this.data.ctx.stop();
     this.setData({
       errMsg: e.detail.errMsg,
     });
+    this.data.ctx.stop();
   },
   bindInputSrc(e) {
     this.setData({

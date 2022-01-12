@@ -1,0 +1,34 @@
+<view class="page-body">
+  <view class="page-section">
+    <live-player
+      id="player"
+      src="{{src}}"
+      mode="live"
+      autoplay
+      orientation="{{orientation}}"
+      bindstatechange="onLivePlayerStateChange"
+      binderror="onLivePlayerError"
+    >
+      <view class="live-player-controls">
+        <view class="control-btn">
+          <view class="control-btn-text" bindtap="bindChangeOrientation">{{orientation}}</view>
+        </view>
+      </view>
+    </live-player>
+    <view class="input-item">
+      <view>src:</view>
+      <view class="weui-cells weui-cells_after-title">
+        <view class="weui-cell weui-cell_input">
+          <input class="weui-input" type="text" maxlength="-1" value="{{inputSrc}}" disabled="{{src}}" placeholder="请输入src" placeholder-class="placeholder" bindinput="bindInputSrc" />
+        </view>
+      </view>
+    </view>
+    <view class="group-button-area">
+      <button bindtap="bindSetSrc" class="group-button" type="primary" size="mini" disabled="{{isPlayerError || src}}">SetSrc</button>
+      <button bindtap="bindClearSrc" class="group-button" type="primary" size="mini" disabled="{{isPlayerError || !src}}">ClearSrc</button>
+      <button bindtap="bindSnapshot" class="group-button" type="primary" size="mini" disabled="{{isPlayerError || !src || errMsg}}">拍照</button>
+    </view>
+    <view wx:if="{{src || errMsg}}" class="two-lines">errMsg: {{errMsg}}</view>
+    <view wx:if="{{src}}">stateMsg: {{stateMsg}}</view>
+  </view>
+</view>
