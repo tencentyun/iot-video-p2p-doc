@@ -478,10 +478,10 @@ Component({
       const realReserve = this.data.mode === 'ipc' && reserve === true;
       if (realReserve) {
         // 保留连接
-        console.log('stopAll but reserve');
+        console.log(`[${this.id}]`, 'stopAll but reserve');
       } else {
         // 不保留，全部停掉
-        console.log('stopAll');
+        console.log(`[${this.id}]`, 'stopAll');
         const { targetId } = this.data;
         this.resetServiceData();
         xp2pManager.stopP2PService(targetId);
@@ -621,11 +621,11 @@ Component({
           },
         })
         .then((res) => {
-          console.log('startVoice success', res);
+          console.log(`[${this.id}]`, 'startVoice success', res);
           this.setData({ voiceState: 'sending' });
         })
         .catch((res) => {
-          console.log('startVoice fail', res);
+          console.log(`[${this.id}]`, 'startVoice fail', res);
           this.setData({ voiceState: '' });
           wx.showToast({
             title: res === Xp2pManagerErrorEnum.NoAuth ? '请授权小程序访问麦克风' : '发起语音对讲失败',
@@ -695,13 +695,13 @@ Component({
     },
     prepareService(serviceSuccessCallback) {
       if (!this.data.targetId) {
-        console.log('prepareService: invalid targetId', this.data);
+        console.log(`[${this.id}]`, 'prepareService: invalid targetId', this.data);
         this.showToast('prepareService: invalid targetId');
         return;
       }
 
       if (!this.data.flvUrl) {
-        console.log('prepareService: invalid flvUrl', this.data);
+        console.log(`[${this.id}]`, 'prepareService: invalid flvUrl', this.data);
         this.showToast('prepareService: invalid flvUrl');
         return;
       }
@@ -826,7 +826,7 @@ Component({
             dataCallback,
           })
           .then((res) => {
-            console.log('startStream success', res);
+            console.log(`[${this.id}]`, 'startStream success', res);
             this.addLog('stream started');
             this.setData({
               state: PlayStateEnum.streamStarted,
@@ -834,7 +834,7 @@ Component({
             });
           })
           .catch((res) => {
-            console.log('startStream fail', res);
+            console.log(`[${this.id}]`, 'startStream fail', res);
             this.addLog('start stream error');
             this.setData({
               state: PlayStateEnum.serviceStarted,
@@ -875,10 +875,9 @@ Component({
     checkCanRetry(type, detail) {
       if (xp2pManager.networkChanged || xp2pManager.needResetLocalServer) {
         // 网络状态变化了，退出重来
-        console.log('networkChanged or needResetLocalServer, trigger playError');
+        console.log(`[${this.id}]`, 'networkChanged or needResetLocalServer, trigger playError');
         this.stopAll();
         this.triggerEvent('playError', {
-          playerId: this.id,
           errType: type,
           errMsg: xp2pManager.needResetLocalServer ? errMsgMap.localServerError : errMsgMap.p2pDisconnect,
           errDetail: detail,
@@ -896,7 +895,6 @@ Component({
 
       // 能retry的才提示这个，不能retry的前面已经触发弹窗了
       this.triggerEvent('playError', {
-        playerId: this.id,
         errType: type,
         errMsg: errMsgMap[type] || '播放失败',
         errDetail: detail,

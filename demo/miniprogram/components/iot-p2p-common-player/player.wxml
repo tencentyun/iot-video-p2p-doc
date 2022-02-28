@@ -8,6 +8,8 @@
         mode="live"
         minCache="0.2"
         maxCache="0.8"
+        muted="{{muted}}"
+        orientation="{{orientation}}"
         bind:playerReady="onPlayerReady"
         bind:playerStartPull="onPlayerStartPull"
         bind:playerClose="onPlayerClose"
@@ -17,10 +19,21 @@
         bind:netstatus="onLivePlayerNetStatusChange"
       />
       <view wx:if="{{!needPlayer}}" class="mock-player">
-        <view>chunkCount: {{chunkCount}}</view>
-        <view>totalBytes: {{totalBytes}}</view>
+        <view wx:if="{{playerState === 'PlayerReady'}}">
+          <view>chunkCount: {{chunkCount}}</view>
+          <view>totalBytes: {{totalBytes}}</view>
+        </view>
+        <view wx:else>
+          <view>playerState: {{playerState}}</view>
+        </view>
       </view>
-      <view class="player-message">{{playerMsg}}</view>
+      <view class="player-message" bindtap="onClickRetry">{{playerMsg}}</view>
+      <view class="player-controls-container">
+        <view class="player-controls">
+          <view class="player-control-item" bindtap="changeMuted">{{muted ? 'muted' : 'notmuted'}}</view>
+          <view class="player-control-item" bindtap="changeOrientation">{{orientation}}</view>
+        </view>
+      </view>
       <view class="debug-info-switch-container">
         <view class="debug-info-switch" bindtap="toggleDebugInfo">打开/关闭调试信息</view>
       </view>
@@ -28,9 +41,10 @@
   </view>
   <view wx:if="{{showDebugInfo}}" class="debug-info-container">
     <view class="debug-info">
+      <view>plugin: xp2p {{xp2pVersion}} / p2p-player {{p2pPlayerVersion}}</view>
       <view>
         <view>flvFile: </view>
-        <view class="text-box two-lines">
+        <view class="text-box lines-2">
           <text class="text-break">{{flvFile}}</text>
         </view>
       </view>
@@ -38,18 +52,22 @@
       <view>p2pState: {{p2pState}}</view>
       <view>streamState: {{streamState}}</view>
       <!-- <view>chunkCount: {{chunkCount}}</view> -->
-      <view>totalBytes: {{totalBytes}}</view>
+      <view>
+        totalBytes: {{totalBytes}}
+        <text class="text-btn right" bindtap="toggleSlow">{{isSlow ? '恢复' : '模拟丢包'}}</text>
+      </view>
       <view>
         <view>livePlayerInfo: </view>
-        <view class="text-box" style="height: 120rpx;">
+        <view class="text-box lines-3">
           <text class="text-break">{{livePlayerInfo}}</text>
         </view>
       </view>
       <view>
         <view>playResult: </view>
-        <view class="text-box" style="height: 800rpx;">
+        <view class="text-box" style="height: 650rpx;">
           <text class="text-break">{{playResultStr}}</text>
         </view>
+        <view>{{idrResultStr}}</view>
       </view>
     </view>
   </view>

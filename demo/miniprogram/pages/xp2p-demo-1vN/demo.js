@@ -19,6 +19,12 @@ Page({
       cfg,
     });
   },
+  onShow() {
+    console.log('demo: onShow');
+  },
+  onHide() {
+    console.log('demo: onHide');
+  },
   onUnload() {
     console.log('demo: onUnload');
     this.hasExited = true;
@@ -54,11 +60,11 @@ Page({
       }
     });
   },
-  onPlayError({ detail }) {
-    console.log('demo: onPlayError', detail);
-    const { playerId, errMsg, errDetail, isFatalError } = detail;
+  onPlayError({ detail, currentTarget }) {
+    console.log('demo: onPlayError', currentTarget.id, detail);
+    const { errMsg, errDetail, isFatalError } = detail;
     wx.showModal({
-      content: `${playerId}: ${errMsg || '播放失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常
+      content: `${currentTarget.id}: ${errMsg || '播放失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常
       showCancel: false,
       complete: () => {
         if (isFatalError) {
@@ -74,5 +80,8 @@ Page({
       content: `systemPermissionDenied\n${detail.errMsg}`,
       showCancel: false,
     });
+  },
+  onOpenPage() {
+    wx.navigateTo({ url: '/pages/test-video/test' });
   },
 });

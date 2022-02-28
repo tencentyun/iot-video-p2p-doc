@@ -64,7 +64,7 @@ appid: 'wx1319af22356934bf'
 ### 2. 在配置中引入插件
 
 ``` js
-// 在app.json里面引入插件，注意插件版本号
+// 在app.json里面引入插件，注意尽量用最新的插件版本号
 {
   "plugins": {
     "wechat-p2p-player": {

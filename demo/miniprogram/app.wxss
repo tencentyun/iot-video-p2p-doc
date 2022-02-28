@@ -1,8 +1,10 @@
 .page-body {
+  position: relative;
   padding: 20rpx 0;
 }
 
 .page-section {
+  position: relative;
   margin-bottom: 20rpx;
 }
 .page-section-gap {

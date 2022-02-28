@@ -16,25 +16,25 @@ const devices = {
   ipc0: {
     showInHomePageBtn: true,
     productId: '9L1S66FZ3Q',
-    deviceName: 'test_34683636_6',
-    xp2pInfo: 'XP2Pm/vMj3MOMr58iOs7o1jdjl4R%2.3.5',
-    liveParams: 'action=live&channel=0&quality=super',
+    deviceName: 'test_34683636_4',
+    xp2pInfo: 'XP2P1Xl5RwePR/gqcHlLzFkes5ly%2.3.5',
+    liveParams: 'action=live&channel=0&quality=standard',
     playbackParams: 'action=playback&channel=0',
   },
-  judy3: {
+  ipc1: {
+    showInHomePageBtn: true,
+    productId: '9L1S66FZ3Q',
+    deviceName: 'test_34683636_5',
+    xp2pInfo: 'XP2PJjjVY/DtlAyXphOqjSTiIeO6%2.3.11',
+  },
+  debug: {
     // showInHomePageBtn: true,
-    showInHomePageNav: true,
+    // showInHomePageNav: true,
     productId: '9L1S66FZ3Q',
     deviceName: 'test_34683636_3',
     xp2pInfo: 'XP2PcDd3JlQPiXxDzaKo4YvCqnUq%2.3.5',
     liveParams: 'action=live&channel=0&quality=super',
     playbackParams: 'action=playback&channel=0',
-  },
-  jlfeng: {
-    showInHomePageBtn: true,
-    productId: 'LYEOZCNW0U',
-    deviceName: '1_49822230_1',
-    xp2pInfo: '',
   },
 };
 

@@ -29,6 +29,7 @@
         bind:playError="onPlayError"
         bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
       />
+      <view class="top-right-btn" bind:tap="onOpenPage">…</view>
     </view>
   </view>
 </view>

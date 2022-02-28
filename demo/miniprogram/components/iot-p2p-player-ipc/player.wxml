@@ -57,6 +57,19 @@
       </button>
     </view>
   </view>
+  <!-- 先不放出来
+  <view class="component-section" wx:if="{{type === 'live'}}">
+    <view class="component-section-title">播放控制</view>
+    <view class="group-button-area">
+      <button bindtap="pauseLive" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || playerPaused}}">
+        暂停
+      </button>
+      <button bindtap="resumeLive" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPaused}}">
+        继续
+      </button>
+    </view>
+  </view>
+  -->
   <view class="component-section" wx:if="{{type === 'live'}}">
     <view class="component-section-title">语音对讲</view>
     <view>voiceState: {{voiceState}}</view>
@@ -79,25 +92,8 @@
     </view>
   </view>
   <view class="component-section" wx:if="{{type === 'playback'}}">
-    <view class="component-section-title">播放录像</view>
-    <view class="weui-cells weui-cells_after-title">
-      <view class="weui-cell weui-cell_input">
-        <input class="weui-input" type="text" value="{{inputPlaybackTime}}" placeholder="获取有效录像列表后自动填入" placeholder-class="placeholder" bindinput="inputIPCPlaybackTime" />
-      </view>
-    </view>
-    <view class="group-button-area">
-      <button bindtap="startPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !inputPlaybackTime}}">
-        播放
-      </button>
-      <button bindtap="stopPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime}}">
-        停止
-      </button>
-    </view>
-  </view>
-  <view class="component-section" wx:if="{{type === 'playback'}}">
     <view class="component-section-title">查询录像</view>
     <view>
-      <view>date:</view>
       <view class="weui-cells weui-cells_after-title">
         <view class="weui-cell weui-cell_input">
           <picker class="weui-input" mode="date" value="{{inputDate}}" bindchange="pickDate">
@@ -117,6 +113,33 @@
       </button>
     </view>
   </view>
+  <view class="component-section" wx:if="{{type === 'playback'}}">
+    <view class="component-section-title">播放录像</view>
+    <view class="weui-cells weui-cells_after-title">
+      <view class="weui-cell weui-cell_input">
+        <input class="weui-input" type="text" value="{{inputPlaybackTime}}" placeholder="获取有效录像列表后自动填入" placeholder-class="placeholder" bindinput="inputIPCPlaybackTime" />
+      </view>
+    </view>
+    <view class="group-button-area">
+      <button bindtap="startPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !inputPlaybackTime}}">
+        播放
+      </button>
+      <button bindtap="stopPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime}}">
+        停止
+      </button>
+    </view>
+    <!-- 先不放出来
+    <view class="group-button-area">
+      <button bindtap="pausePlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || playerPaused}}">
+        暂停
+      </button>
+      <button bindtap="resumePlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !playerPaused}}">
+        继续
+      </button>
+      <text>需要设备端支持</text>
+    </view>
+    -->
+  </view>
   <view class="component-section">
     <view class="component-section-title">内置信令</view>
     <view class="group-button-area" wx:if="{{type === 'live'}}">
@@ -131,14 +154,6 @@
       <button bindtap="sendInnerCommand" data-cmd-name="getPlaybackStatus" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
         获取回放拉流状态
       </button>
-      <!-- 设备端暂未实现
-      <button bindtap="sendInnerCommand" data-cmd-name="pausePlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
-        暂停回放
-      </button>
-      <button bindtap="sendInnerCommand" data-cmd-name="resumePlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
-        继续回放
-      </button>
-      -->
     </view>
   </view>
   <view class="component-section">

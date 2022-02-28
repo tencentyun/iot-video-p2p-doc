@@ -20,6 +20,7 @@ const P2PStateEnum = {
   P2PIniting: 'P2PIniting',
   P2PInited: 'P2PInited',
   P2PInitError: 'P2PInitError',
+  P2PLocalNATChanged: 'P2PLocalNATChanged',
   ServicePreparing: 'ServicePreparing',
   ServiceStarted: 'ServiceStarted',
   ServiceStartError: 'ServiceStartError',
@@ -27,7 +28,9 @@ const P2PStateEnum = {
 };
 const StreamStateEnum = {
   StreamIdle: 'StreamIdle',
+  StreamWaitPull: 'StreamWaitPull',
   StreamChecking: 'StreamChecking',
+  StreamCheckSuccess: 'StreamCheckSuccess',
   StreamCheckError: 'StreamCheckError',
   StreamPreparing: 'StreamPreparing',
   StreamStarted: 'StreamStarted',
@@ -50,12 +53,15 @@ const totalMsgMap = {
   [P2PStateEnum.P2PIniting]: '正在初始化p2p模块...',
   [P2PStateEnum.P2PInited]: '初始化p2p模块完成',
   [P2PStateEnum.P2PInitError]: '初始化p2p模块失败',
+  [P2PStateEnum.P2PLocalNATChanged]: '本地NAT发生变化',
   [P2PStateEnum.ServicePreparing]: '正在启动p2p服务...',
   [P2PStateEnum.ServiceStarted]: '启动p2p服务完成',
   [P2PStateEnum.ServiceStartError]: '启动p2p服务失败',
   [P2PStateEnum.ServiceError]: '连接失败或断开',
 
+  [StreamStateEnum.StreamWaitPull]: '加载中...',
   [StreamStateEnum.StreamChecking]: '加载中...',
+  [StreamStateEnum.StreamCheckSuccess]: '加载中...',
   [StreamStateEnum.StreamCheckError]: '设备正忙，请稍后重试',
   [StreamStateEnum.StreamPreparing]: '加载中...',
   [StreamStateEnum.StreamStarted]: '加载中...',
@@ -73,13 +79,14 @@ const PlayStepEnum = {
   InitModule: 'StepInitModule',
   StartP2PService: 'StepStartP2PService',
   // WaitBothReady: 'StepWaitBothReady',
-  WaitTriggerPlay: 'StepWaitTriggerPlay', // 回放时等待选择录像的时间
+  // WaitTriggerPlay: 'StepWaitTriggerPlay', // 回放时等待选择录像的时间，不需要了，回放从选择录像开始计时
   ConnectLocalServer: 'StepConnectLocalServer',
   WaitStream: 'StepWaitStream',
   CheckStream: 'StepCheckStream',
   StartStream: 'StepStartStream',
   WaitHeader: 'StepWaitHeader',
   WaitData: 'StepWaitData',
+  WaitIDR: 'StepWaitIDR',
 };
 const state2StepConfig = {
   // player
@@ -126,10 +133,10 @@ const state2StepConfig = {
   },
 
   // stream
-  [StreamStateEnum.StreamPreparing]: {
+  [StreamStateEnum.StreamCheckSuccess]: {
     step: PlayStepEnum.CheckStream,
     fromState: StreamStateEnum.StreamChecking,
-    toState: StreamStateEnum.StreamPreparing,
+    toState: StreamStateEnum.StreamCheckSuccess,
   },
   [StreamStateEnum.StreamCheckError]: {
     step: PlayStepEnum.CheckStream,
@@ -161,6 +168,8 @@ const state2StepConfig = {
   },
 };
 
+let playerSeq = 0;
+
 Component({
   behaviors: ['wx://component-export'],
   properties: {
@@ -176,6 +185,15 @@ Component({
     autoReplay: {
       type: Boolean,
       value: false,
+    },
+    // 以下是 live-player 的属性
+    muted: {
+      type: Boolean,
+      value: false,
+    },
+    orientation: {
+      type: String,
+      value: 'vertical',
     },
     // 以下 ipc 模式用
     productId: {
@@ -212,6 +230,13 @@ Component({
     },
   },
   data: {
+    innerId: '',
+    xp2pVersion: xp2pManager.XP2PVersion,
+    p2pPlayerVersion: xp2pManager.P2PPlayerVersion,
+
+    // page相关
+    pageHide: false,
+
     // 这是onLoad时就固定的
     streamExInfo: null,
     canUseP2P: false,
@@ -225,7 +250,7 @@ Component({
     // player状态
     hasPlayer: false, // needPlayer时才有效，出错销毁时设为false
     autoPlay: false,
-    playerId: '',
+    playerId: '', // 这是 p2p-player 组件的id，不是自己的id
     playerState: PlayerStateEnum.PlayerIdle,
     playerComp: null,
     playerCtx: null,
@@ -233,6 +258,7 @@ Component({
 
     // p2p状态
     p2pState: P2PStateEnum.P2PIdle,
+    p2pConnected: false,
 
     // stream状态
     streamState: StreamStateEnum.StreamIdle,
@@ -245,18 +271,39 @@ Component({
 
     // debug用
     showDebugInfo: false,
+    isSlow: false,
 
     // 统计用
     playResultParams: null,
     playResultStr: '',
+    hasReceivedIDR: false,
+    idrResultParams: null,
+    idrResultStr: '',
+  },
+  pageLifetimes: {
+    show() {
+      console.log(`[${this.data.innerId}]`, '==== page show');
+      this.setData({
+        pageHide: false,
+      });
+    },
+    hide() {
+      console.log(`[${this.data.innerId}]`, '==== page hide');
+      this.setData({
+        pageHide: true,
+      });
+    },
   },
   lifetimes: {
     created() {
       // 在组件实例刚刚被创建时执行
+      playerSeq++;
+      this.setData({ innerId: `common-player-${playerSeq}` });
+      console.log(`[${this.data.innerId}]`, '==== created');
     },
     attached() {
       // 在组件实例进入页面节点树时执行
-      console.log(`[${this.id}]`, '==== attached', this.id, this.properties);
+      console.log(`[${this.data.innerId}]`, '==== attached', this.id, this.properties);
 
       const canUseP2P = (this.properties.mode === 'ipc' && canUseP2PIPCMode) || (this.properties.mode === 'server' && canUseP2PServerMode);
       const flvFile = this.properties.flvUrl.split('/').pop();
@@ -264,12 +311,12 @@ Component({
       const onlyp2p = this.properties.onlyp2p || false;
       const needPlayer = !onlyp2p;
       const hasPlayer = needPlayer && canUseP2P;
-      const playerId = `${this.id || `common-player-${Date.now()}-${Math.floor(Math.random() * 1000)}`}-player`;
+      const playerId = `${this.data.innerId}-player`; // 这是 p2p-player 组件的id，不是自己的id
       let p2pState, playerState;
       let playerMsg = '';
       if (canUseP2P) {
         p2pState = P2PStateEnum.P2PIdle;
-        playerState = PlayerStateEnum.PlayerPreparing;
+        playerState = PlayerStateEnum.PlayerIdle;
       } else {
         p2pState = P2PStateEnum.P2PInitError;
         playerState = PlayerStateEnum.PlayerError;
@@ -279,81 +326,39 @@ Component({
       // 统计用
       this.makeResultParams({ startAction: 'enter', flvParams });
 
-      this.changeState(
-        {
-          flvFile,
-          flvFilename,
-          flvParams,
-          streamExInfo: {
-            productId: this.properties.productId,
-            deviceName: this.properties.deviceName,
-            xp2pInfo: this.properties.xp2pInfo,
-            codeUrl: this.properties.codeUrl,
-          },
-          canUseP2P,
-          needPlayer,
-          hasPlayer,
-          playerId,
-          playerState,
-          playerMsg,
-          p2pState,
+      this.changeState({
+        flvFile,
+        flvFilename,
+        flvParams,
+        streamExInfo: {
+          productId: this.properties.productId,
+          deviceName: this.properties.deviceName,
+          xp2pInfo: this.properties.xp2pInfo,
+          codeUrl: this.properties.codeUrl,
         },
-        () => {
-          if (!canUseP2P) {
-            return;
-          }
+        canUseP2P,
+        needPlayer,
+        hasPlayer,
+        playerId,
+        playerState,
+        playerMsg,
+        p2pState,
+      });
 
-          this.initP2P();
-
-          if (!needPlayer) {
-            // mock 一个
-            const playerExport = {
-              addChunk: () => {},
-            };
-            const livePlayerContext = {
-              play: ({ success, fail, complete } = {}) => {
-                if (livePlayerContext.isPlaying) {
-                  fail && fail({ errMsg: 'already playing' });
-                  complete && complete();
-                  return;
-                }
-                livePlayerContext.isPlaying = true;
-                setTimeout(() => {
-                  this.onPlayerStartPull({});
-                  success && success();
-                  complete && complete();
-                }, 0);
-              },
-              stop: ({ success, fail, complete } = {}) => {
-                if (!livePlayerContext.isPlaying) {
-                  fail && fail({ errMsg: 'not playing' });
-                  complete && complete();
-                  return;
-                }
-                livePlayerContext.isPlaying = false;
-                setTimeout(() => {
-                  this.onPlayerClose({});
-                  success && success();
-                  complete && complete();
-                }, 0);
-              },
-            };
-            this.onPlayerReady({
-              detail: {
-                playerExport,
-                livePlayerContext,
-              },
-            });
-          }
-        },
-      );
+      if (!canUseP2P) {
+        return;
+      }
+      this.createPlayer();
+      this.initP2P();
     },
     ready() {
       // 在组件在视图层布局完成后执行
     },
     detached() {
       // 在组件实例被从页面节点树移除时执行
+      console.log(`[${this.data.innerId}]`, '==== detached');
       this.stopAll();
+      console.log(`[${this.data.innerId}]`, '==== detached end');
     },
     error() {
       // 每当组件方法抛出错误时执行
@@ -363,6 +368,8 @@ Component({
     return {
       changeFlv: this.changeFlv.bind(this),
       stopAll: this.stopAll.bind(this),
+      pause: this.pause.bind(this),
+      resume: this.resume.bind(this),
     };
   },
   methods: {
@@ -405,7 +412,6 @@ Component({
       this.setData({ ...newData, playerMsg: this.getPlayerMessage(newData) }, callback);
       if (newData.p2pState && newData.p2pState !== oldP2PState) {
         this.triggerEvent('p2pStateChange', {
-          playerId: this.id,
           p2pState: newData.p2pState,
         });
       }
@@ -414,17 +420,21 @@ Component({
       const now = Date.now();
       const playResultParams = {
         startAction,
-        flvParams,
+        flvParams: flvParams || this.data.flvParams,
         timestamp: now,
         lastTimestamp: now,
         playTimestamps: {},
         steps: [],
+        firstChunkBytes: 0,
       };
       this.setData({
         playResultParams,
         playResultStr: '',
+        hasReceivedIDR: false,
+        idrResultParams: null,
+        idrResultStr: '',
       });
-      console.log(`[${this.id}]`, '=== start new play', startAction, flvParams);
+      console.log(`[${this.data.innerId}]`, '==== start new play', startAction, flvParams);
     },
     addStateTimestamp(state) {
       if (!state || !this.data.playResultParams) {
@@ -441,32 +451,44 @@ Component({
         return;
       }
       const now = Date.now();
-      let timeCost = 0;
-      if (fromState && toState) {
-        const { playTimestamps } = this.data.playResultParams;
+      const { playTimestamps } = this.data.playResultParams;
+      let fromTime = 0;
+      let toTime = 0;
+      if (fromState) {
         if (!playTimestamps[fromState]) {
-          console.log(`[${this.id}]`, 'addStep', step, 'but no', fromState);
+          console.log(`[${this.data.innerId}]`, 'addStep', step, 'but no fromState', fromState);
           return;
         }
-        timeCost = playTimestamps[toState] - playTimestamps[fromState];
+        fromTime = playTimestamps[fromState];
       } else {
-        timeCost = now - this.data.playResultParams.lastTimestamp;
+        fromTime = this.data.playResultParams.lastTimestamp;
       }
-      console.log(`[${this.id}]`, 'addStep', step, timeCost, fromState, toState);
+      if (toState) {
+        if (!playTimestamps[toState]) {
+          console.log(`[${this.data.innerId}]`, 'addStep', step, 'but no toState', toState);
+          return;
+        }
+        toTime = playTimestamps[toState];
+      } else {
+        toTime = now;
+      }
+
+      const timeCost = toTime - fromTime;
+      console.log(`[${this.data.innerId}]`, 'addStep', step, timeCost, fromState ? `${fromState} -> ${toState || 'now'}` : '');
       this.data.playResultParams.lastTimestamp = now;
       this.data.playResultParams.steps.push({
         step,
         timeCost,
       });
       if (isResult) {
-        const { startAction, timestamp, steps } = this.data.playResultParams;
+        const { startAction, timestamp, firstChunkBytes, steps } = this.data.playResultParams;
         const timeCost = now - timestamp;
-        console.log(`[${this.id}]`, '==== play result', startAction, step, toState, timeCost, this.data.playResultParams);
+        console.log(`[${this.data.innerId}]`, '==== play result', startAction, step, toState, timeCost, this.data.playResultParams);
+        const byteStr = firstChunkBytes > 0 ? `(${firstChunkBytes} bytes)` : '';
         const playResultStr = JSON.stringify({
-          result: toState,
+          result: `${toState} ${byteStr}`,
           timeCost,
           startAction,
-          timestamp,
           steps: steps.map((item, index) => `${index}: ${item.step} - ${item.timeCost}`),
         }, null, 2);
         this.setData({
@@ -475,8 +497,101 @@ Component({
         });
       }
     },
+    createPlayer() {
+      console.log(`[${this.data.innerId}]`, 'createPlayer', Date.now());
+      if (this.data.playerState !== PlayerStateEnum.PlayerIdle) {
+        console.error(`[${this.data.innerId}]`, 'can not createPlayer in playerState', this.data.playerState);
+        return;
+      }
+
+      this.changeState({
+        playerState: PlayerStateEnum.PlayerPreparing,
+      });
+
+      if (!this.data.needPlayer) {
+        // mock 一个
+        const playerExport = {
+          addChunk: () => {},
+        };
+        const livePlayerContext = {
+          isPlaying: false, // play/stop 用
+          isPaused: false, // pause/resume 用
+          play: ({ success, fail, complete } = {}) => {
+            if (livePlayerContext.isPlaying) {
+              fail && fail({ errMsg: 'already playing' });
+              complete && complete();
+              return;
+            }
+            livePlayerContext.isPlaying = true;
+            livePlayerContext.isPaused = false;
+            setTimeout(() => {
+              this.onPlayerStartPull({});
+              success && success();
+              complete && complete();
+            }, 0);
+          },
+          stop: ({ success, fail, complete } = {}) => {
+            if (!livePlayerContext.isPlaying) {
+              fail && fail({ errMsg: 'not playing' });
+              complete && complete();
+              return;
+            }
+            livePlayerContext.isPlaying = false;
+            livePlayerContext.isPaused = false;
+            // 这个是立刻调用的
+            this.onPlayerClose({ detail: { error: { code: 'USER_CLOSE' } } });
+            setTimeout(() => {
+              success && success();
+              complete && complete();
+            }, 0);
+          },
+          pause: ({ success, fail, complete } = {}) => {
+            if (!livePlayerContext.isPlaying) {
+              fail && fail({ errMsg: 'not playing' });
+              complete && complete();
+              return;
+            }
+            if (livePlayerContext.isPaused) {
+              fail && fail({ errMsg: 'already paused' });
+              complete && complete();
+              return;
+            }
+            livePlayerContext.isPaused = true;
+            setTimeout(() => {
+              this.onPlayerClose({ detail: { error: { code: 'LIVE_PLAYER_CLOSED' } } });
+              success && success();
+              complete && complete();
+            }, 0);
+          },
+          resume: ({ success, fail, complete } = {}) => {
+            if (!livePlayerContext.isPlaying) {
+              fail && fail({ errMsg: 'not playing' });
+              complete && complete();
+              return;
+            }
+            if (!livePlayerContext.isPaused) {
+              fail && fail({ errMsg: 'not paused' });
+              complete && complete();
+              return;
+            }
+            livePlayerContext.isPaused = false;
+            setTimeout(() => {
+              this.onPlayerStartPull({});
+              success && success();
+              complete && complete();
+            }, 0);
+          },
+        };
+        this.onPlayerReady({
+          detail: {
+            playerExport,
+            livePlayerContext,
+          },
+        });
+      }
+    },
     onPlayerReady({ detail }) {
-      console.log(`[${this.id}]`, '==== onPlayerReady in', this.data.playerState, this.data.p2pState, detail);
+      console.log(`[${this.data.innerId}]`, '==== onPlayerReady in', this.data.playerState, this.data.p2pState, detail);
       const oldPlayerState = this.data.playerState;
       this.changeState({
         playerState: PlayerStateEnum.PlayerReady,
@@ -486,28 +601,28 @@ Component({
       this.tryTriggerPlay(`${oldPlayerState} -> ${this.data.playerState}`);
     },
     onPlayerStartPull({ detail }) {
-      console.info(`[${this.id}]`, `==== onPlayerStartPull in p2pState ${this.data.p2pState}`, detail);
+      console.log(`[${this.data.innerId}]`, `==== onPlayerStartPull in p2pState ${this.data.p2pState}, pageHide ${this.data.pageHide}`, detail);
       if (this.data.p2pState !== P2PStateEnum.ServiceStarted) {
         // 因为各种各样的原因，player在状态不对的时候又触发播放了，停掉
-        console.warn(`onPlayerStartPull in p2pState ${this.data.p2pState}, stop player`);
+        console.warn(`[${this.data.innerId}]`, `onPlayerStartPull in p2pState ${this.data.p2pState}, stop player`);
         try {
           this.data.playerCtx.stop();
         } catch (err) {}
         return;
       }
 
-      this.addStep(PlayStepEnum.ConnectLocalServer);
+      this.addStep(PlayStepEnum.ConnectLocalServer, { fromState: StreamStateEnum.StreamWaitPull });
 
       // 开始拉流
       this.startStream();
     },
     onPlayerClose({ detail }) {
-      console.info(`[${this.id}]`, `==== onPlayerClose in p2pState ${this.data.p2pState}`, detail);
+      console.log(`[${this.data.innerId}]`, `==== onPlayerClose in p2pState ${this.data.p2pState}, pageHide ${this.data.pageHide}`, detail);
       // 停止拉流
       this.stopStream();
     },
     onPlayerError({ detail }) {
-      console.log(`[${this.id}]`, '==== onPlayerError', detail);
+      console.log(`[${this.data.innerId}]`, '==== onPlayerError', detail);
       this.changeState({
         playerState: PlayerStateEnum.PlayerError,
       });
@@ -515,7 +630,7 @@ Component({
     },
     // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     onLivePlayerError({ detail }) {
-      console.error(`[${this.id}]`, '==== onLivePlayerError', detail);
+      console.error(`[${this.data.innerId}]`, '==== onLivePlayerError', detail);
       this.changeState({
         playerState: PlayerStateEnum.LivePlayerError,
       });
@@ -529,20 +644,42 @@ Component({
     },
     // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     onLivePlayerStateChange({ detail }) {
-      // console.log(`[${this.id}]`, '==== onLivePlayerStateChange', detail.code, detail.message);
+      /*
+        code说明参考：https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html
+        正常启播应该是
+          ios: 2008 - 触发startPull - 2001 - 2004 - 2026 (- 2007 - 2004) * n - 2009 - 2003
+          android: 触发startPull - 2001 - 2004 - 2026 - 2008 - 2009 - 2003 - 2032
+        注意
+          2001 已经连接服务器，不是连接到本地服务器，而是收到了数据，在 result 之后
+          2008 解码器启动，在 ios/android 的出现顺序不同
+      */
       if (this.data.p2pState !== P2PStateEnum.ServiceStarted) {
         // 已经停止p2pservice了，不再处理
         return;
       }
-      // code说明参考：https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html
       switch (detail.code) {
         case 2005: // 视频播放进度
           // 不处理
           break;
+        case 2006: // 视频播放结束
+        case 6000: // 拉流被挂起
+          console.log(`[${this.data.innerId}]`, '==== onLivePlayerStateChange', detail.code, detail, `streamState: ${this.data.streamState}`);
+          break;
+        case 2003: // 网络接收到首个视频数据包(IDR)
+          console.log(`[${this.data.innerId}]`, '==== onLivePlayerStateChange', detail.code, detail, `totalBytes: ${this.data.totalBytes}`);
+          if (!this.data.hasReceivedIDR && this.data.idrResultParams) {
+            const timeCost = Date.now() - this.data.idrResultParams.playSuccTime;
+            this.data.idrResultParams.timeCost = timeCost;
+            this.setData({
+              hasReceivedIDR: true,
+              idrResultStr: `${PlayStepEnum.WaitIDR}: ${timeCost} ms, ${this.data.chunkCount} chunks, ${this.data.totalBytes} bytes`,
+            });
+          }
+          break;
         case 2103: // 网络断连, 已启动自动重连
-          console.error('==== onLivePlayerStateChange', detail.code, detail);
-          if (/errCode:-1004(\D|$)/.test(detail.message)) {
-            // -1004 无法连接服务器
+          console.error(`[${this.data.innerId}]`, '==== onLivePlayerStateChange', detail.code, detail);
+          if (/errCode:-1004(\D|$)/.test(detail.message) || /Failed to connect to/.test(detail.message)) {
+            // 无法连接本地服务器
             xp2pManager.needResetLocalServer = true;
 
             // 这时其实网络状态应该也变了，但是网络状态变化事件延迟较大，networkChanged不一定为true
@@ -569,7 +706,7 @@ Component({
           }
           break;
         case -2301: // live-player断连，且经多次重连抢救无效，需要提示出错，由用户手动重试
-          console.error('==== onLivePlayerStateChange', detail.code, detail);
+          console.error(`[${this.data.innerId}]`, '==== onLivePlayerStateChange', detail.code, detail);
           // 到这里应该已经触发过 onPlayerClose 了
           this.changeState({
             playerState: xp2pManager.needResetLocalServer
@@ -580,50 +717,72 @@ Component({
           break;
         default:
           // 这些不特别处理，打个log
-          console.log('onLivePlayerStateChange', detail.code, detail);
+          console.log(`[${this.data.innerId}]`, 'onLivePlayerStateChange', detail.code, detail);
           break;
       }
     },
     // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     onLivePlayerNetStatusChange({ detail }) {
-      // console.log(`[${this.id}]`, 'onLivePlayerNetStatusChange', detail.info);
+      // console.log(`[${this.data.innerId}]`, 'onLivePlayerNetStatusChange', detail.info);
       if (!detail.info) {
         return;
       }
       this.setData({
         livePlayerInfo: [
           `size: ${detail.info.videoWidth}x${detail.info.videoHeight}, fps: ${detail.info.videoFPS}`,
-          `cache: video ${detail.info.videoCache}, audio ${detail.info.audioCache}`,
+          `bitrate(kbps): video ${detail.info.videoBitrate}, audio ${detail.info.audioBitrate}`,
+          `cache(ms): video ${detail.info.videoCache}, audio ${detail.info.audioCache}`,
         ].join('\n'),
       });
     },
     resetServiceData(newP2PState) {
+      this.clearStreamData();
       this.changeState({
         p2pState: newP2PState,
+        p2pConnected: false,
         streamState: StreamStateEnum.StreamIdle,
         playing: false,
+      });
+    },
+    resetStreamData(newStreamState) {
+      this.clearStreamData();
+      this.changeState({
+        streamState: newStreamState,
+        playing: false,
+      });
+    },
+    clearStreamData() {
+      this.setData({
         chunkCount: 0,
         totalBytes: 0,
         livePlayerInfo: '',
       });
     },
     initP2P() {
-      console.log(`[${this.id}]`, 'initP2P');
+      console.log(`[${this.data.innerId}]`, 'initP2P');
       if (this.data.p2pState !== P2PStateEnum.P2PIdle) {
-        console.log('can not initP2P in p2pState', this.data.p2pState);
+        console.log(`[${this.data.innerId}]`, 'can not initP2P in p2pState', this.data.p2pState);
         return;
       }
-
-      console.log(`[${this.id}]`, 'initModule', Date.now());
 
       this.changeState({
         p2pState: P2PStateEnum.P2PIniting,
       });
 
+      if (xp2pManager.isModuleActive) {
+        this.changeState({
+          p2pState: P2PStateEnum.P2PInited,
+        });
+        this.prepare();
+        return;
+      }
+
+      console.log(`[${this.data.innerId}]`, 'initModule');
+
       xp2pManager
         .initModule()
         .then((res) => {
-          console.log(`[${this.id}]`, '==== initModule res', res, 'in p2pState', this.data.p2pState);
+          console.log(`[${this.data.innerId}]`, '==== initModule res', res, 'in p2pState', this.data.p2pState);
           if (res === 0) {
             this.changeState({
               p2pState: P2PStateEnum.P2PInited,
@@ -638,7 +797,7 @@ Component({
           }
         })
         .catch((errcode) => {
-          console.error(`[${this.id}]`, '==== initModule error', errcode, 'in p2pState', this.data.p2pState);
+          console.error(`[${this.data.innerId}]`, '==== initModule error', errcode, 'in p2pState', this.data.p2pState);
           xp2pManager.destroyModule();
           this.changeState({
             p2pState: P2PStateEnum.P2PInitError,
@@ -647,15 +806,18 @@ Component({
         });
     },
     prepare() {
-      console.log(`[${this.id}]`, 'prepare');
-      if (this.data.p2pState !== P2PStateEnum.P2PInited) {
+      console.log(`[${this.data.innerId}]`, 'prepare');
+      if (this.data.p2pState !== P2PStateEnum.P2PInited
+        && this.data.p2pState !== P2PStateEnum.ServiceStartError
+        && this.data.p2pState !== P2PStateEnum.ServiceError
+      ) {
         console.log(`can not start service in p2pState ${this.data.p2pState}`);
         return;
       }
 
       const { targetId } = this.properties;
       const { flvUrl, streamExInfo } = this.data;
-      console.log(`[${this.id}]`, 'startP2PService', targetId, flvUrl, streamExInfo);
+      console.log(`[${this.data.innerId}]`, 'startP2PService', targetId, flvUrl, streamExInfo);
 
       const msgCallback = (event, subtype, detail) => {
         this.onP2PMessage(targetId, event, subtype, detail);
@@ -675,7 +837,7 @@ Component({
           },
         )
         .then((res) => {
-          console.log(`[${this.id}]`, '==== startP2PService res', res);
+          console.log(`[${this.data.innerId}]`, '==== startP2PService res', res);
           if (res === 0) {
             const oldP2PState = this.data.p2pState;
             this.changeState({
@@ -688,24 +850,25 @@ Component({
           }
         })
         .catch((errcode) => {
-          console.error(`[${this.id}]`, '==== startP2PService error', errcode);
+          console.error(`[${this.data.innerId}]`, '==== startP2PService error', errcode);
           this.stopAll(P2PStateEnum.ServiceStartError);
           this.handlePlayError(P2PStateEnum.ServiceStartError, { msg: `startP2PService err ${errcode}` });
         });
     },
     startStream() {
-      console.log(`[${this.id}]`, 'startStream');
+      console.log(`[${this.data.innerId}]`, 'startStream');
       if (this.data.p2pState !== P2PStateEnum.ServiceStarted) {
-        console.log(`can not start stream in p2pState ${this.data.p2pState}`);
+        console.log(`[${this.data.innerId}]`, `can not start stream in p2pState ${this.data.p2pState}`);
         return;
       }
       if (this.data.playing) {
-        console.log('already playing');
+        console.log(`[${this.data.innerId}]`, 'already playing');
         return;
       }
 
+      // 先检查能否拉流
       const checkCanStartStream = this.properties.checkFunctions && this.properties.checkFunctions.checkCanStartStream;
-      console.log('need checkCanStartStream', !!checkCanStartStream);
+      console.log(`[${this.data.innerId}]`, 'need checkCanStartStream', !!checkCanStartStream);
 
       if (!checkCanStartStream) {
         // 不检查，直接拉流
@@ -713,13 +876,10 @@ Component({
         return;
       }
 
-      // 先检查能否拉流
+      this.clearStreamData();
       this.changeState({
         streamState: StreamStateEnum.StreamChecking,
         playing: true,
-        chunkCount: 0,
-        totalBytes: 0,
-        livePlayerInfo: '',
       });
 
       checkCanStartStream({ filename: this.data.flvFilename, params: this.data.flvParams })
@@ -729,7 +889,10 @@ Component({
             return;
           }
           // 检查通过，开始拉流
-          console.log(`[${this.id}]`, '==== checkCanStartStream success');
+          console.log(`[${this.data.innerId}]`, '==== checkCanStartStream success');
+          this.changeState({
+            streamState: StreamStateEnum.StreamCheckSuccess,
+          });
           this.doStartStream();
         })
         .catch((errmsg) => {
@@ -738,14 +901,8 @@ Component({
             return;
           }
           // 检查失败，前面已经弹过提示了
-          console.log(`[${this.id}]`, '==== checkCanStartStream fail', errmsg);
-          this.changeState({
-            streamState: StreamStateEnum.StreamCheckError,
-            playing: false,
-            chunkCount: 0,
-            totalBytes: 0,
-            livePlayerInfo: '',
-          });
+          console.log(`[${this.data.innerId}]`, '==== checkCanStartStream fail', errmsg);
+          this.resetStreamData(StreamStateEnum.StreamCheckError);
           if (errmsg) {
             this.setData({ playerMsg: errmsg });
           }
@@ -759,20 +916,35 @@ Component({
         });
     },
     doStartStream() {
-      console.log(`[${this.id}]`, 'do startStream', this.properties.targetId, this.data.flvFilename, this.data.flvParams);
+      console.log(`[${this.data.innerId}]`, 'do startStream', this.properties.targetId, this.data.flvFilename, this.data.flvParams);
 
-      let dataCallback;
+      const { playerComp } = this.data;
       let chunkCount = 0;
       let totalBytes = 0;
-      const onlyDataCallback = (data) => {
+      const dataCallback = (data) => {
         if (!data || !data.byteLength) {
+          return;
+        }
+
+        if (this.data.isSlow) {
+          // 模拟丢包
           return;
         }
 
         chunkCount++;
         totalBytes += data.byteLength;
         if (chunkCount === 1) {
-          console.log(`[${this.id}]`, '==== firstChunk', data.byteLength);
+          console.log(`[${this.data.innerId}]`, '==== firstChunk', data.byteLength);
+          if (this.data.playResultParams) {
+            this.data.playResultParams.firstChunkBytes = data.byteLength;
+            this.setData({
+              hasReceivedIDR: false,
+              idrResultParams: {
+                playSuccTime: Date.now(),
+              },
+              idrResultStr: '',
+            });
+          }
           this.changeState({
             streamState: StreamStateEnum.StreamDataReceived,
           });
@@ -781,25 +953,13 @@ Component({
           chunkCount,
           totalBytes,
         });
+        playerComp.addChunk(data);
       };
-      if (this.data.needPlayer) {
-        // 用player触发请求时
-        const { playerComp } = this.data;
-        dataCallback = (data) => {
-          onlyDataCallback(data);
-          playerComp.addChunk(data);
-        };
-      } else {
-        // 只拉数据时
-        dataCallback = onlyDataCallback;
-      }
 
+      this.clearStreamData();
       this.changeState({
         streamState: StreamStateEnum.StreamPreparing,
         playing: true,
-        chunkCount: 0,
-        totalBytes: 0,
-        livePlayerInfo: '',
       });
 
       xp2pManager
@@ -812,20 +972,14 @@ Component({
           dataCallback,
         })
         .then((res) => {
-          console.log(`[${this.id}]`, '==== startStream success', res);
+          console.log(`[${this.data.innerId}]`, '==== startStream success', res);
           this.changeState({
             streamState: StreamStateEnum.StreamStarted,
           });
         })
         .catch((res) => {
-          console.log(`[${this.id}]`, '==== startStream fail', res);
-          this.changeState({
-            streamState: StreamStateEnum.StreamError,
-            playing: false,
-            chunkCount: 0,
-            totalBytes: 0,
-            livePlayerInfo: '',
-          });
+          console.log(`[${this.data.innerId}]`, '==== startStream fail', res);
+          this.resetStreamData(StreamStateEnum.StreamError);
           if (this.data.playerCtx) {
             try {
               this.data.playerCtx.stop();
@@ -836,26 +990,20 @@ Component({
         });
     },
     stopStream(newStreamState = StreamStateEnum.StreamIdle) {
-      console.log(`[${this.id}]`, 'stopStream');
+      console.log(`[${this.data.innerId}]`, 'stopStream');
       if (!this.data.playing) {
-        console.log('not playing');
+        console.log(`[${this.data.innerId}]`, 'not playing');
         return;
       }
 
-      console.log(`[${this.id}]`, 'do stopStream', this.properties.targetId);
+      console.log(`[${this.data.innerId}]`, 'do stopStream', this.properties.targetId);
 
-      this.changeState({
-        streamState: newStreamState,
-        playing: false,
-        chunkCount: 0,
-        totalBytes: 0,
-        livePlayerInfo: '',
-      });
+      this.resetStreamData(newStreamState);
 
       xp2pManager.stopStream(this.properties.targetId);
     },
     changeFlv({ filename = '', params = '' }) {
-      console.log(`[${this.id}]`, 'changeFlv', filename, params);
+      console.log(`[${this.data.innerId}]`, 'changeFlv', filename, params);
       this.setData(
         {
           flvFile: `${filename}${params ? `?${params}` : ''}`,
@@ -865,7 +1013,7 @@ Component({
         () => {
           const checkIsFlvValid = this.properties.checkFunctions && this.properties.checkFunctions.checkIsFlvValid;
           if (checkIsFlvValid && !checkIsFlvValid({ filename: this.data.flvFilename, params: this.data.flvParams })) {
-            console.log('flv invalid, stopStream');
+            console.log(`[${this.data.innerId}]`, 'flv invalid, stopStream');
             // 无效，停止播放
             this.stopStream();
             if (this.data.playerCtx) {
@@ -884,8 +1032,11 @@ Component({
           if (this.data.playerCtx) {
             this.data.playerCtx.stop({
               success: () => {
-                console.log('==== trigger play', this.data.flvFilename, this.data.flvParams);
+                console.log(`[${this.data.innerId}]`, '==== trigger play', this.data.flvFilename, this.data.flvParams);
                 this.makeResultParams({ startAction: 'changeFlv', flvParams: params });
+                this.changeState({
+                  streamState: StreamStateEnum.StreamWaitPull,
+                });
                 this.data.playerCtx.play();
               },
             });
@@ -894,10 +1045,12 @@ Component({
       );
     },
     stopAll(newP2PState = P2PStateEnum.P2PUnkown) {
-      console.log(`[${this.id}]`, 'stopAll', newP2PState);
+      console.log(`[${this.data.innerId}]`, 'stopAll', newP2PState);
 
       // 不用等stopPlay的回调，先把流停掉
-      this.stopStream();
+      if (this.data.playing) {
+        this.stopStream();
+      }
 
       this.resetServiceData(newP2PState);
       xp2pManager.stopP2PService(this.properties.targetId);
@@ -910,55 +1063,80 @@ Component({
         }
       }
     },
+    pause({ success, fail, complete }) {
+      if (!this.data.playerCtx) {
+        fail && fail({ errMsg: 'player not ready' });
+        complete && complete();
+      }
+      this.data.playerCtx.pause({ success, fail, complete });
+    },
+    resume({ success, fail, complete }) {
+      if (!this.data.playerCtx) {
+        fail && fail({ errMsg: 'player not ready' });
+        complete && complete();
+      }
+      this.data.playerCtx.resume({ success, fail, complete });
+    },
     tryTriggerPlay(reason) {
       const isReplay = reason === 'replay';
       console.log(
-        `[${this.id}]`, '==== tryTriggerPlay',
-        '\n  reason', this.data.playerState,
+        `[${this.data.innerId}]`, '==== tryTriggerPlay',
+        '\n  reason', reason,
         '\n  playerState', this.data.playerState,
         '\n  p2pState', this.data.p2pState,
         '\n  streamState', this.data.streamState,
       );
 
-      const checkIsFlvValid = this.properties.checkFunctions && this.properties.checkFunctions.checkIsFlvValid;
-      if (checkIsFlvValid && !checkIsFlvValid({ filename: this.data.flvFilename, params: this.data.flvParams })) {
-        console.log('flv invalid, return');
-        return;
+      // 这个要放在上面，否则回放时的统计不对
+      if (this.data.p2pState === P2PStateEnum.ServiceStarted && this.data.playerState === PlayerStateEnum.PlayerReady
+        && !this.data.playResultParams.playTimestamps.bothReady) {
+        this.addStateTimestamp('bothReady');
       }
 
+      const isP2PStateCanPlay = this.data.p2pState === P2PStateEnum.ServiceStarted;
       let isPlayerStateCanPlay = this.data.playerState === PlayerStateEnum.PlayerReady;
       if (!isPlayerStateCanPlay && isReplay) {
         // 是重试，出错状态也可以触发play
         isPlayerStateCanPlay = this.data.playerState === PlayerStateEnum.LivePlayerError
           || this.data.playerState === PlayerStateEnum.LivePlayerStateError;
       }
-      if (this.data.p2pState === P2PStateEnum.ServiceStarted && this.data.playerCtx && isPlayerStateCanPlay) {
-        // 都准备好了，触发播放，这个会触发 onPlayerStartPull
-        this.addStep(PlayStepEnum.WaitTriggerPlay);
-        if (this.data.needPlayer && !this.data.autoPlay) {
-          // 用 autoPlay 是因为有时候成功调用了play，但是live-player实际并没有开始播放
-          console.log('==== trigger play by autoPlay');
-          this.setData({ autoPlay: true });
-        } else {
-          console.log('==== trigger play by playerCtx');
-          this.data.playerCtx.play({
-            success: (res) => {
-              console.log('call play success', res);
-            },
-            fail: (res) => {
-              console.log('call play fail', res);
-            },
-          });
-        }
+      if (!isP2PStateCanPlay || !this.data.playerCtx || !isPlayerStateCanPlay) {
+        console.log(`[${this.data.innerId}]`, 'state can not play, return');
+        return;
+      }
+
+      const checkIsFlvValid = this.properties.checkFunctions && this.properties.checkFunctions.checkIsFlvValid;
+      if (checkIsFlvValid && !checkIsFlvValid({ filename: this.data.flvFilename, params: this.data.flvParams })) {
+        console.log(`[${this.data.innerId}]`, 'flv invalid, return');
+        return;
+      }
+
+      // 都准备好了，触发播放，这个会触发 onPlayerStartPull
+      this.changeState({
+        streamState: StreamStateEnum.StreamWaitPull,
+      });
+      if (this.data.needPlayer && !this.data.autoPlay) {
+        // 用 autoPlay 是因为有时候成功调用了play，但是live-player实际并没有开始播放
+        console.log(`[${this.data.innerId}]`, '==== trigger play by autoPlay');
+        this.setData({ autoPlay: true });
+      } else {
+        console.log(`[${this.data.innerId}]`, '==== trigger play by playerCtx');
+        this.data.playerCtx.play({
+          success: (res) => {
+            console.log(`[${this.data.innerId}]`, 'call play success', res);
+          },
+          fail: (res) => {
+            console.log(`[${this.data.innerId}]`, 'call play fail', res);
+          },
+        });
       }
     },
     checkCanRetry(type, detail) {
       if (type === P2PStateEnum.P2PInitError) {
         // 初始化失败，退出重来
-        console.log('P2PInitError, trigger playError');
+        console.log(`[${this.data.innerId}]`, 'P2PInitError, trigger playError');
         this.stopAll();
         this.triggerEvent('playError', {
-          playerId: this.id,
           errType: type,
           errMsg: totalMsgMap[type],
           errDetail: detail,
@@ -968,14 +1146,13 @@ Component({
       }
       if (xp2pManager.networkChanged || xp2pManager.needResetLocalServer) {
         // 网络状态变化了，退出重来
-        console.log('networkChanged or needResetLocalServer, trigger playError');
-        this.stopAll();
+        console.log(`[${this.data.innerId}]`, 'networkChanged or needResetLocalServer, trigger playError');
+        this.stopAll(P2PStateEnum.P2PLocalNATChanged);
         this.triggerEvent('playError', {
-          playerId: this.id,
           errType: type,
           errMsg: xp2pManager.needResetLocalServer
             ? totalMsgMap[PlayerStateEnum.LocalServerError]
-            : totalMsgMap[P2PStateEnum.ServiceError],
+            : totalMsgMap[P2PStateEnum.P2PLocalNATChanged],
           errDetail: detail,
           isFatalError: true,
         });
@@ -990,15 +1167,46 @@ Component({
       }
 
       // 自动重新开始
-      console.log('auto replay');
+      console.log(`[${this.data.innerId}]`, 'auto replay');
       this.stopStream(newStreamState);
       if (this.data.playerCtx) {
         this.data.playerCtx.stop({
           success: () => {
-            console.log('trigger replay');
+            this.changeState({
+              streamState: StreamStateEnum.StreamWaitPull,
+            });
+            console.log(`[${this.data.innerId}]`, 'trigger replay');
             this.data.playerCtx.play();
           },
         });
+      }
+    },
+    // 手动retry
+    onClickRetry() {
+      if (this.data.playerState !== PlayerStateEnum.PlayerReady) {
+        // player 没ready不能retry
+        return;
+      }
+      if (this.data.playing || this.data.streamState !== StreamStateEnum.StreamIdle) {
+        // 播放中不能retry
+        return;
+      }
+
+      if (!this.checkCanRetry()) {
+        return;
+      }
+
+      console.log(`[${this.data.innerId}]`, 'click retry');
+      this.makeResultParams({ startAction: 'clickRetry' });
+      if (this.data.p2pState === P2PStateEnum.ServiceStarted) {
+        this.tryTriggerPlay('clickRetry');
+      } else if (this.data.p2pState === P2PStateEnum.P2PInited
+        || this.data.p2pState === P2PStateEnum.ServiceStartError
+        || this.data.p2pState === P2PStateEnum.ServiceError
+      ) {
+        this.prepare();
+      } else if (this.data.p2pState === P2PStateEnum.P2PIdle) {
+        this.initP2P();
       }
     },
     // 处理播放错误
@@ -1009,7 +1217,6 @@ Component({
 
       // 能retry的才提示这个，不能retry的前面已经触发弹窗了
       this.triggerEvent('playError', {
-        playerId: this.id,
         errType: type,
         errMsg: totalMsgMap[type] || '播放失败',
         errDetail: detail,
@@ -1031,7 +1238,7 @@ Component({
     onP2PMessage(targetId, event, subtype, detail) {
       if (targetId !== this.properties.targetId) {
         console.warn(
-          `[${this.id}]`,
+          `[${this.data.innerId}]`,
           `onP2PMessage, targetId error, now ${this.properties.targetId}, receive`,
           targetId,
           event,
@@ -1054,14 +1261,20 @@ Component({
           break;
 
         default:
-          console.log(`[${this.id}]`, 'onP2PMessage, unknown event', event, subtype);
+          console.log(`[${this.data.innerId}]`, 'onP2PMessage, unknown event', event, subtype);
       }
     },
     onP2PMessage_Notify(type, detail) {
-      console.log(`[${this.id}]`, 'onP2PMessage_Notify', type, detail);
+      console.log(`[${this.data.innerId}]`, 'onP2PMessage_Notify', type, detail);
       switch (type) {
         case XP2PNotify_SubType.Connected:
           // 注意不要修改state，Connected只在心跳保活时可能收到，不在关键路径上，只是记录一下
+          this.setData({
+            p2pConnected: true,
+          });
+          if (!this.data.playResultParams.playTimestamps.p2pConnected) {
+            this.addStateTimestamp('p2pConnected');
+          }
           break;
         case XP2PNotify_SubType.Request:
           this.changeState({
@@ -1077,12 +1290,12 @@ Component({
         case XP2PNotify_SubType.Success:
         case XP2PNotify_SubType.Eof:
           // 数据传输正常结束
-          console.log(`[${this.id}]`, `==== Notify ${type} in p2pState ${this.data.p2pState}`);
+          console.log(`[${this.data.innerId}]`, `==== Notify ${type} in p2pState ${this.data.p2pState}`);
           this.handlePlayEnd(StreamStateEnum.StreamDataEnd);
           break;
         case XP2PNotify_SubType.Fail:
           // 数据传输出错
-          console.error(`[${this.id}]`, `==== Notify ${type} in p2pState ${this.data.p2pState}`, detail);
+          console.error(`[${this.data.innerId}]`, `==== Notify ${type} in p2pState ${this.data.p2pState}`, detail);
           this.handlePlayEnd(StreamStateEnum.StreamError);
           break;
         case XP2PNotify_SubType.Close:
@@ -1095,14 +1308,31 @@ Component({
           break;
         case XP2PNotify_SubType.Disconnect:
           // p2p链路断开
-          console.error(`[${this.id}]`, `XP2PNotify_SubType.Disconnect in p2pState ${this.data.p2pState}`, detail);
+          console.error(`[${this.data.innerId}]`, `XP2PNotify_SubType.Disconnect in p2pState ${this.data.p2pState}`, detail);
+          this.setData({
+            p2pConnected: false,
+          });
           this.stopAll(P2PStateEnum.ServiceError);
           this.handlePlayError(P2PStateEnum.ServiceError, { msg: `p2pNotify: ${type} ${detail}` });
           break;
       }
     },
+    changeMuted() {
+      this.setData({
+        muted: !this.data.muted,
+      });
+    },
+    changeOrientation() {
+      this.setData({
+        orientation: this.data.orientation === 'horizontal' ? 'vertical' : 'horizontal',
+      });
+    },
+    // 以下是调试面板里的
     toggleDebugInfo() {
       this.setData({ showDebugInfo: !this.data.showDebugInfo });
+    },
+    toggleSlow() {
+      this.setData({ isSlow: !this.data.isSlow });
     },
   },
 });

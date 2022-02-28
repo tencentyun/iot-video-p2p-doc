@@ -76,11 +76,11 @@ Page({
       } catch (err) {}
     }
   },
-  onPlayError({ detail }) {
-    console.log('singleplayer: onPlayError', detail.errType, 'isFatalError', detail.isFatalError, detail);
-    const { playerId, errMsg, errDetail, isFatalError } = detail;
+  onPlayError({ detail, currentTarget }) {
+    console.log('singleplayer: onPlayError', currentTarget.id, detail.errType, 'isFatalError', detail.isFatalError, detail);
+    const { errMsg, errDetail, isFatalError } = detail;
     wx.showModal({
-      content: `${playerId}: ${errMsg || '播放失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常
+      content: `${currentTarget.id}: ${errMsg || '播放失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常
       showCancel: false,
       complete: () => {
         if (isFatalError) {

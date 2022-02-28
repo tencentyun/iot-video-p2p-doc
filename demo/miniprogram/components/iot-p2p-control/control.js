@@ -24,7 +24,6 @@ Component({
       console.log(`[${this.id}]`, 'attached', this.id, this.properties);
       // 自动 initModule
       this.initModule();
-      this.setData({ uuid: xp2pManager.uuid });
     },
     ready() {
       // 在组件在视图层布局完成后执行
@@ -54,6 +53,7 @@ Component({
     },
     resetXP2PData() {
       this.changeState({
+        // uuid: '', // reset 不用清uuid
         state: '',
         localPeername: '',
       });
@@ -71,6 +71,7 @@ Component({
         return;
       }
       this.changeState({
+        uuid: xp2pManager.uuid,
         state: xp2pManager.state,
         localPeername: xp2pManager.localPeername,
       });
@@ -128,6 +129,7 @@ Component({
             showCancel: false,
           });
         });
+      this.setData({ uuid: xp2pManager.uuid });
     },
     destroyModule() {
       console.log(`[${this.id}]`, 'destroyModule');
@@ -179,6 +181,7 @@ Component({
             showCancel: false,
           });
         });
+      this.setData({ uuid: xp2pManager.uuid });
     },
   },
 });

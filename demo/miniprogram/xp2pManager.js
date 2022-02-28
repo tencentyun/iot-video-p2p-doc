@@ -29,8 +29,19 @@ const parseCommandResData = (data) => {
 };
 
 class Xp2pManager {
+  get P2PPlayerVersion() {
+    if (!playerPlugin) {
+      playerPlugin = requirePlugin('wechat-p2p-player');
+    }
+    return playerPlugin?.Version;
+  }
+
   get XP2PVersion() {
     return p2pExports?.XP2PVersion;
+  }
+
+  get XP2PLocalEventEnum() {
+    return p2pExports?.XP2PLocalEventEnum;
   }
 
   get XP2PEventEnum() {
@@ -76,6 +87,12 @@ class Xp2pManager {
   set needResetLocalServer(v) {
     this._needResetLocalServer = v;
   }
+
+  get isModuleActive() {
+    return this._state === 'inited'
+      && !this.networkChanged;
+  }
+
   constructor() {
     this._promise = null;
     this._state = '';
@@ -83,6 +100,7 @@ class Xp2pManager {
     this._networkType = '';
     this._networkChanged = null;
     this._needResetLocalServer = false;
+    this._appHideTimestamp = 0;
 
     // 自定义信令用
     this._msgSeq = 0;
@@ -98,11 +116,30 @@ class Xp2pManager {
 
     // 监听网络变化
     wx.onNetworkStatusChange((res) => {
-      console.warn('Xp2pManager: onNetworkStatusChange', this._networkType, '->', res);
+      console.log('Xp2pManager: onNetworkStatusChange', this._networkType, '->', res.networkType, res);
+
+      const timestamp = Date.now();
+      if (this._appHideTimestamp) {
+        console.log(`Xp2pManager: networkChanged after appHide ${timestamp - this._appHideTimestamp}`);
+      }
 
       // 仅记录
       this._networkType = res.networkType;
-      this._networkChanged = { detail: res, timestamp: Date.now() };
+      this._networkChanged = { detail: res, timestamp };
+    });
+
+    // 退后台打个log
+    wx.onAppHide(() => {
+      this._appHideTimestamp = Date.now();
+      console.log('Xp2pManager: onAppHide');
+    });
+    wx.onAppShow(() => {
+      if (!this._appHideTimestamp) {
+        return;
+      }
+      const hideTime = Date.now() - this._appHideTimestamp;
+      this._appHideTimestamp = 0;
+      console.log(`Xp2pManager: onAppShow, hideTime: ${hideTime}`);
     });
   }
 
@@ -130,7 +167,7 @@ class Xp2pManager {
 
     if (this._state === 'inited') {
       // 已经初始化好了
-      console.log('p2pModule already inited');
+      console.log('Xp2pManager: p2pModule already inited');
       return Promise.resolve(0);
     }
 
@@ -159,6 +196,7 @@ class Xp2pManager {
       p2pExports
         .init({
           appParams,
+          eventHandler: this._eventHandler.bind(this), // 需要xp2p插件1.1.1以上版本
         })
         .then((res) => {
           clearTimeout(timer);
@@ -169,7 +207,7 @@ class Xp2pManager {
 
           if (res === 0) {
             const localPeername = p2pExports.getLocalXp2pInfo();
-            console.log('localPeername', localPeername);
+            console.log('Xp2pManager: localPeername', localPeername);
             this._state = 'inited';
             this._localPeername = localPeername;
             this._promise = null;
@@ -198,7 +236,7 @@ class Xp2pManager {
     console.log('Xp2pManager: destroyModule in state', this._state);
 
     if (!this._state) {
-      console.log('p2pModule not running');
+      console.log('Xp2pManager: p2pModule not running');
       return;
     }
 
@@ -210,7 +248,7 @@ class Xp2pManager {
     console.log('Xp2pManager: resetP2P in state', this._state);
 
     if (this._state !== 'inited') {
-      console.log('p2pModule not inited');
+      console.log('Xp2pManager: p2pModule not inited');
       return Promise.reject(Xp2pManagerErrorEnum.ModuleNotInited);
     }
 
@@ -237,13 +275,11 @@ class Xp2pManager {
           if (this._promise !== promise) {
             return;
           }
-          console.log('Xp2pManager: resetP2P res', res);
+          console.log('Xp2pManager: resetP2P res', res, 'delay', Date.now() - start);
 
           if (res === 0) {
-            const now = Date.now();
-            console.log('resetP2P delay', now - start);
             const localPeername = p2pExports.getLocalXp2pInfo();
-            console.log('localPeername', localPeername);
+            console.log('Xp2pManager: localPeername', localPeername);
             this._state = 'inited';
             this._localPeername = localPeername;
             this._promise = null;
@@ -408,6 +444,21 @@ class Xp2pManager {
     this._localPeername = '';
     this._networkChanged = null;
     this._msgSeq = 0;
+  }
+
+  _eventHandler(type, detail) {
+    console.log('Xp2pManager: _eventHandler', type, detail);
+    const timestamp = Date.now();
+    switch (type) {
+      case this.XP2PLocalEventEnum.NATChanged:
+      case this.XP2PLocalEventEnum.NATError:
+        if (this._appHideTimestamp) {
+          console.log(`Xp2pManager: ${type} after appHide ${timestamp - this._appHideTimestamp}`);
+        }
+        // 仅记录
+        this._networkChanged = { detail, timestamp };
+        break;
+    }
   }
 
   _checkRecordAuthorize() {

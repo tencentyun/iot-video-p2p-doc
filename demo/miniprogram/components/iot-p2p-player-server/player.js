@@ -3,6 +3,8 @@ import { getXp2pManager } from '../../xp2pManager';
 const xp2pManager = getXp2pManager();
 const { XP2PDevNotify_SubType } = xp2pManager;
 
+let serverPlayerSeq = 0;
+
 Component({
   behaviors: ['wx://component-export'],
   properties: {
@@ -22,6 +24,8 @@ Component({
     },
   },
   data: {
+    innerId: '',
+
     // 这些是控制player和p2p的
     playerId: 'iot-p2p-common-player',
     player: null,
@@ -54,15 +58,18 @@ Component({
   lifetimes: {
     created() {
       // 在组件实例刚刚被创建时执行
+      serverPlayerSeq++;
+      this.setData({ innerId: `server-player-${serverPlayerSeq}` });
+      console.log(`[${this.data.innerId}]`, '==== created');
     },
     attached() {
       // 在组件实例进入页面节点树时执行
-      console.log(`[${this.id}]`, '==== attached', this.id, this.properties);
+      console.log(`[${this.data.innerId}]`, '==== attached', this.id, this.properties);
       const player = this.selectComponent(`#${this.data.playerId}`);
       if (player) {
         this.setData({ player });
       } else {
-        console.error('create player error', this.data.playerId);
+        console.error(`[${this.data.innerId}]`, 'create player error', this.data.playerId);
       }
     },
     ready() {
@@ -70,7 +77,9 @@ Component({
     },
     detached() {
       // 在组件实例被从页面节点树移除时执行
+      console.log(`[${this.data.innerId}]`, '==== detached');
       this.stopAll();
+      console.log(`[${this.data.innerId}]`, '==== detached end');
     },
     error() {
       // 每当组件方法抛出错误时执行
@@ -98,7 +107,7 @@ Component({
     },
     // 以下是 common-player 的事件
     onP2PStateChange(e) {
-      console.log(`[${this.id}]`, 'onP2PStateChange', e.detail.p2pState);
+      console.log(`[${this.data.innerId}]`, 'onP2PStateChange', e.detail.p2pState);
       const p2pReady = e.detail.p2pState === 'ServiceStarted';
       this.setData({ p2pReady });
       if (!p2pReady) {
@@ -148,7 +157,7 @@ Component({
           this.setData({ peerlist: `${this.getClockTime()} - ${detail.detail}` });
           break;
         case XP2PDevNotify_SubType.Subscribe:
-          console.log(`[${this.id}]`, 'onP2PDevNotify', detail.type, detail.detail);
+          console.log(`[${this.data.innerId}]`, 'onP2PDevNotify', detail.type, detail.detail);
           this.setData({ subscribeLog: `${this.data.subscribeLog}${this.getClockTime()} - ${detail.detail}\n` });
           break;
         case XP2PDevNotify_SubType.Err:

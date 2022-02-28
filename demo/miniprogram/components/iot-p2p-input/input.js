@@ -25,7 +25,7 @@ Component({
     inputXp2pInfo: '',
     inputLiveParams: '',
     inputPlaybackParams: '',
-    needCheckStreamChecked: true,
+    needCheckStreamChecked: false,
 
     // 1v多用
     inputUrl: '',
@@ -45,6 +45,9 @@ Component({
     },
     attached() {
       // 在组件实例进入页面节点树时执行
+      if (!this.id) {
+        this.id = 'iot-p2p-input';
+      }
       console.log(`[${this.id}]`, 'attached', this.id, this.properties);
       const { totalData } = config;
       const data = this.properties.cfg && totalData[this.properties.cfg];
@@ -64,7 +67,7 @@ Component({
           inputXp2pInfo: data.xp2pInfo || data.peername || '',
           inputLiveParams: data.liveParams || 'action=live&channel=0&quality=super',
           inputPlaybackParams: data.playbackParams || 'action=playback&channel=0',
-          needCheckStreamChecked: typeof data.needCheckStream === 'boolean' ? data.needCheckStream : true,
+          needCheckStreamChecked: typeof data.needCheckStream === 'boolean' ? data.needCheckStream : false,
           // 1v多用
           inputUrl: data.flvUrl || '',
           inputCodeUrl: data.codeUrl || '',
@@ -80,6 +83,7 @@ Component({
     },
     detached() {
       // 在组件实例被从页面节点树移除时执行
+      console.log(`[${this.id}]`, 'detached');
     },
     error() {
       // 每当组件方法抛出错误时执行
@@ -208,15 +212,19 @@ Component({
         return;
       }
 
-      console.log('startPlayer', streamData);
+      const options = {
+        needCheckStream: this.data.needCheckStreamChecked,
+        onlyp2p: this.data.onlyp2pChecked,
+      };
+
+      console.log(`[${this.id}]`, 'startPlayer', streamData, options);
       this.setData(streamData);
       this.triggerEvent('startPlayer', {
         mode: this.data.mode,
         targetId: streamData.targetId,
         flvUrl: streamData.flvUrl,
         ...streamData.streamExInfo,
-        needCheckStream: this.data.needCheckStreamChecked,
-        onlyp2p: this.data.onlyp2pChecked,
+        ...options,
       });
     },
   },
