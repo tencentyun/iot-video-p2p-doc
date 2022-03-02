@@ -235,7 +235,7 @@ Component({
     p2pPlayerVersion: xp2pManager.P2PPlayerVersion,
 
     // page相关
-    pageHide: false,
+    pageHideTimestamp: 0,
 
     // 这是onLoad时就固定的
     streamExInfo: null,
@@ -282,15 +282,16 @@ Component({
   },
   pageLifetimes: {
     show() {
-      console.log(`[${this.data.innerId}]`, '==== page show');
+      const hideTime = this.data.pageHideTimestamp ? Date.now() - this.data.pageHideTimestamp : 0;
+      console.log(`[${this.data.innerId}]`, '==== page show, hideTime', hideTime);
       this.setData({
-        pageHide: false,
+        pageHideTimestamp: 0,
       });
     },
     hide() {
       console.log(`[${this.data.innerId}]`, '==== page hide');
       this.setData({
-        pageHide: true,
+        pageHideTimestamp: Date.now(),
       });
     },
   },
@@ -409,10 +410,16 @@ Component({
       this.addStateTimestamp(newData.streamState);
 
       const oldP2PState = this.data.p2pState;
+      const oldStreamState = this.data.streamState;
       this.setData({ ...newData, playerMsg: this.getPlayerMessage(newData) }, callback);
       if (newData.p2pState && newData.p2pState !== oldP2PState) {
         this.triggerEvent('p2pStateChange', {
           p2pState: newData.p2pState,
+        });
+      }
+      if (newData.streamState && newData.streamState !== oldStreamState) {
+        this.triggerEvent('streamStateChange', {
+          streamState: newData.streamState,
         });
       }
     },
@@ -558,9 +565,9 @@ Component({
             }
             livePlayerContext.isPaused = true;
             setTimeout(() => {
-              this.onPlayerClose({ detail: { error: { code: 'LIVE_PLAYER_CLOSED' } } });
               success && success();
               complete && complete();
+              this.onPlayerClose({ detail: { error: { code: 'LIVE_PLAYER_CLOSED' } } });
             }, 0);
           },
           resume: ({ success, fail, complete } = {}) => {
@@ -576,9 +583,9 @@ Component({
             }
             livePlayerContext.isPaused = false;
             setTimeout(() => {
-              this.onPlayerStartPull({});
               success && success();
               complete && complete();
+              this.onPlayerStartPull({});
             }, 0);
           },
         };
@@ -601,7 +608,7 @@ Component({
       this.tryTriggerPlay(`${oldPlayerState} -> ${this.data.playerState}`);
     },
     onPlayerStartPull({ detail }) {
-      console.log(`[${this.data.innerId}]`, `==== onPlayerStartPull in p2pState ${this.data.p2pState}, pageHide ${this.data.pageHide}`, detail);
+      console.log(`[${this.data.innerId}]`, `==== onPlayerStartPull in p2pState ${this.data.p2pState}, pageHide ${!!this.data.pageHideTimestamp}`, detail);
       if (this.data.p2pState !== P2PStateEnum.ServiceStarted) {
         // 因为各种各样的原因，player在状态不对的时候又触发播放了，停掉
         console.warn(`[${this.data.innerId}]`, `onPlayerStartPull in p2pState ${this.data.p2pState}, stop player`);
@@ -617,7 +624,7 @@ Component({
       this.startStream();
     },
     onPlayerClose({ detail }) {
-      console.log(`[${this.data.innerId}]`, `==== onPlayerClose in p2pState ${this.data.p2pState}, pageHide ${this.data.pageHide}`, detail);
+      console.log(`[${this.data.innerId}]`, `==== onPlayerClose in p2pState ${this.data.p2pState}, pageHide ${!!this.data.pageHideTimestamp}`, detail);
       // 停止拉流
       this.stopStream();
     },

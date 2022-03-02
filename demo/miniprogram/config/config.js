@@ -62,6 +62,9 @@ const config = {
         type: 'playback',
       },
     },
+    getPlaybackProgress: {
+      cmd: 'playback_progress',
+    },
     pausePlayback: {
       cmd: 'playback_pause',
     },

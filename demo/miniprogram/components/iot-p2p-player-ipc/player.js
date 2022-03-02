@@ -42,6 +42,7 @@ Component({
     playerId: 'iot-p2p-common-player',
     player: null,
     p2pReady: false,
+    streamSuccess: false,
     checkFunctions: null,
 
     // live / playback
@@ -73,6 +74,10 @@ Component({
     inputPlaybackTime: '',
     playerPlaybackTime: '',
     playerPlaybackTimeLocaleStr: '',
+
+    // 继续播放的progress，单位ms
+    playbackSeekProgress: 0,
+    playbackProgressStr: '',
   },
   lifetimes: {
     created() {
@@ -138,6 +143,8 @@ Component({
         playerPaused: false,
         playerPlaybackTime: '',
         playerPlaybackTimeLocaleStr: '',
+        playbackSeekProgress: 0,
+        playbackProgressStr: '',
       });
     },
     showToast(content) {
@@ -153,7 +160,20 @@ Component({
     onP2PStateChange(e) {
       console.log(`[${this.data.innerId}]`, 'onP2PStateChange', e.detail.p2pState);
       const p2pReady = e.detail.p2pState === 'ServiceStarted';
+      if (this.data.p2pReady && !p2pReady) {
+        // 注意要在修改 p2pReady 之前
+        this.stopAll();
+      }
       this.setData({ p2pReady });
+      this.passEvent(e);
+    },
+    onStreamStateChange(e) {
+      console.log(`[${this.data.innerId}]`, 'onStreamStateChange', e.detail.streamState);
+      const streamSuccess = e.detail.streamState === 'StreamDataReceived';
+      if (!this.data.streamSuccess && streamSuccess && this.data.type === 'playback' && this.data.playbackSeekProgress) {
+        this.sendPlaybackSeek();
+      }
+      this.setData({ streamSuccess });
       this.passEvent(e);
     },
     // 以下是用户交互
@@ -170,6 +190,8 @@ Component({
 
       this.setData({
         playerPaused: false,
+        playbackSeekProgress: 0,
+        playbackProgressStr: '',
       });
 
       const { flv } = e.currentTarget.dataset;
@@ -509,6 +531,8 @@ Component({
         playerPaused: false,
         playerPlaybackTime: this.data.inputPlaybackTime,
         playerPlaybackTimeLocaleStr: `${toDateTimeString(startDate)} ~ ${toDateTimeString(endDate)}`,
+        playbackSeekProgress: 0,
+        playbackProgressStr: '',
       });
 
       const filename = 'ipc.flv';
@@ -531,6 +555,8 @@ Component({
         playerPaused: false,
         playerPlaybackTime: '',
         playerPlaybackTimeLocaleStr: '',
+        playbackSeekProgress: 0,
+        playbackProgressStr: '',
       });
 
       const filename = 'ipc.flv';
@@ -549,17 +575,31 @@ Component({
         return;
       }
 
+      this.getPlaybackProgress({
+        success: (res) => {
+          const progress = parseInt(res.progress, 10); // 偏移，单位ms
+          this.setData({
+            playbackSeekProgress: progress,
+            playbackProgressStr: `pause: ${res.progress}`,
+          });
+          this.doPausePlayback();
+        },
+      });
+    },
+    doPausePlayback() {
+      console.log(`[${this.data.innerId}]`, 'doPausePlayback');
       this.pausePlayer({
         success: () => {
+          console.log(`[${this.data.innerId}]`, 'sendPlaybackPause');
           xp2pManager
             .sendInnerCommand(this.properties.targetId, {
               cmd: 'playback_pause',
             })
             .then((res) => {
               const status = parseInt(res && res.status, 10); // 返回的 status 是字符串，兼容一下
-              console.log(`[${this.data.innerId}]`, 'playback_pause status', status);
+              console.log(`[${this.data.innerId}]`, 'playback_pause status', status, res);
               if (status !== 0) {
-                this.showToast(`playback_pause err ${status}`);
+                this.showToast(`playback_pause status err ${status}`);
               }
             })
             .catch((errmsg) => {
@@ -582,23 +622,140 @@ Component({
 
       this.resumePlayer({
         success: () => {
-          xp2pManager
-            .sendInnerCommand(this.properties.targetId, {
-              cmd: 'playback_resume',
-            })
-            .then((res) => {
-              const status = parseInt(res && res.status, 10); // 有的设备返回的 status 是字符串，兼容一下
-              console.log(`[${this.data.innerId}]`, 'playback_resume status', status);
-              if (status !== 0) {
-                this.showToast(`playback_resume err ${status}`);
-              }
-            })
-            .catch((errmsg) => {
-              console.log(`[${this.data.innerId}]`, 'playback_resume fail', errmsg);
-              this.showToast('playback_resume fail');
-            });
+          // 没断开就resume，断开了就seek
+          const isResume = this.data.streamSuccess;
+          console.log(`[${this.data.innerId}] isResume ${isResume}`);
+          if (isResume) {
+            // 没断开，直接resume
+            this.sendPlaybackResume();
+          } else {
+            // 断开了，等拉到数据后seek，见 onStreamStateChange
+          }
         },
       });
+    },
+    sendPlaybackResume() {
+      const { playbackSeekProgress } = this.data;
+      this.setData({
+        playbackSeekProgress: 0,
+        playbackProgressStr: '',
+      });
+
+      console.log(`[${this.data.innerId}] sendPlaybackResume`);
+      xp2pManager
+        .sendInnerCommand(this.properties.targetId, {
+          cmd: 'playback_resume',
+        })
+        .then((res) => {
+          const status = parseInt(res && res.status, 10); // 有的设备返回的 status 是字符串，兼容一下
+          console.log(`[${this.data.innerId}]`, 'playback_resume status', status, res);
+          if (status !== 0) {
+            this.showToast(`playback_resume status err ${status}`);
+            return;
+          }
+
+          // resume后再拉进度看看对不对
+          this.getPlaybackProgress({
+            success: (res) => {
+              const progress = parseInt(res.progress, 10); // 偏移，单位ms
+              this.setData({
+                playbackSeekProgress: progress,
+                playbackProgressStr: `resume: ${playbackSeekProgress} -> ${res.progress}`,
+              });
+            },
+          });
+        })
+        .catch((errmsg) => {
+          console.log(`[${this.data.innerId}]`, 'playback_resume fail', errmsg);
+          this.showToast('playback_resume fail');
+        });
+    },
+    sendPlaybackSeek() {
+      if (!this.data.playbackSeekProgress) {
+        // 不用seek
+        return;
+      }
+
+      const { playbackSeekProgress } = this.data;
+      this.setData({
+        playbackSeekProgress: 0,
+        playbackProgressStr: '',
+      });
+
+      console.log(`[${this.data.innerId}] sendPlaybackSeek, progress ${playbackSeekProgress}`);
+      xp2pManager
+        .sendInnerCommand(this.properties.targetId, {
+          cmd: 'playback_seek',
+          params: {
+            progress: playbackSeekProgress,
+          },
+        })
+        .then((res) => {
+          const status = parseInt(res && res.status, 10); // 有的设备返回的 status 是字符串，兼容一下
+          console.log(`[${this.data.innerId}]`, 'playback_seek status', status, res);
+          if (status !== 0) {
+            this.showToast(`playback_seek status err ${status}`);
+            return;
+          }
+
+          // resume后再拉进度看看对不对
+          this.getPlaybackProgress({
+            success: (res) => {
+              const progress = parseInt(res.progress, 10); // 偏移，单位ms
+              this.setData({
+                playbackSeekProgress: progress,
+                playbackProgressStr: `seek: ${playbackSeekProgress} -> ${res.progress}`,
+              });
+            },
+          });
+        })
+        .catch((errmsg) => {
+          console.log(`[${this.data.innerId}]`, 'playback_seek fail', errmsg);
+          this.showToast('playback_seek fail');
+        });
+    },
+    getPlaybackProgress({ success, fail } = {}) {
+      console.log(`[${this.data.innerId}]`, 'getPlaybackProgress');
+      if (!this.data.p2pReady) {
+        console.log(`[${this.data.innerId}]`, 'p2p not ready');
+        fail && fail();
+        return;
+      }
+      if (!this.data.playerPlaybackTime) {
+        console.log(`[${this.data.innerId}]`, 'no playback');
+        fail && fail();
+        return;
+      }
+
+      xp2pManager
+        .sendInnerCommand(this.properties.targetId, {
+          cmd: 'playback_progress',
+        })
+        .then((res) => {
+          console.log(`[${this.data.innerId}]`, 'playback_progress res', res);
+          const status = parseInt(res && res.status, 10); // 设备返回的 status 是字符串，兼容一下
+          if (status !== 0) {
+            this.showToast(`playback_progress status err ${status}`);
+            fail && fail();
+            return;
+          }
+
+          if (!res.progress && res.time) {
+            // 兼容设备端旧版本
+            res.progress = res.time;
+          }
+
+          if (success) {
+            success(res);
+          } else {
+            this.showToast(`progress ${res.progress}`);
+          }
+        })
+        .catch((errmsg) => {
+          console.log(`[${this.data.innerId}]`, 'playback_progress fail', errmsg);
+          this.showToast('playback_progress fail');
+          fail && fail();
+        });
     },
     sendInnerCommand(e, inputParams = undefined, callback = undefined) {
       console.log(`[${this.data.innerId}]`, 'sendInnerCommand');

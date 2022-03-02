@@ -25,7 +25,7 @@ const devices = {
     showInHomePageBtn: true,
     productId: '9L1S66FZ3Q',
     deviceName: 'test_34683636_5',
-    xp2pInfo: 'XP2PJjjVY/DtlAyXphOqjSTiIeO6%2.3.11',
+    xp2pInfo: 'XP2PJjjVY/DtlAyKpgmIljDGJq6L%2.3.11',
   },
   debug: {
     // showInHomePageBtn: true,

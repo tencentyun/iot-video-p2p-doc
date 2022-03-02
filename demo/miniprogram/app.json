@@ -2,7 +2,6 @@
   "pages": [
     "pages/index/index",
     "pages/xp2p-demo-1vN/demo",
-    "pages/xp2p-demo-debug/demo",
     "pages/xp2p-singleplayer/demo",
     "pages/xp2p-multiplayers/demo",
     "pages/test-live-player/test",
@@ -14,7 +13,7 @@
       "provider": "wx9e8fbc98ceac2628"
     },
     "xp2p": {
-      "version": "dev-a091fb94480b39ae6f0648ef0d1a383e",
+      "version": "1.1.1",
       "provider": "wx1319af22356934bf"
     }
   },
@@ -24,8 +23,8 @@
     "iot-p2p-player-ipc": "components/iot-p2p-player-ipc/player",
     "iot-p2p-player-server": "components/iot-p2p-player-server/player",
     "iot-p2p-control": "components/iot-p2p-control/control",
-    "iot-p2p-input": "components/iot-p2p-input/input",
-    "iot-p2p-player-debug": "components/iot-p2p-player-debug/player"
+    "iot-p2p-input": "components/iot-p2p-input/input"
   },
-  "sitemapLocation": "sitemap.json"
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
 }

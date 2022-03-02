@@ -12,6 +12,7 @@
       checkFunctions="{{checkFunctions}}"
       onlyp2p="{{onlyp2p}}"
       bind:p2pStateChange="onP2PStateChange"
+      bind:streamStateChange="onStreamStateChange"
       bind:playError="passEvent"
       bind:systemPermissionDenied="passEvent"
     />
@@ -57,7 +58,6 @@
       </button>
     </view>
   </view>
-  <!-- 先不放出来
   <view class="component-section" wx:if="{{type === 'live'}}">
     <view class="component-section-title">播放控制</view>
     <view class="group-button-area">
@@ -69,7 +69,6 @@
       </button>
     </view>
   </view>
-  -->
   <view class="component-section" wx:if="{{type === 'live'}}">
     <view class="component-section-title">语音对讲</view>
     <view>voiceState: {{voiceState}}</view>
@@ -128,17 +127,18 @@
         停止
       </button>
     </view>
-    <!-- 先不放出来
     <view class="group-button-area">
-      <button bindtap="pausePlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || playerPaused}}">
+      <button bindtap="getPlaybackProgress" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime}}">
+        获取进度
+      </button>
+      <button bindtap="pausePlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !streamSuccess || playerPaused}}">
         暂停
       </button>
       <button bindtap="resumePlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !playerPaused}}">
         继续
       </button>
-      <text>需要设备端支持</text>
+      <text>{{playbackProgressStr}}</text>
     </view>
-    -->
   </view>
   <view class="component-section">
     <view class="component-section-title">内置信令</view>

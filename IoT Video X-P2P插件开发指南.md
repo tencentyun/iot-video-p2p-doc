@@ -10,6 +10,7 @@
 | 1.0.2 | 2021.11.24 | stunServer支持DNS |
 | 1.0.3 | 2021.12.16 | 开发版小程序支持关闭流加密 |
 | 1.1.0 | 2021.12.27 | 优化1v多，server端提供https流，不用另外部署code服务 |
+| 1.1.1 | 2022.3.2 | 检测到本地NAT发生变化时通知调用方 |
 
 ## 插件介绍
 
@@ -68,11 +69,11 @@ appid: 'wx1319af22356934bf'
 {
   "plugins": {
     "wechat-p2p-player": {
-      "version": "1.0.1",
+      "version": "1.0.2",
       "provider": "wx9e8fbc98ceac2628"
     },
     "xp2p": {
-      "version": "1.0.1",
+      "version": "1.1.1",
       "provider": "wx1319af22356934bf"
     }
   }
@@ -109,6 +110,9 @@ p2pModule
       appKey: $yourAppKey,
       appSecretKey: $yourAppSecretKey,
       appPackage: $yourAppPackage,
+    },
+    eventHandler: (event, detail) => {
+      // 各种本地NAT相关的事件通知，取值见api说明，要求最低版本 1.1.1
     },
   })
   .then((res) => {
@@ -168,6 +172,9 @@ p2pModule
       appKey: $yourAppKey,
       appSecretKey: $yourAppSecretKey,
       appPackage: $yourAppPackage,
+    },
+    eventHandler: (event, detail) => {
+      // 各种本地NAT相关的事件通知，取值见api说明，要求最低版本 1.1.1
     },
   })
   .then((res) => {
@@ -396,6 +403,21 @@ onUnload() {
 | 属性 | 类型 | 默认值 | 必填 | 说明 |
 | - | - | - | - | - |
 | appParams | Object | - | 是 | 客户参数 |
+| eventHandler | (event: string, detail: Object) => void | - | 否 | 本地NAT事件通知，要求最低版本 1.1.1 |
+
+**eventHandler 参数**
+
+| 参数 | 类型 | 说明 |
+| - | - | - |
+| event | string | 事件名 |
+| detail | Object | 详细信息 |
+
+event 的值
+
+| event | 说明 |
+| - | - |
+| 'natChanged' | 本地NAT发生变化 |
+| 'natError' | 本地NAT探测失败 |
 
 #### 返回值
 
