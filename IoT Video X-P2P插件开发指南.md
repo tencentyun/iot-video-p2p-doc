@@ -11,6 +11,7 @@
 | 1.0.3 | 2021.12.16 | 开发版小程序支持关闭流加密 |
 | 1.1.0 | 2021.12.27 | 优化1v多，server端提供https流，不用另外部署code服务 |
 | 1.1.1 | 2022.3.2 | 检测到本地NAT发生变化时通知调用方 |
+| 1.2.0 | 2022.3.7 | 新增本地文件下载功能 |
 
 ## 插件介绍
 
@@ -256,6 +257,76 @@ p2pModule.stopServiceById(ipcId);
 // 销毁 IoTP2PModule，可以在小程序销毁时一并销毁
 p2pModule.destroy();
 
+```
+
+#### 3.3 本地文件下载
+``` js
+// 获取插件
+const videoPlugin = requirePlugin('iotvideo-weapp-plugin');
+const p2pModule = videoPlugin.p2p;
+```
+
+```js
+// 初始化 IoTP2PModule，建议尽早初始化，提前探测网络状态
+p2pModule
+  .init({
+    appParams: {
+      appid: $yourTCloudAppId,
+      appOauthId: $yourAppOauthId,
+      appKey: $yourAppKey,
+      appSecretKey: $yourAppSecretKey,
+      appPackage: $yourAppPackage,
+    },
+  })
+  .then((res) => {
+    // res === 0 说明初始化成功
+    console.log('init res', res);
+  })
+  .catch(({ errcode, errmsg }) => {
+    console.error('init error', errcode, errmsg);
+  });
+```
+
+``` js
+// 开始下载文件
+p2pModule.startLocalDownload(ipcId, options, callbacks);
+```
+
+``` js
+// 下载视频文件示例：
+const file = { file_name: 'p2p_demo_file.mp4' };
+const params = `_crypto=off&channel=0&file_name=${file.file_name}&offset=0`;
+
+// 临时文件路径
+const filePath = `${wx.env.USER_DATA_PATH}/${file.file_name.replace('/', '_')}`;
+
+// 使用FileSystemManager组装文件
+const fileSystemManager = wx.getFileSystemManager();
+
+p2pModule.startLocalDownload(ipcId, { urlParams: params }, {
+  onReceiveChunk: (data) => {
+    // 接收chunk包并组装文件
+    fileSystemManager.appendFileSync(filePath, data, 'binary')
+  },
+  onComplete: () => {
+    // 保存组装的临时视频文件到相册
+    wx.saveVideoToPhotosAlbum({
+      filePath,
+      success(res) {
+        // saved file handler
+      },
+    });
+  },
+  onFailure: (data) => {
+    // Error handler
+  },
+});
+
+```
+
+``` js
+// 停止下载文件
+p2pModule.stopLocalDownload(ipcId);
 ```
 
 ### 4. 常见问题
@@ -730,6 +801,39 @@ type 的值
 | 'error' | 请求失败 |
 | 'timeout' | 请求超时 |
 
+--------
+
+### p2pModule.startLocalDownload(ipcId, options, callbacks) => Promise\<res\>
+
+开始指定id的本地文件下载
+
+#### 参数
+
+| 参数 | 类型 | 说明 |
+| - | - | - |
+| ipcId | string | 唯一的Id |
+| options | XP2PLocalDownloadOptions | 下载参数，{ urlParams?: \`_crypto=off&channel=0&file_name=${file.file_name}&offset=0\` } |
+| callbacks | XP2PLocalDownloadCallbacks | 各种回调函数 |
+
+
+##### options: XP2PLocalDownloadOptions
+
+| 属性 | 类型 | 默认值 | 必填 | 说明 |
+| - | - | - | - | - |
+| urlParams | string | - | 是 | 文件下载的URL，示例：\`_crypto=off&channel=0&file_name=${file.file_name}&offset=0\` |
+##### callbacks: XP2PLocalDownloadCallbacks
+
+各种回调函数
+
+| 属性 | 类型 | 默认值 | 必填 | 说明 |
+| - | - | - | - | - |
+| onReceiveChunk | (data: ArrayBuffer) => void | - | 是 | 文件流的chunk包 |
+| onComplete | (data?: IResponse) => void | - | 是 | 文件流传输完成的回调函数，成功失败都会调用，调用完成后自动关闭p2p连接 |
+| onPased | (data?: IResponse) => void | - | 否 | 响应头解析成功的回调 |
+| onSuccess | (data?: IResponse) => void | - | 否 | 文件传输成功的回调，调用顺序早于onComplete |
+| onFailure | (data?: IResponse) => void | - | 否 | 文件传输失败的回调，调用顺序早于onComplete，会自动断开p2p连接 |
+| onError | (data?: IResponse) => void | - | 否 | 文件传输出错的回调 |
+
 ## 错误码 说明
 
 | 错误码 | 说明 |
@@ -751,3 +855,4 @@ type 的值
 | -2501 | 数据加密失败 |
 | -2502 | 数据解密失败 |
 | -2601 | 启动语音对讲失败 |
+| -2701 | 文件下载失败 |
