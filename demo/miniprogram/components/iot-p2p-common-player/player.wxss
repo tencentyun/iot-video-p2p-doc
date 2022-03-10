@@ -1,4 +1,7 @@
+@import '../../common.wxss';
+
 .player-container {
+  box-sizing: border-box;
   position: relative;
   width: 100%;
   height: 420rpx;
@@ -8,6 +11,14 @@
   width: 100%  !important;
   height: 100%  !important;
 }
+.player-container .mock-player {
+  box-sizing: border-box;
+  color: white;
+  width: 100%;
+  height: 100%;
+  padding: 20rpx;
+}
+
 .player-container .player-message {
   position: absolute;
   left: 0;
@@ -16,7 +27,13 @@
   text-align: center;
   color: white;
 }
-.player-container .player-controls-container {
+
+.player-container .player-controls-container.left {
+  position: absolute;
+  left: 20rpx;
+  bottom: 20rpx;
+}
+.player-container .player-controls-container.right {
   position: absolute;
   right: 20rpx;
   bottom: 20rpx;
@@ -28,8 +45,14 @@
   position: inline-block;
   vertical-align: bottom;
   color: white;
+}
+.player-container .player-controls-container.left .player-controls .player-control-item {
+  margin-right: 20rpx;
+}
+.player-container .player-controls-container.right .player-controls .player-control-item {
   margin-left: 20rpx;
 }
+
 .player-container .debug-info-switch-container {
   position: absolute;
   left: 20rpx;
@@ -43,13 +66,6 @@
   margin-right: 20rpx;
 }
 
-.player-container .mock-player {
-  color: white;
-  width: 100%;
-  height: 100%;
-  padding: 20rpx;
-}
-
 .debug-info-container {
   position: absolute;
   width: 100%;
@@ -60,29 +76,4 @@
   box-shadow: inset 0 -2rpx 0 0 rgba(0, 0, 0, 0.1);
   z-index: 100;
   padding: 20rpx;
-}
-.text-box {
-  box-sizing: border-box;
-  padding: 0 10rpx;
-  min-height: 54rpx; /* 44 + 10 */
-}
-.text-box.lines-2 {
-  min-height: 98rpx; /* 44 * 2 + 10 */
-}
-.text-box.lines-3 {
-  min-height: 142rpx; /* 44 * 3 + 10 */
-}
-.text-break {
-  word-break: break-all;
-}
-.text-btn {
-  color: #0052d9;
-}
-.text-btn.right {
-  position: absolute;
-  right: 20rpx;
-}
-.text-btn.float-right {
-  float: right;
-  margin-right: 20rpx;
 }

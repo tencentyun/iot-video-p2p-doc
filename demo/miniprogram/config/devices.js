@@ -17,7 +17,7 @@ const devices = {
     showInHomePageBtn: true,
     productId: '9L1S66FZ3Q',
     deviceName: 'test_34683636_4',
-    xp2pInfo: 'XP2P1Xl5RwePR/gqcHlLzFkes5ly%2.3.5',
+    xp2pInfo: 'XP2P1Xl5RwePR/gIS39Av1Z0iKt6%2.3.5',
     liveParams: 'action=live&channel=0&quality=standard',
     playbackParams: 'action=playback&channel=0',
   },
@@ -25,7 +25,7 @@ const devices = {
     showInHomePageBtn: true,
     productId: '9L1S66FZ3Q',
     deviceName: 'test_34683636_5',
-    xp2pInfo: 'XP2PJjjVY/DtlAyKpgmIljDGJq6L%2.3.11',
+    xp2pInfo: 'XP2PJjjVY/DtlAy3nRKtrSLDOJqi%2.3.11',
   },
   debug: {
     // showInHomePageBtn: true,

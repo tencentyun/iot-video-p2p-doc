@@ -45,20 +45,6 @@
     </view>
   </view>
   <view class="component-section" wx:if="{{type === 'live'}}">
-    <view class="component-section-title">切换清晰度</view>
-    <view class="group-button-area">
-      <button bindtap="changeFlv" data-flv="ipc.flv?action=live&channel=0&quality=super" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
-        超清
-      </button>
-      <button bindtap="changeFlv" data-flv="ipc.flv?action=live&channel=0&quality=high" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
-        高清
-      </button>
-      <button bindtap="changeFlv" data-flv="ipc.flv?action=live&channel=0&quality=standard" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
-        标清
-      </button>
-    </view>
-  </view>
-  <view class="component-section" wx:if="{{type === 'live'}}">
     <view class="component-section-title">播放控制</view>
     <view class="group-button-area">
       <button bindtap="pauseLive" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || playerPaused}}">
@@ -66,6 +52,20 @@
       </button>
       <button bindtap="resumeLive" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPaused}}">
         继续
+      </button>
+    </view>
+  </view>
+  <view class="component-section" wx:if="{{type === 'live'}}">
+    <view class="component-section-title">切换清晰度</view>
+    <view class="group-button-area">
+      <button bindtap="changeQuality" data-flv="ipc.flv?action=live&channel=0&quality=super" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+        超清
+      </button>
+      <button bindtap="changeQuality" data-flv="ipc.flv?action=live&channel=0&quality=high" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+        高清
+      </button>
+      <button bindtap="changeQuality" data-flv="ipc.flv?action=live&channel=0&quality=standard" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+        标清
       </button>
     </view>
   </view>
@@ -87,7 +87,26 @@
   <view class="component-section" wx:if="{{type === 'playback'}}">
     <view class="component-section-title">当前录像</view>
     <view class="text-box">
-      <text class="text-break">{{playerPlaybackTimeLocaleStr}}</text>
+      <text>{{playerPlaybackTimeLocaleStr}}</text>
+      <text wx:if="{{playerPlaybackTime}}" style="margin-left: 20rpx;">({{playbackDuration / 1000}}s)</text>
+    </view>
+    <slider min="0" max="{{playbackDuration}}" value="{{sliderProgress}}" bindchange="sliderProgressChange" show-value  disabled="{{!p2pReady || !playerPlaybackTime || !streamSuccess}}"/>
+    <view class="group-button-area">
+      <button bindtap="getPlaybackProgress" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !streamSuccess}}">
+        获取进度
+      </button>
+      <!-- <button bindtap="seekPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !streamSuccess}}">
+        Seek
+      </button> -->
+      <button bindtap="pausePlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !streamSuccess || playerPaused}}">
+        暂停
+      </button>
+      <button bindtap="resumePlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !playerPaused}}">
+        继续
+      </button>
+    </view>
+    <view class="text-box">
+      <text>{{playbackProgressStr}}</text>
     </view>
   </view>
   <view class="component-section" wx:if="{{type === 'playback'}}">
@@ -126,18 +145,6 @@
       <button bindtap="stopPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime}}">
         停止
       </button>
-    </view>
-    <view class="group-button-area">
-      <button bindtap="getPlaybackProgress" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime}}">
-        获取进度
-      </button>
-      <button bindtap="pausePlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !streamSuccess || playerPaused}}">
-        暂停
-      </button>
-      <button bindtap="resumePlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !playerPaused}}">
-        继续
-      </button>
-      <text>{{playbackProgressStr}}</text>
     </view>
   </view>
   <view class="component-section">

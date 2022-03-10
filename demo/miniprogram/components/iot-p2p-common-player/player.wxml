@@ -7,7 +7,7 @@
         autoPlay="{{autoPlay}}"
         mode="live"
         minCache="0.2"
-        maxCache="0.8"
+        maxCache="0.5"
         muted="{{muted}}"
         orientation="{{orientation}}"
         bind:playerReady="onPlayerReady"
@@ -28,14 +28,15 @@
         </view>
       </view>
       <view class="player-message" bindtap="onClickRetry">{{playerMsg}}</view>
-      <view class="player-controls-container">
+      <view class="player-controls-container right">
         <view class="player-controls">
+          <view class="player-control-item">{{playerPaused ? 'paused' : ''}}</view>
           <view class="player-control-item" bindtap="changeMuted">{{muted ? 'muted' : 'notmuted'}}</view>
           <view class="player-control-item" bindtap="changeOrientation">{{orientation}}</view>
         </view>
       </view>
       <view class="debug-info-switch-container">
-        <view class="debug-info-switch" bindtap="toggleDebugInfo">打开/关闭调试信息</view>
+        <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
       </view>
     </view>
   </view>
@@ -48,9 +49,9 @@
           <text class="text-break">{{flvFile}}</text>
         </view>
       </view>
-      <view>playerState: {{playerState}}</view>
+      <view>playerState: {{playerState}} <text wx:if="{{playerPaused}}">pauseType: {{playerPaused}}</text></view>
       <view>p2pState: {{p2pState}}</view>
-      <view>streamState: {{streamState}}</view>
+      <view>streamState: {{streamState}} {{playing ? 'playing' : ''}}</view>
       <!-- <view>chunkCount: {{chunkCount}}</view> -->
       <view>
         totalBytes: {{totalBytes}}
@@ -64,7 +65,7 @@
       </view>
       <view>
         <view>playResult: </view>
-        <view class="text-box" style="height: 650rpx;">
+        <view class="text-box" style="min-height: 650rpx;">
           <text class="text-break">{{playResultStr}}</text>
         </view>
         <view>{{idrResultStr}}</view>
