@@ -304,9 +304,9 @@ const filePath = `${wx.env.USER_DATA_PATH}/${file.file_name.replace('/', '_')}`;
 const fileSystemManager = wx.getFileSystemManager();
 
 p2pModule.startLocalDownload(ipcId, { urlParams: params }, {
-  onReceiveChunk: (data) => {
+  onReceiveChunk: (chunk) => {
     // 接收chunk包并组装文件
-    fileSystemManager.appendFileSync(filePath, data, 'binary')
+    fileSystemManager.appendFileSync(filePath, chunk, 'binary')
   },
   onComplete: () => {
     // 保存组装的临时视频文件到相册
@@ -317,7 +317,7 @@ p2pModule.startLocalDownload(ipcId, { urlParams: params }, {
       },
     });
   },
-  onFailure: (data) => {
+  onFailure: (result) => {
     // Error handler
   },
 });
@@ -812,7 +812,7 @@ type 的值
 | 参数 | 类型 | 说明 |
 | - | - | - |
 | ipcId | string | 唯一的Id |
-| options | XP2PLocalDownloadOptions | 下载参数，{ urlParams?: \`_crypto=off&channel=0&file_name=${file.file_name}&offset=0\` } |
+| options | XP2PLocalDownloadOptions | 下载参数，{ urlParams?: string } |
 | callbacks | XP2PLocalDownloadCallbacks | 各种回调函数 |
 
 
@@ -827,12 +827,12 @@ type 的值
 
 | 属性 | 类型 | 默认值 | 必填 | 说明 |
 | - | - | - | - | - |
-| onReceiveChunk | (data: ArrayBuffer) => void | - | 是 | 文件流的chunk包 |
-| onComplete | (data?: IResponse) => void | - | 是 | 文件流传输完成的回调函数，成功失败都会调用，调用完成后自动关闭p2p连接 |
-| onPased | (data?: IResponse) => void | - | 否 | 响应头解析成功的回调 |
-| onSuccess | (data?: IResponse) => void | - | 否 | 文件传输成功的回调，调用顺序早于onComplete |
-| onFailure | (data?: IResponse) => void | - | 否 | 文件传输失败的回调，调用顺序早于onComplete，会自动断开p2p连接 |
-| onError | (data?: IResponse) => void | - | 否 | 文件传输出错的回调 |
+| onChunkReceived | (chunk: ArrayBuffer) => void | - | 是 | 文件流的chunk包 |
+| onComplete | () => void | - | 是 | 文件流传输完成的回调函数，成功失败都会调用，调用完成后自动关闭p2p连接 |
+| onHeadersReceived | (result?: { status: number; headers: Headers }) => void | - | 否 | 响应头解析成功的回调 |
+| onSuccess | (result: XP2PLocalDownloadResult) => void | - | 否 | 文件传输成功的回调，调用顺序早于onComplete |
+| onFailure | (result: XP2PLocalDownloadResult) => void | - | 否 | 文件传输失败的回调，调用顺序早于onComplete，会自动断开p2p连接 |
+| onError | (result: XP2PLocalDownloadResult) => void | - | 否 | 文件传输出错的回调 |
 
 ## 错误码 说明
 
