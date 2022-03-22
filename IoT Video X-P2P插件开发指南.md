@@ -11,7 +11,8 @@
 | 1.0.3 | 2021.12.16 | 开发版小程序支持关闭流加密 |
 | 1.1.0 | 2021.12.27 | 优化1v多，server端提供https流，不用另外部署code服务 |
 | 1.1.1 | 2022.3.2 | 检测到本地NAT发生变化时通知调用方 |
-| 1.2.0 | 2022.3.7 | 新增本地文件下载功能 |
+| 1.2.0 | 2022.3.10 | 新增本地文件下载功能 |
+| 1.3.0 | 2022.3.22 | 支持发送自定义的语音数据 |
 
 ## 插件介绍
 
@@ -39,13 +40,14 @@
 
 使用本插件需要：
 
-- 接入腾讯云 IoT Video P2P 服务，获取访问密钥
+- 接入腾讯云 IoT Video P2P 服务，获取访问密钥等信息（即后文中的`appParams`）
+- 申请使用 `xp2p插件(wx1319af22356934bf)` 和 `p2p-player插件(wx9e8fbc98ceac2628)` 
 - 有使用 live-player 的权限，详见 [live-player官方文档](https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html)
 - 如果使用 1v多 模式，需要将flv流的域名加到小程序的 `request合法域名` 和 `tcp合法域名` 配置中，详见 [服务器域名配置官方文档](https://developers.weixin.qq.com/miniprogram/dev/framework/ability/network.html#1.%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%9F%9F%E5%90%8D%E9%85%8D%E7%BD%AE)
 
 ## 微信版本限制
 
-- 1v1: 微信 8.0.10 以上，基础库 2.19.3 以上
+- 1v1：微信 8.0.10 以上，基础库 2.19.3 以上
 - 1v多：微信 8.0.14 以上，基础库 2.20.2 以上
 
 ## 使用方法
@@ -63,7 +65,22 @@ appid: 'wx9e8fbc98ceac2628'
 appid: 'wx1319af22356934bf'
 ```
 
-### 2. 在配置中引入插件
+申请通过后可以尝试运行demo项目，熟悉基本功能
+
+demo项目地址：https://github.com/tencentyun/iot-video-p2p-doc/tree/master/demo/miniprogram
+
+运行前需要修改一些配置：
+- 替换 project.config.json 里的小程序 appid
+- 替换 config/config.js 里的客户参数 appParams
+- 1v1模式，替换 config/devcies.js 里预置的设备信息
+- 1v多模式，替换 config/streams.js 里预置的server流信息
+
+注意事项：
+- 要求微信 8.0.10 以上，基础库 2.19.3 以上，低版本需提示升级
+- 开发者工具不支持 live-player 和 TCPServer，所以不能在开发者工具中调试，也不支持真机调试，需使用二维码预览的方式在真机运行
+
+
+### 2. 在自有小程序的配置中引入插件
 
 ``` js
 // 在app.json里面引入插件，注意尽量用最新的插件版本号
@@ -81,7 +98,7 @@ appid: 'wx1319af22356934bf'
 }
 ```
 
-### 3. 使用插件
+### 3. 在自有小程序中使用插件
 
 p2p监控需要2个插件配合使用，参考 demo 中的组件 [iot-p2p-common-player](./demo/miniprogram/components/iot-p2p-common-player)。
 
@@ -141,7 +158,8 @@ p2pModule.startP2PService(streamId, streamInfo, {
 
 ``` js
 // 在 p2p-player 插件结束请求后关闭p2p通信
-p2pModule.stopServiceById(streamId);
+// 1.3.0 之前需使用旧接口名 stopServiceById
+p2pModule.stopP2PService(streamId);
 
 ```
 
@@ -210,7 +228,8 @@ p2pModule.updateServiceCallbacks(ipcId, {
 
 ``` js
 // 在 p2p-player 插件开始请求后启动p2p拉流，注意需要先调用 startP2PService
-p2pModule.startP2PStream(ipcId, {
+// 1.3.0 之前需使用旧接口名 startP2PStream
+p2pModule.startStream(ipcId, {
   // 不指定 flv 就从 startP2PService 的参数里解析
   flv: {
     filename: 'ipc.flv',
@@ -225,31 +244,15 @@ p2pModule.startP2PStream(ipcId, {
 
 ``` js
 // 在 p2p-player 插件结束请求后关闭p2p拉流
-p2pModule.stopP2PStream(ipcId);
-
-```
-
-``` js
-// 开始语音对讲，注意需要先调用 startP2PService
-p2pModule.startVoiceService(ipcId, recorderManager, options, callbacks);
-
-```
-
-``` js
-// 停止语音对讲
-p2pModule.stopVoiceService(ipcId);
-
-```
-
-``` js
-// 发送信令，注意需要先调用 startP2PService
-p2pModule.sendCommand(ipcId, command);
+// 1.3.0 之前需使用旧接口名 stopP2PStream
+p2pModule.stopStream(ipcId);
 
 ```
 
 ``` js
 // 关闭p2p通信，如果正在拉流或者对讲，也会一起关闭
-p2pModule.stopServiceById(ipcId);
+// 1.3.0 之前需使用旧接口名 stopServiceById
+p2pModule.stopP2PService(ipcId);
 
 ```
 
@@ -259,37 +262,67 @@ p2pModule.destroy();
 
 ```
 
-#### 3.3 本地文件下载
+#### 3.3 1v1 扩展功能
+
+对于1v1，在 startP2PService 之后，可以直接与设备进行交互
+
+##### 发送信令
+
+通常用来获取设备状态、控制设备ptz等
+
 ``` js
-// 获取插件
-const videoPlugin = requirePlugin('iotvideo-weapp-plugin');
-const p2pModule = videoPlugin.p2p;
+// 发送信令
+p2pModule.sendCommand(ipcId, command);
+
 ```
 
-```js
-// 初始化 IoTP2PModule，建议尽早初始化，提前探测网络状态
-p2pModule
-  .init({
-    appParams: {
-      appid: $yourTCloudAppId,
-      appOauthId: $yourAppOauthId,
-      appKey: $yourAppKey,
-      appSecretKey: $yourAppSecretKey,
-      appPackage: $yourAppPackage,
-    },
-  })
-  .then((res) => {
-    // res === 0 说明初始化成功
-    console.log('init res', res);
-  })
-  .catch(({ errcode, errmsg }) => {
-    console.error('init error', errcode, errmsg);
-  });
+##### 语音对讲
+
+``` js
+// 开始语音对讲
+// 1.3.0 之前需使用旧接口名 startVoiceService
+p2pModule.startVoice(ipcId, recorderManager, options, callbacks);
+
+// 停止语音对讲
+// 1.3.0 之前需使用旧接口名 stopVoiceService
+p2pModule.stopVoice(ipcId);
 ```
+
+``` js
+// 示例
+
+// 语音对讲需要recorderManager
+const recorderManager = wx.getRecorderManager();
+
+// 说明见微信官方文档中 RecorderManager.start 的参数
+const recorderOptions = {
+  numberOfChannels: 1, // 录音通道数
+  sampleRate: 8000, // 采样率
+  encodeBitRate: 16000, // 编码码率
+};
+
+p2pModule.startVoice(ipcId, recorderManager, recorderOptions, {
+  onPause: (res) => {
+    // 简单点，recorder暂停就停止语音对讲
+    this.stopVoice();
+  },
+  onStop: (res) => {
+    if (!res.willRestart) {
+      // 如果是到达最长录音时间触发的，插件会自动续期，不自动restart的才需要stopVoice
+      this.stopVoice();
+    }
+  },
+});
+```
+
+##### 本地文件下载
 
 ``` js
 // 开始下载文件
 p2pModule.startLocalDownload(ipcId, options, callbacks);
+
+// 停止下载文件
+p2pModule.stopLocalDownload(ipcId);
 ```
 
 ``` js
@@ -304,7 +337,7 @@ const filePath = `${wx.env.USER_DATA_PATH}/${file.file_name.replace('/', '_')}`;
 const fileSystemManager = wx.getFileSystemManager();
 
 p2pModule.startLocalDownload(ipcId, { urlParams: params }, {
-  onReceiveChunk: (data) => {
+  onChunkReceived: (data) => {
     // 接收chunk包并组装文件
     fileSystemManager.appendFileSync(filePath, data, 'binary')
   },
@@ -324,16 +357,37 @@ p2pModule.startLocalDownload(ipcId, { urlParams: params }, {
 
 ```
 
-``` js
-// 停止下载文件
-p2pModule.stopLocalDownload(ipcId);
-```
+## 常见问题
 
-### 4. 常见问题
+拉流时需要 `xp2p插件` 和 `p2p-player插件` 同时使用，2个插件的错误事件都需要处理
 
-监控时需要 `xp2p插件` 和 `p2p-player插件` 同时使用，2个插件的错误事件都需要处理
+下面对照 iot-p2p-common-player 组件的启播流程来说明
 
-#### 4.1 进入监控页，第一次触发播放，有时live-player并没有开始播放，没收到 playerStartPull 事件
+<img width="1250" src="./pic/plugin-xp2p/common-player.png"/>
+
+### 1 xp2p插件启动错误（ServiceStarted之前）
+
+#### P2PInitError
+- -2000 参数错误：检查appParams各字段是否填写完整
+- -2003 重复启动：单例，只需要启动1次
+- 超时：检查本地网络是否正常
+
+#### ServiceStartError
+- -2401 重复启动：同一个设备只能有1个连接，如果重连需要先stop前一个
+
+### 2 p2p-player插件启动错误（PlayerReady之前）
+
+#### PlayerError
+- 检查环境：微信 8.0.10 以上，基础库 2.19.3 以上
+- 不支持开发者工具调试，需要真机二维码预览运行
+
+#### LivePlayerError
+- 透传 live-player 的error事件
+
+
+### 3 播放相关错误
+
+#### 3.1 进入监控页，第一次触发播放，有时live-player并没有开始播放
 
 通过代码 playerCtx.play() 来触发播放，有时候 live-player 并没有真正开始播放，建议按这个流程处理：
 - 进入监控页，启动p2p和创建player并行，初始 autoplay 为 false
@@ -341,11 +395,15 @@ p2pModule.stopLocalDownload(ipcId);
   - 如果 autoplay 为 false，把它设为 true
   - 如果 autoplay 已经是 true（比如p2p连接断开后重连），调用 playerCtx.play()
 
-#### 4.2 播放一段时间之后，收到xp2p插件的连接断开事件
+#### 3.2 live-player已经开始播放，通过 playerStartPull 事件触发了xp2p插件拉流，但是xp2p插件没收到数据
+
+请检查设备是否在线，以及小程序拿到的xp2pInfo是否正确
+
+#### 3.3 播放一段时间之后，收到xp2p插件的连接断开事件
 
 xp2p插件会通过 `msgCallback` 通知各种事件。
 
-如果是连接断开，可能有多种情况：设备离线、设备停止推流、本地网络状态变化等等，通常处理是退出监控页，用户检查之后再重新进入页面。
+如果是连接断开，可能有多种情况：设备离线、设备网络变化、设备停止推流、本地网络状态变化等等，通常处理是退出监控页，用户检查之后再重新进入页面。
 
 注意：在退出时可能需要重置p2p模块，详见后文 **“退出监控页时的处理”**。
 
@@ -370,11 +428,17 @@ onP2PMessage(event, subtype, detail) {
 }
 ```
 
-#### 4.3 退后台一段时间再回来，live-player已经开始播放，但是没收到 playerStartPull 事件
+#### 3.4 网络变化后，xp2p插件收不到数据，live-player自动重试数次后提示播放失败
 
-退后台一段时间，部分系统会中断网络服务，导致player插件启动的本地server无法再收到请求。这种情况目前暂时没有单独的事件，但是可以在p2p-player组件的 statechange 事件 2103 中通过详情间接判断。
+网络变化会导致p2p模块收不到数据，live-player在一段时间没收到数据后会触发自动重试。
 
-通常处理也是退出监控页，退出时重置本地server，用户重新进入页面后创建的player就能正常触发事件了。
+可以在p2p-player组件的 statechange 事件 2103 中检查，如果网络变化，就认为播放失败。
+
+注意，可以区分1v1/1v多做不同处理：
+- 1v1：网络变化后就不能再次连接上ipc，所以需要调用 checkCanRetry 检查，不能重试的就算播放失败
+- 1v多：网络变化但还是有连接时（比如 wifi->4g），重试可以成功，只是后续会一直从server拉流，无法切换到从其他节点拉流
+  - 为了省流量，可以和1v1一样，调用 checkCanRetry 检查
+  - 为了体验稳定，可以不特别处理，live-player 会继续重试
 
 ``` js
 // p2p-player组件消息处理
@@ -382,16 +446,9 @@ onLivePlayerStateChange({ detail }) {
   switch (detail.code) {
     case 2103: // 网络断连, 已启动自动重连
       console.error('onLivePlayerStateChange', detail.code, detail);
-      if (/errCode:-1004(\D|$)/.test(detail.message)) {
-        // -1004 无法连接服务器
-        xp2pManager.needResetLocalServer = true;
-
-        // 这时其实网络状态应该也变了，但是网络状态变化事件延迟较大，networkChanged不一定为true，所以主动把 networkChanged 也设为true
-        xp2pManager.networkChanged = true;
-
-        // 销毁p2p-player组件，否则会多次重试，多次收到 2103
-        
-        // 弹个提示，退出监控页
+      if (/errCode:-1004(\D|$)/.test(detail.message) || /Failed to connect to/.test(detail.message)) {
+        // 无法连接本地服务器
+        /* 详见下一节 */
       } else {
         // 这里一般是一段时间没收到数据，或者数据不是有效的视频流导致的
         /*
@@ -409,23 +466,42 @@ onLivePlayerStateChange({ detail }) {
 }
 ```
 
-#### 4.4 网络变化后，live-player不断自动重试
+#### 3.5 退后台一段时间再回来，live-player已经开始播放，但是没触发 playerStartPull 事件
 
-网络变化会导致p2p模块收不到数据，live-player在一段时间没收到数据后会触发自动重试。
+退后台一段时间，部分系统会中断网络服务，导致player插件启动的本地server无法再收到请求。
 
-可以在p2p-player组件的 statechange 事件 2103 中检查，如果网络变化，就认为播放失败。
+对于player插件1.1.0以上版本，会收到playerError(code: 'WECHAT_SERVER_ERROR')
 
-注意，可以区分1v1/1v多做不同处理：
-- 1v1：网络变化后就不能再次连接上ipc，所以需要调用 checkCanRetry 检查，不能重试的就算播放失败
-- 1v多：网络变化但还是有连接时（比如 wifi->4g），重试可以成功，只是后续会一直从server拉流，无法切换到从其他节点拉流
-  - 为了省流量，可以和1v1一样，调用 checkCanRetry 检查
-  - 为了体验稳定，可以不特别处理，live-player 会继续重试
+对于player插件1.0.x版本，没有单独的事件，但是可以在p2p-player组件的 statechange 事件 2103 中通过详情间接判断。
+
+通常处理也是退出监控页，退出时重置本地server，用户重新进入页面后创建的player就能正常触发事件了。
 
 ``` js
-// 代码见上一节
+// p2p-player组件消息处理
+onLivePlayerStateChange({ detail }) {
+  switch (detail.code) {
+    case 2103: // 网络断连, 已启动自动重连
+      console.error('onLivePlayerStateChange', detail.code, detail);
+      if (/errCode:-1004(\D|$)/.test(detail.message) || /Failed to connect to/.test(detail.message)) {
+        // 无法连接本地服务器
+        xp2pManager.needResetLocalServer = true;
+
+        // 这时其实网络状态应该也变了，但是网络状态变化事件延迟较大，networkChanged不一定为true，所以主动把 networkChanged 也设为true
+        xp2pManager.networkChanged = true;
+
+        // 销毁p2p-player组件，否则会多次重试，多次收到 2103
+        
+        // 弹个提示，退出监控页
+      } else {
+        // 这里一般是一段时间没收到数据，或者数据不是有效的视频流导致的
+        /* 详见上一节 */
+      }
+      break;
+  }
+}
 ```
 
-#### 4.5 退出监控页时的处理
+### 5 退出监控页时的处理
 
 退出监控页时，根据标记重置插件
 
@@ -456,10 +532,6 @@ onUnload() {
   }
 }
 ```
-
-### 5. 代码示例
-
-见 [小程序demo](./demo/miniprogram)
 
 ## API 说明
 
@@ -511,6 +583,10 @@ res 的值
 
 重置p2p模块
 
+#### 参数
+
+无
+
 #### 返回值
 
 ##### Promise<res: number>
@@ -530,6 +606,14 @@ res 的值
 
 销毁
 
+#### 参数
+
+无
+
+#### 返回值
+
+无
+
 --------
 
 ### p2pModule.getUUID() => string
@@ -537,6 +621,14 @@ res 的值
 获取UUID，可以用来查XP2P的log
 
 init 之后调用，初始化失败也能获取到
+
+#### 参数
+
+无
+
+#### 返回值
+
+uuid: string
 
 --------
 
@@ -657,11 +749,15 @@ res 的值
 | - | - | - |
 | id | string | 唯一id |
 
+#### 返回值
+
+无
+
 --------
 
-### p2pModule.startP2PStream(id, params) => Promise\<res\>
+### p2pModule.startStream(id, params) => Promise\<res\>
 
-开始指定id的拉流服务
+开始指定id的拉流请求
 
 #### 参数
 
@@ -702,68 +798,19 @@ res 的值
 
 --------
 
-### p2pModule.stopP2PStream(id) => void
+### p2pModule.stopStream(id) => void
 
-停止指定id的拉流服务
-
-#### 参数
-
-| 参数 | 类型 | 说明 |
-| - | - | - |
-| id | string | 唯一id |
-
---------
-
-### p2pModule.startVoiceService(id, recorderManager, options, callbacks) => Promise\<res\>
-
-开始指定id的语音对讲服务
+停止指定id的拉流请求
 
 #### 参数
 
 | 参数 | 类型 | 说明 |
 | - | - | - |
 | id | string | 唯一id |
-| recorderManager | RecorderManager | 录音管理器 |
-| options | RecorderManagerStartOption | 录音参数，format 需设置为 PCM |
-| callbacks | Object | 各种回调函数 |
-
-##### callbacks: Object
-
-各种回调函数
-
-| 属性 | 类型 | 默认值 | 必填 | 说明 |
-| - | - | - | - | - |
-| onStart | () => void | - | 否 | 参考 RecorderManager.onStart |
-| onPause | ({ inInterruption: boolean }) => void | - | 否 | 参考 RecorderManager.onPause，参数增加属性 inInterruption |
-| onResume | () => void | - | 否 | 参考 RecorderManager.onStart |
-| onStop | ({ willRestart: boolean }) => void | - | 否 | 参考 RecorderManager.onStop，参数增加属性 willRestart |
 
 #### 返回值
 
-##### Promise<res: number>
-
-res 的值
-
-| res | 说明 |
-| - | - |
-| 0 | 成功 |
-| -2000 | 参数错误 |
-| -2002 | 模块尚未初始化 |
-| -2401 | 重复启动p2p服务 |
-| -2403 | p2p服务尚未启动 |
-| -2601 | 启动语音对讲失败 |
-
---------
-
-### p2pModule.stopVoiceService(id) => void
-
-停止指定id的语音对讲服务
-
-#### 参数
-
-| 参数 | 类型 | 说明 |
-| - | - | - |
-| id | string | 唯一id |
+无
 
 --------
 
@@ -803,6 +850,63 @@ type 的值
 
 --------
 
+### p2pModule.startVoice(id, recorderManager, options, callbacks) => Promise\<res\>
+
+开始指定id的语音对讲
+
+#### 参数
+
+| 参数 | 类型 | 说明 |
+| - | - | - |
+| id | string | 唯一id |
+| recorderManager | RecorderManager | 录音管理器 |
+| options | RecorderManagerStartOption | 录音参数，format 需设置为 PCM |
+| callbacks | Object | 各种回调函数 |
+
+##### callbacks: Object
+
+各种回调函数
+
+| 属性 | 类型 | 默认值 | 必填 | 说明 |
+| - | - | - | - | - |
+| onStart | () => void | - | 否 | 参考 RecorderManager.onStart |
+| onPause | ({ inInterruption: boolean }) => void | - | 否 | 参考 RecorderManager.onPause，参数增加属性 inInterruption |
+| onResume | () => void | - | 否 | 参考 RecorderManager.onStart |
+| onStop | ({ willRestart: boolean }) => void | - | 否 | 参考 RecorderManager.onStop，参数增加属性 willRestart |
+
+#### 返回值
+
+##### Promise<res: number>
+
+res 的值
+
+| res | 说明 |
+| - | - |
+| 0 | 成功 |
+| -2000 | 参数错误 |
+| -2002 | 模块尚未初始化 |
+| -2401 | 重复启动p2p服务 |
+| -2403 | p2p服务尚未启动 |
+| -2601 | 启动语音对讲失败 |
+
+--------
+
+### p2pModule.stopVoice(id) => void
+
+停止指定id的语音对讲
+
+#### 参数
+
+| 参数 | 类型 | 说明 |
+| - | - | - |
+| id | string | 唯一id |
+
+#### 返回值
+
+无
+
+--------
+
 ### p2pModule.startLocalDownload(ipcId, options, callbacks) => Promise\<res\>
 
 开始指定id的本地文件下载
@@ -821,20 +925,66 @@ type 的值
 | 属性 | 类型 | 默认值 | 必填 | 说明 |
 | - | - | - | - | - |
 | urlParams | string | - | 是 | 文件下载的URL，示例：\`_crypto=off&channel=0&file_name=${file.file_name}&offset=0\` |
+
 ##### callbacks: XP2PLocalDownloadCallbacks
 
 各种回调函数
 
 | 属性 | 类型 | 默认值 | 必填 | 说明 |
 | - | - | - | - | - |
-| onReceiveChunk | (data: ArrayBuffer) => void | - | 是 | 文件流的chunk包 |
-| onComplete | (data?: IResponse) => void | - | 是 | 文件流传输完成的回调函数，成功失败都会调用，调用完成后自动关闭p2p连接 |
-| onPased | (data?: IResponse) => void | - | 否 | 响应头解析成功的回调 |
-| onSuccess | (data?: IResponse) => void | - | 否 | 文件传输成功的回调，调用顺序早于onComplete |
-| onFailure | (data?: IResponse) => void | - | 否 | 文件传输失败的回调，调用顺序早于onComplete，会自动断开p2p连接 |
-| onError | (data?: IResponse) => void | - | 否 | 文件传输出错的回调 |
+| onChunkReceived | (chunk: ArrayBuffer) => void | - | 是 | 文件流的chunk包 |
+| onComplete | () => void | - | 是 | 文件流传输完成的回调函数，成功失败都会调用，调用完成后自动关闭p2p连接 |
+| onHeadersReceived | (result?: { status: number; headers: Headers }) => void | - | 否 | 响应头解析成功的回调 |
+| onSuccess | (result: XP2PLocalDownloadResult) => void | - | 否 | 文件传输成功的回调，调用顺序早于onComplete |
+| onFailure | (result: XP2PLocalDownloadResult) => void | - | 否 | 文件传输失败的回调，调用顺序早于onComplete，会自动断开p2p连接 |
+| onError | (result: XP2PLocalDownloadResult) => void | - | 否 | 文件传输出错的回调 |
 
-## 错误码 说明
+##### result: XP2PLocalDownloadResult
+
+回调函数参数
+
+| 属性 | 类型 | 默认值 | 必填 | 说明 |
+| - | - | - | - | - |
+| status | number | - | 是 | http 状态码 |
+| headers | Headers | - | 是 | http 响应头 |
+| data | ArrayBuffer | - | 否 | 响应的数据包 |
+| errcode | number | - | 否 | 错误码 |
+| errmsg | string | - | 否 | 错误信息 |
+
+#### 返回值
+
+##### Promise<res: number>
+
+res 的值
+
+| res | 说明 |
+| - | - |
+| 0 | 成功 |
+| -2000 | 参数错误 |
+| -2002 | 模块尚未初始化 |
+| -2401 | 重复启动p2p服务 |
+| -2403 | p2p服务尚未启动 |
+| -2701 | 文件下载失败 |
+
+--------
+
+### p2pModule.stopLocalDownload(id) => void
+
+停止指定id的本地文件下载
+
+#### 参数
+
+| 参数 | 类型 | 说明 |
+| - | - | - |
+| id | string | 唯一id |
+
+#### 返回值
+
+无
+
+--------
+
+## 附录：错误码汇总
 
 | 错误码 | 说明 |
 | - | - |
