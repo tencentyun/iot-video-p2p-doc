@@ -328,7 +328,7 @@ p2pModule.stopLocalDownload(ipcId);
 ``` js
 // 下载视频文件示例：
 const file = { file_name: 'p2p_demo_file.mp4' };
-const params = `_crypto=off&channel=0&file_name=${file.file_name}&offset=0`;
+const params = `channel=0&file_name=${file.file_name}&offset=0`;
 
 // 临时文件路径
 const filePath = `${wx.env.USER_DATA_PATH}/${file.file_name.replace('/', '_')}`;
@@ -927,7 +927,7 @@ res 的值
 
 | 属性 | 类型 | 默认值 | 必填 | 说明 |
 | - | - | - | - | - |
-| urlParams | string | - | 是 | 文件下载的URL，示例：\`_crypto=off&channel=0&file_name=${file.file_name}&offset=0\` |
+| urlParams | string | - | 是 | 文件下载的URL，示例：\`channel=0&file_name=${file.file_name}&offset=0\` |
 
 ##### callbacks: XP2PLocalDownloadCallbacks
 

@@ -7,8 +7,8 @@
 ## 准备工作
 
 - 申请腾讯云 IoT Video P2P 服务，获取访问密钥（联调阶段可直接使用demo里的密钥，正式发布时请使用我们邮件提供给您的正式密钥）
-- 有使用 live-player 的权限，详见 [官方文档](https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html)
 - 向腾讯云IoT Video团队申请使用 [IoT Video X-P2P插件](./IoT%20Video%20X-P2P%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md) 和 [IoT Video P2P-Player插件](./IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
+- 有使用 live-player 的权限，详见 [官方文档](https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html)
 - 如果使用 1v多 模式，需要将flv流的域名加到小程序的 `request合法域名` 和 `tcp合法域名` 配置中，详见 [服务器域名配置官方文档](https://developers.weixin.qq.com/miniprogram/dev/framework/ability/network.html#1.%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%9F%9F%E5%90%8D%E9%85%8D%E7%BD%AE)
 
 ## 微信版本限制
@@ -21,19 +21,23 @@
 
 ![](./pic/miniprogram/%E5%B0%8F%E7%A8%8B%E5%BA%8FP2P%E6%9E%B6%E6%9E%84%E5%9B%BE.png)
 
-- 1、初始化阶段：
+- 0、初始化阶段：
 
-  1-1：小程序Demo或自有小程序引用IoT Video P2P-Player，返回`livePlayerContext`， 可以直接对`live-player`的context进行操作
+  小程序在启动时就可以调用IoT Video P2P插件的 init 接口，初始化p2p模块，入参填写腾讯云IoT Video分配的appKey和appKeySecret等信息
 
-  1-2：小程序Demo或自有小程序调用IoT Video P2P插件的初始化接口，初始化入参填写腾讯云IoT Video分配的appKey和appKeySecret等信息
+- 1、小程序用户选择某个摄像头
 
-- 2、小程序用户选择某个摄像头进行播放
+  1-1：小程序引用IoT Video P2P-Player，返回`livePlayerContext`， 可以直接对`live-player`的context进行操作
 
-- 3、小程序Demo或自有小程序设置播放：
+  1-2：如果是1v1，小程序调用IoT Video P2P插件的 startP2PService 接口，开始建立p2p连接
 
-  3-1：P2P-Player插件抛出拉流事件给小程序应用
+- 2、小程序利用`livePlayerContext`触发播放
+
+- 3、插件启动播放：
+
+  3-1：P2P-Player插件抛出拉流事件 playerStartPull 给小程序应用
   
-  3-2：小程序应用在拉流回调中，调用XP2P插件的 startP2PService、startStream 接口，传入需要播放的摄像头ID或播放URL，并设置消息接收回调和数据接收回调
+  3-2：小程序应用调用XP2P插件的 startStream 接口，传入需要播放的摄像头ID和播放URL，并设置消息接收回调和数据接收回调
 
 - 4、数据流会通过第3步设置的数据接收回调，传递给P2P-Player插件播放
 
@@ -41,9 +45,13 @@
 
 - 6、插件终止播放：
 
-  6-1：小程序Demo或自有小程序调用P2P插件的 stopStream、stopServiceById 终止传输数据
+  6-1：小程序调用P2P插件的 stopStream、stopServiceById 终止传输数据
 
   6-2：小程序Demo或自有小程序操作live-player的context，停止播放
+
+- 7 消耗
+
+  小程序退出时，调用IoT Video P2P插件的 destroy 接口，销毁p2p模块
 
 ### 小程序Demo
 
