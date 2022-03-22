@@ -39,7 +39,7 @@
     "ignoreUploadUnusedFiles": true
   },
   "appid": "wx9e8fbc98ceac2628",
-  "projectname": "iotvideo-xp2p-demo",
+  "projectname": "miniprogram",
   "simulatorType": "wechat",
   "simulatorPluginLibVersion": {},
   "condition": {}

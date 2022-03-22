@@ -48,10 +48,12 @@ class Xp2pManager {
     return p2pExports?.XP2PEventEnum;
   }
 
+  // eslint-disable-next-line camelcase
   get XP2PNotify_SubType() {
     return p2pExports?.XP2PNotify_SubType;
   }
 
+  // eslint-disable-next-line camelcase
   get XP2PDevNotify_SubType() {
     return p2pExports?.XP2PDevNotify_SubType;
   }
@@ -88,6 +90,14 @@ class Xp2pManager {
     this._needResetLocalServer = v;
   }
 
+  get needResetLocalRtmpServer() {
+    return this._needResetLocalRtmpServer;
+  }
+
+  set needResetLocalRtmpServer(v) {
+    this._needResetLocalRtmpServer = v;
+  }
+
   get isModuleActive() {
     return this._state === 'inited'
       && !this.networkChanged;
@@ -100,6 +110,7 @@ class Xp2pManager {
     this._networkType = '';
     this._networkChanged = null;
     this._needResetLocalServer = false;
+    this._needResetLocalRtmpServer = false;
     this._appHideTimestamp = 0;
 
     // 自定义信令用
@@ -143,6 +154,28 @@ class Xp2pManager {
     });
   }
 
+  checkReset() {
+    console.log('Xp2pManager: checkReset');
+
+    if (this._networkChanged) {
+      try {
+        this.resetP2P();
+      } catch (err) {}
+    }
+
+    if (this._needResetLocalServer) {
+      try {
+        this.resetLocalServer();
+      } catch (err) {}
+    }
+
+    if (this._needResetLocalRtmpServer) {
+      try {
+        this.resetLocalRtmpServer();
+      } catch (err) {}
+    }
+  }
+
   resetLocalServer() {
     console.log('Xp2pManager: resetLocalServer');
     this._needResetLocalServer = false;
@@ -157,6 +190,22 @@ class Xp2pManager {
       console.error('playerPlugin.reset error', err);
     }
   }
+
+  resetLocalRtmpServer() {
+    console.log('Xp2pManager: resetLocalRtmpServer');
+    this._needResetLocalRtmpServer = false;
+
+    try {
+      if (!playerPlugin) {
+        playerPlugin = requirePlugin('wechat-p2p-player');
+      }
+      playerPlugin.resetRtmp();
+    } catch (err) {
+      // 低版本插件没有 reset，保护一下
+      console.error('playerPlugin.resetRtmp error', err);
+    }
+  }
+
   initModule() {
     console.log('Xp2pManager: initModule in state', this._state);
 
@@ -311,7 +360,7 @@ class Xp2pManager {
 
   stopP2PService(targetId) {
     console.log('Xp2pManager: stopP2PService', targetId);
-    return p2pExports.stopServiceById(targetId);
+    return p2pExports.stopP2PService(targetId);
   }
 
   getServiceInitInfo(targetId) {
@@ -325,19 +374,19 @@ class Xp2pManager {
 
   startStream(targetId, { flv, dataCallback }) {
     console.log('Xp2pManager: startStream', targetId);
-    return p2pExports.startP2PStream(targetId, { flv, dataCallback });
+    return p2pExports.startStream(targetId, { flv, dataCallback });
   }
 
   stopStream(targetId) {
     console.log('Xp2pManager: stopStream', targetId);
-    return p2pExports.stopP2PStream(targetId);
+    return p2pExports.stopStream(targetId);
   }
 
   startVoice(targetId, options, callbacks) {
     console.log('Xp2pManager: startVoice', targetId, options);
 
     return new Promise((resolve, reject) => {
-      this._checkRecordAuthorize()
+      this.checkRecordAuthorize()
         .then((result) => {
           console.log('checkRecordAuthorize res', result);
 
@@ -345,7 +394,7 @@ class Xp2pManager {
           const recorderManager = wx.getRecorderManager();
 
           p2pExports
-            .startVoiceService(targetId, recorderManager, options, callbacks)
+            .startVoice(targetId, recorderManager, options, callbacks)
             .then((res) => {
               resolve(res);
             })
@@ -360,9 +409,14 @@ class Xp2pManager {
     });
   }
 
+  startVoiceData(targetId, options, callbacks) {
+    console.log('Xp2pManager: startVoiceData', targetId, options);
+    return p2pExports.startVoiceData(targetId, options, callbacks);
+  };
+
   stopVoice(targetId) {
     console.log('Xp2pManager: stopVoice', targetId);
-    return p2pExports.stopVoiceService(targetId);
+    return p2pExports.stopVoice(targetId);
   }
 
   sendCommand(targetId, command, options = { responseType: 'text' }) {
@@ -461,14 +515,18 @@ class Xp2pManager {
     }
   }
 
-  _checkRecordAuthorize() {
+  checkRecordAuthorize() {
+    return this._checkAuthorize('scope.record');
+  }
+
+  _checkAuthorize(scope) {
     return new Promise((resolve, reject) => {
       wx.getSetting({
         success(res) {
           console.log('wx.getSetting res', res);
-          if (!res.authSetting['scope.record']) {
+          if (!res.authSetting[scope]) {
             wx.authorize({
-              scope: 'scope.record',
+              scope,
               success() {
                 // 用户已经同意小程序使用录音功能，后续调用 wx.startRecord 接口不会弹窗询问
                 resolve(0);

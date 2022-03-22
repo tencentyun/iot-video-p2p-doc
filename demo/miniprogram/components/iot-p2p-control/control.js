@@ -5,8 +5,9 @@ const xp2pManager = getXp2pManager();
 Component({
   behaviors: ['wx://component-export'],
   properties: {
-    showDestroy: {
-      type: Boolean,
+    id: {
+      type: String,
+      value: '',
     },
   },
   data: {
@@ -14,6 +15,24 @@ Component({
     uuid: '',
     state: '',
     localPeername: '',
+
+    // 记录需要刷新
+    dirty: false,
+  },
+  pageLifetimes: {
+    show() {
+      // 再显示时同步一下状态，应该用事件通知，先简单处理吧
+      if (!this.data.dirty) {
+        return;
+      }
+      this.setData({ dirty: false });
+
+      console.log(`[${this.id}]`, 'refreshState after show');
+      this.refreshState();
+    },
+    hide() {
+      this.setData({ dirty: true });
+    },
   },
   lifetimes: {
     created() {
@@ -21,7 +40,6 @@ Component({
     },
     attached() {
       // 在组件实例进入页面节点树时执行
-      console.log(`[${this.id}]`, 'attached', this.id, this.properties);
       // 自动 initModule
       this.initModule();
     },
@@ -59,7 +77,7 @@ Component({
       });
     },
     printData() {
-      console.info(`[${this.id}]`, 'now p2p data', this.data);
+      console.log(`[${this.id}]`, 'now p2p data', this.data);
     },
     changeState(newData) {
       this.triggerEvent('statechange', { state: newData.state, localPeername: newData.localPeername });

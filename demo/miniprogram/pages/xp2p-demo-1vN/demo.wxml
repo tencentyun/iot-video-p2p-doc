@@ -15,6 +15,8 @@
         deviceName="{{deviceName}}" 
         xp2pInfo="{{xp2pInfo}}" 
         needCheckStream="{{needCheckStream}}"
+        needPusher="{{needPusher}}"
+        needDuplex="{{needDuplex}}"
         onlyp2p="{{onlyp2p}}"
         bind:playError="onPlayError"
         bind:systemPermissionDenied="onPlayerSystemPermissionDenied"

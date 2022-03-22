@@ -1,0 +1,48 @@
+<view class="component">
+  <view class="pusher-container">
+    <p2p-pusher
+      wx:if="{{hasPusher}}"
+      id="{{pusherId}}"
+      mode="RTC"
+      enableCamera="{{enableCamera}}"
+      enableMic="{{enableMic}}"
+      enableAns="{{true}}"
+      orientation="{{orientation}}"
+      bind:pusherReady="onPusherReady"
+      bind:pusherStartPush="onPusherStartPush"
+      bind:pusherFlvHeader="onPusherFlvHeader"
+      bind:pusherFlvAudioTag="onPusherFlvAudioTag"
+      bind:pusherFlvVideoTag="onPusherFlvVideoTag"
+      bind:pusherFlvDataTag="onPusherFlvDataTag"
+      bind:pusherClose="onPusherClose"
+      bind:pusherError="onPusherError"
+      bind:error="onLivePusherError"
+      bind:statechange="onLivePusherStateChange"
+      bind:netstatus="onLivePusherNetStatusChange"
+    />
+    <view class="pusher-message">{{pusherMsg}}</view>
+    <view class="pusher-controls-container right">
+      <view class="pusher-controls">
+        <view class="pusher-control-item" bindtap="changeEnableCamera">{{enableCamera ? 'enableCamera' : 'disableCamera'}}</view>
+        <view class="pusher-control-item" bindtap="changeEnableMic">{{enableMic ? 'enableMic' : 'disableMic'}}</view>
+        <view class="pusher-control-item" bindtap="changeOrientation">{{orientation}}</view>
+      </view>
+    </view>
+    <view class="debug-info-switch-container">
+      <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
+    </view>
+  </view>
+  <view wx:if="{{showDebugInfo}}" class="debug-info-container">
+    <view class="debug-info">
+      <view>pusherState: {{pusherState}}</view>
+      <view>hasWriter: {{!!writer}}</view>
+      <view>totalBytes: {{!!totalBytes}}</view>
+      <view>
+        <view>livePusherInfo: </view>
+        <view class="text-box lines-3">
+          <text class="text-break">{{livePusherInfoStr}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

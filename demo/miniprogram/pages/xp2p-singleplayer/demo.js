@@ -62,19 +62,8 @@ Page({
       this.setData({ player: null });
     }
 
-    if (xp2pManager.networkChanged) {
-      try {
-        console.log('networkChanged, resetP2P when exit');
-        xp2pManager.resetP2P();
-      } catch (err) {}
-    }
-
-    if (xp2pManager.needResetLocalServer) {
-      try {
-        console.log('needResetLocalServer, resetLocalServer when exit');
-        xp2pManager.resetLocalServer();
-      } catch (err) {}
-    }
+    console.log('singleplayer: checkReset when exit');
+    xp2pManager.checkReset();
   },
   onPlayError({ detail, currentTarget }) {
     console.log('singleplayer: onPlayError', currentTarget.id, detail.errType, 'isFatalError', detail.isFatalError, detail);

@@ -35,19 +35,8 @@ Page({
       this.setData({ player: null });
     }
 
-    if (xp2pManager.networkChanged) {
-      try {
-        console.log('networkChanged, resetP2P when exit');
-        xp2pManager.resetP2P();
-      } catch (err) {}
-    }
-
-    if (xp2pManager.needResetLocalServer) {
-      try {
-        console.log('needResetLocalServer, resetLocalServer when exit');
-        xp2pManager.resetLocalServer();
-      } catch (err) {}
-    }
+    console.log('demo: checkReset when exit');
+    xp2pManager.checkReset();
   },
   onStartPlayer({ detail }) {
     console.log('demo: onStartPlayer', detail);
@@ -73,12 +62,6 @@ Page({
           !this.hasExited && wx.navigateBack();
         }
       },
-    });
-  },
-  onPlayerSystemPermissionDenied({ detail }) {
-    wx.showModal({
-      content: `systemPermissionDenied\n${detail.errMsg}`,
-      showCancel: false,
     });
   },
   onOpenPage() {

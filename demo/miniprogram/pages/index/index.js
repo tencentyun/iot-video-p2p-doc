@@ -21,11 +21,6 @@ Page({
     wxSDKVersion: sysInfo.SDKVersion,
     xp2pVersion: p2pExports.XP2PVersion,
 
-    // 这些控制p2p的
-    controlId: 'iot-p2p-main-control',
-    p2pControl: null,
-    dirty: false,
-
     // 这些是监控页入口
     listBtn: [],
     listNav: [],
@@ -33,9 +28,6 @@ Page({
     firstIPCStream: null,
   },
   onLoad() {
-    const p2pControl = this.selectComponent(`#${this.data.controlId}`);
-    this.setData({ p2pControl });
-
     const listBtn = [];
     const listNav = [];
     let firstServerStream = null;
@@ -75,17 +67,6 @@ Page({
     this.setData({ listBtn, listNav, firstServerStream, firstIPCStream });
   },
   onUnload() {},
-  onShow() {
-    // 再显示时同步一下状态，应该用事件通知，先简单处理吧
-    if (!this.data.dirty || !this.data.p2pControl) {
-      return;
-    }
-    this.data.p2pControl.refreshState();
-    this.setData({ dirty: false });
-  },
-  onHide() {
-    this.setData({ dirty: true });
-  },
   onP2PModuleStateChange({ detail }) {
     console.log('index: onP2PModuleStateChange', detail);
   },

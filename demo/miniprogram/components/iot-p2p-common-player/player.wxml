@@ -1,43 +1,41 @@
 <view class="component">
-  <view class="component-section">
-    <view class="player-container">
-      <p2p-player
-        wx:if="{{needPlayer && hasPlayer}}"
-        id="{{playerId}}"
-        autoPlay="{{autoPlay}}"
-        mode="live"
-        minCache="0.2"
-        maxCache="0.5"
-        muted="{{muted}}"
-        orientation="{{orientation}}"
-        bind:playerReady="onPlayerReady"
-        bind:playerStartPull="onPlayerStartPull"
-        bind:playerClose="onPlayerClose"
-        bind:playerError="onPlayerError"
-        bind:error="onLivePlayerError"
-        bind:statechange="onLivePlayerStateChange"
-        bind:netstatus="onLivePlayerNetStatusChange"
-      />
-      <view wx:if="{{!needPlayer}}" class="mock-player">
-        <view wx:if="{{playerState === 'PlayerReady'}}">
-          <view>chunkCount: {{chunkCount}}</view>
-          <view>totalBytes: {{totalBytes}}</view>
-        </view>
-        <view wx:else>
-          <view>playerState: {{playerState}}</view>
-        </view>
+  <view class="player-container">
+    <p2p-player
+      wx:if="{{needPlayer && hasPlayer}}"
+      id="{{playerId}}"
+      autoplay="{{autoPlay}}"
+      mode="live"
+      minCache="0.2"
+      maxCache="0.5"
+      muted="{{muted}}"
+      orientation="{{orientation}}"
+      bind:playerReady="onPlayerReady"
+      bind:playerStartPull="onPlayerStartPull"
+      bind:playerClose="onPlayerClose"
+      bind:playerError="onPlayerError"
+      bind:error="onLivePlayerError"
+      bind:statechange="onLivePlayerStateChange"
+      bind:netstatus="onLivePlayerNetStatusChange"
+    />
+    <view wx:if="{{!needPlayer}}" class="mock-player">
+      <view wx:if="{{playerState === 'PlayerReady'}}">
+        <view>chunkCount: {{chunkCount}}</view>
+        <view>totalBytes: {{totalBytes}}</view>
       </view>
-      <view class="player-message" bindtap="onClickRetry">{{playerMsg}}</view>
-      <view class="player-controls-container right">
-        <view class="player-controls">
-          <view class="player-control-item">{{playerPaused ? 'paused' : ''}}</view>
-          <view class="player-control-item" bindtap="changeMuted">{{muted ? 'muted' : 'notmuted'}}</view>
-          <view class="player-control-item" bindtap="changeOrientation">{{orientation}}</view>
-        </view>
+      <view wx:else>
+        <view>playerState: {{playerState}}</view>
       </view>
-      <view class="debug-info-switch-container">
-        <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
+    </view>
+    <view class="player-message" bindtap="onClickRetry">{{playerMsg}}</view>
+    <view class="player-controls-container right">
+      <view class="player-controls">
+        <view class="player-control-item">{{playerPaused ? 'paused' : ''}}</view>
+        <view class="player-control-item" bindtap="changeMuted">{{muted ? 'muted' : 'notMuted'}}</view>
+        <view class="player-control-item" bindtap="changeOrientation">{{orientation}}</view>
       </view>
+    </view>
+    <view class="debug-info-switch-container">
+      <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
     </view>
   </view>
   <view wx:if="{{showDebugInfo}}" class="debug-info-container">
@@ -60,7 +58,7 @@
       <view>
         <view>livePlayerInfo: </view>
         <view class="text-box lines-3">
-          <text class="text-break">{{livePlayerInfo}}</text>
+          <text class="text-break">{{livePlayerInfoStr}}</text>
         </view>
       </view>
       <view>

@@ -48,9 +48,9 @@ const totalMsgMap = {
   [PlayerStateEnum.PlayerPreparing]: '正在创建播放器...',
   [PlayerStateEnum.PlayerReady]: '创建播放器成功',
   [PlayerStateEnum.PlayerError]: '创建播放器失败',
-  [PlayerStateEnum.LivePlayerError]: '播放失败',
+  [PlayerStateEnum.LivePlayerError]: 'LivePlayer错误',
   [PlayerStateEnum.LivePlayerStateError]: '播放失败',
-  [PlayerStateEnum.LocalServerError]: '播放器错误',
+  [PlayerStateEnum.LocalServerError]: '本地HttpServer错误',
 
   [P2PStateEnum.P2PUnkown]: 'P2PUnkown',
   [P2PStateEnum.P2PIniting]: '正在初始化p2p模块...',
@@ -64,7 +64,7 @@ const totalMsgMap = {
 
   [StreamStateEnum.StreamWaitPull]: '加载中...',
   [StreamStateEnum.StreamReceivePull]: '加载中...',
-  [StreamStateEnum.StreamLocalServerError]: '播放器错误',
+  [StreamStateEnum.StreamLocalServerError]: '本地HttpServer错误',
   [StreamStateEnum.StreamChecking]: '加载中...',
   [StreamStateEnum.StreamCheckSuccess]: '加载中...',
   [StreamStateEnum.StreamCheckError]: '设备正忙，请稍后重试',
@@ -193,12 +193,15 @@ Component({
   properties: {
     mode: {
       type: String,
+      value: '',
     },
     targetId: {
       type: String,
+      value: '',
     },
     flvUrl: {
       type: String,
+      value: '',
     },
     autoReplay: {
       type: Boolean,
@@ -240,6 +243,7 @@ Component({
     */
     checkFunctions: {
       type: Object,
+      value: {},
     },
     // 以下仅供调试，正式组件不需要
     onlyp2p: {
@@ -290,7 +294,8 @@ Component({
     totalBytes: 0,
 
     // 这些是播放相关信息，清空时机同 totalBytes
-    livePlayerInfo: '',
+    livePlayerInfo: null,
+    livePlayerInfoStr: '',
 
     // debug用
     showDebugInfo: false,
@@ -329,6 +334,7 @@ Component({
       // 在组件实例进入页面节点树时执行
       console.log(`[${this.data.innerId}]`, '==== attached', this.id, this.properties);
 
+      const isModeValid = this.properties.mode === 'ipc' || this.properties.mode === 'server';
       const canUseP2P = (this.properties.mode === 'ipc' && canUseP2PIPCMode) || (this.properties.mode === 'server' && canUseP2PServerMode);
       const flvFile = this.properties.flvUrl.split('/').pop();
       const [flvFilename = '', flvParams = ''] = flvFile.split('?');
@@ -344,7 +350,7 @@ Component({
       } else {
         p2pState = P2PStateEnum.P2PInitError;
         playerState = PlayerStateEnum.PlayerError;
-        playerMsg = '您的微信基础库版本过低，请升级后再使用';
+        playerMsg = isModeValid ? '您的微信基础库版本过低，请升级后再使用' : `无效的mode: ${this.properties.mode}`;
       }
 
       // 统计用
@@ -682,10 +688,23 @@ Component({
     },
     onPlayerError({ detail }) {
       console.log(`[${this.data.innerId}]`, '==== onPlayerError', detail);
-      this.changeState({
-        playerState: PlayerStateEnum.PlayerError,
-      });
-      this.handlePlayError(PlayerStateEnum.PlayerError, { msg: `p2pPlayerError: ${detail.error.code}` });
+      const code = detail && detail.error && detail.error.code;
+      let playerState = PlayerStateEnum.PlayerError;
+      if (code === 'WECHAT_SERVER_ERROR') {
+        playerState = PlayerStateEnum.LocalServerError;
+        xp2pManager.needResetLocalServer = true;
+        xp2pManager.networkChanged = true;
+        this.stopAll(P2PStateEnum.P2PLocalNATChanged);
+        this.changeState({
+          hasPlayer: false,
+          playerState,
+        });
+      } else {
+        this.changeState({
+          playerState,
+        });
+      }
+      this.handlePlayError(playerState, { msg: `p2pPlayerError: ${code}` });
     },
     // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     onLivePlayerError({ detail }) {
@@ -735,7 +754,7 @@ Component({
             });
           }
           break;
-        case 2103: // 网络断连, 已启动自动重连
+        case 2103: // live-player断连, 已启动自动重连
           console.log(`[${this.data.innerId}]`, '==== onLivePlayerStateChange', detail.code, detail, `streamState: ${this.data.streamState}`);
           if (/errCode:-1004(\D|$)/.test(detail.message) || /Failed to connect to/.test(detail.message)) {
             // 无法连接本地服务器
@@ -804,8 +823,16 @@ Component({
       if (!detail.info) {
         return;
       }
+      // 不是所有字段都有值，不能直接覆盖整个info，只更新有值的字段
+      const livePlayerInfo = { ...this.data.livePlayerInfo };
+      for (const key in detail.info) {
+        if (detail.info[key] !== undefined) {
+          livePlayerInfo[key] = detail.info[key];
+        }
+      }
       this.setData({
-        livePlayerInfo: [
+        livePlayerInfo,
+        livePlayerInfoStr: [
           `size: ${detail.info.videoWidth}x${detail.info.videoHeight}, fps: ${detail.info.videoFPS}`,
           `bitrate(kbps): video ${detail.info.videoBitrate}, audio ${detail.info.audioBitrate}`,
           `cache(ms): video ${detail.info.videoCache}, audio ${detail.info.audioCache}`,
@@ -833,7 +860,8 @@ Component({
         chunkTime: 0,
         chunkCount: 0,
         totalBytes: 0,
-        livePlayerInfo: '',
+        livePlayerInfo: null,
+        livePlayerInfoStr: '',
       });
     },
     initP2P() {
@@ -1168,6 +1196,7 @@ Component({
       if (!this.data.playerCtx) {
         fail && fail({ errMsg: 'player not ready' });
         complete && complete();
+        return;
       }
 
       if (!needPauseStream) {
@@ -1212,6 +1241,7 @@ Component({
       if (!this.data.playerCtx) {
         fail && fail({ errMsg: 'player not ready' });
         complete && complete();
+        return;
       }
       const funcName = this.data.playerPaused === 'stopped' ? 'play' : 'resume';
       console.log(`[${this.data.innerId}] playerCtx.${funcName}`);
@@ -1314,29 +1344,41 @@ Component({
         });
       }
     },
-    checkCanRetry(type, detail) {
-      if (type === P2PStateEnum.P2PInitError) {
-        // 初始化失败，退出重来
-        console.log(`[${this.data.innerId}]`, 'P2PInitError, trigger playError');
-        this.stopAll();
-        this.triggerEvent('playError', {
-          errType: type,
-          errMsg: totalMsgMap[type],
-          errDetail: detail,
-          isFatalError: true,
-        });
-        return false;
+    checkCanRetry() {
+      let errType;
+      let isFatalError = false;
+      let msg = '';
+      if (this.data.playerState === PlayerStateEnum.PlayerError) {
+        // 初始化player失败
+        errType = this.data.playerState;
+        if (wx.getSystemInfoSync().platform === 'devtools') {
+          // 开发者工具里不支持 live-player 和 TCPServer，明确提示
+          msg = '不支持在开发者工具中创建p2p-player';
+        }
+        isFatalError = true;
+      } else if (this.data.p2pState === P2PStateEnum.P2PInitError) {
+        // 初始化p2p失败
+        errType = this.data.p2pState;
+        msg = '请检查本地网络是否正常';
+        isFatalError = true;
+      } else if (xp2pManager.needResetLocalServer) {
+        // 本地server出错
+        errType = PlayerStateEnum.LocalServerError;
+        msg = '系统网络服务可能被中断，请重置本地HttpServer';
+        isFatalError = true;
+      } else if (xp2pManager.networkChanged) {
+        // 网络状态变化
+        errType = P2PStateEnum.P2PLocalNATChanged;
+        msg = '本地网络服务可能发生变化，请重置xp2p模块';
+        isFatalError = true;
       }
-      if (xp2pManager.networkChanged || xp2pManager.needResetLocalServer) {
-        // 网络状态变化了，退出重来
-        console.log(`[${this.data.innerId}]`, 'networkChanged or needResetLocalServer, trigger playError');
-        this.stopAll(P2PStateEnum.P2PLocalNATChanged);
+      if (isFatalError) {
+        // 不可恢复错误，退出重来
+        console.log(`[${this.data.innerId}] ${errType} isFatalError, trigger playError`);
         this.triggerEvent('playError', {
-          errType: type,
-          errMsg: xp2pManager.needResetLocalServer
-            ? totalMsgMap[PlayerStateEnum.LocalServerError]
-            : totalMsgMap[P2PStateEnum.P2PLocalNATChanged],
-          errDetail: detail,
+          errType,
+          errMsg: totalMsgMap[errType],
+          errDetail: { msg },
           isFatalError: true,
         });
         return false;
@@ -1393,9 +1435,9 @@ Component({
         this.initP2P();
       }
     },
-    // 处理播放错误
+    // 处理播放错误，detail: { msg: string }
     handlePlayError(type, detail) {
-      if (!this.checkCanRetry(type, detail)) {
+      if (!this.checkCanRetry()) {
         return;
       }
 
@@ -1503,6 +1545,7 @@ Component({
           break;
       }
     },
+    // 以下是播放器控件相关的
     changeMuted() {
       this.setData({
         muted: !this.data.muted,
@@ -1513,7 +1556,7 @@ Component({
         orientation: this.data.orientation === 'horizontal' ? 'vertical' : 'horizontal',
       });
     },
-    // 以下是调试面板里的
+    // 以下是调试面板相关的
     toggleDebugInfo() {
       this.setData({ showDebugInfo: !this.data.showDebugInfo });
     },

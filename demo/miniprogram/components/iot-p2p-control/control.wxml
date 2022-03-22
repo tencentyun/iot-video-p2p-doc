@@ -7,7 +7,7 @@
       <button wx:if="{{state}}" bindtap="resetP2P" class="group-button" type="primary" size="mini" disabled="{{!state}}">
         resetP2P
       </button>
-      <button wx:if="{{showDestroy}}" bindtap="destroyModule" class="group-button" type="primary" size="mini" disabled="{{!state}}">
+      <button bindtap="destroyModule" class="group-button" type="primary" size="mini" disabled="{{!state}}">
         destroyModule
       </button>
     </view>

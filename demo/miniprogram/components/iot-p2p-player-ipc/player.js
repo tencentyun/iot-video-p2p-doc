@@ -6,6 +6,36 @@ const xp2pManager = getXp2pManager();
 
 const { commandMap } = config;
 
+// ts才能用enum，先这么处理吧
+const VoiceTypeEnum = {
+  Recorder: 'Recorder',
+  Pusher: 'Pusher',
+  DuplexAudio: 'DuplexAudio',
+  DuplexVideo: 'DuplexVideo',
+};
+
+const voiceConfigMap = {
+  [VoiceTypeEnum.Recorder]: { needPusher: false },
+  [VoiceTypeEnum.Pusher]: { needPusher: true },
+  [VoiceTypeEnum.DuplexAudio]: {
+    needPusher: true,
+    isDuplex: true,
+    options: { urlParams: 'calltype=audio' },
+  },
+  [VoiceTypeEnum.DuplexVideo]: {
+    needPusher: true,
+    isDuplex: true,
+    options: { urlParams: 'calltype=video' },
+  },
+};
+
+const VoiceStateEnum = {
+  checking: 'checking', // 检查权限和设备状态
+  starting: 'starting', // 发起voice请求
+  sending: 'sending', // 发送语音数据(包括等待pusher开始)
+  error: 'error',
+};
+
 let ipcPlayerSeq = 0;
 
 Component({
@@ -28,7 +58,15 @@ Component({
     },
     needCheckStream: {
       type: Boolean,
-      value: true,
+      value: false,
+    },
+    needPusher: {
+      type: Boolean,
+      value: false,
+    },
+    needDuplex: {
+      type: Boolean,
+      value: false,
     },
     // 以下仅供调试，正式组件不需要
     onlyp2p: {
@@ -52,7 +90,13 @@ Component({
     playerPaused: false,
 
     // 语音对讲
-    voiceState: '', // checking / starting / sending
+    voiceState: '', // VoiceStateEnum
+    voiceType: '', // recorder / pusher
+
+    // 这些是控制pusher的
+    pusherId: 'iot-p2p-common-pusher',
+    pusher: null,
+    pusherReady: false,
 
     // 自定义信令
     inputCommand: 'action=inner_define&channel=0&cmd=get_device_st&type=playback',
@@ -115,6 +159,13 @@ Component({
       } else {
         console.error(`[${this.data.innerId}]`, 'create player error', this.data.playerId);
       }
+
+      const pusher = this.selectComponent(`#${this.data.pusherId}`);
+      if (pusher) {
+        this.setData({ pusher });
+      } else {
+        console.error(`[${this.data.innerId}]`, 'create pusher error', this.data.pusherId);
+      }
     },
     ready() {
       // 在组件在视图层布局完成后执行
@@ -143,6 +194,10 @@ Component({
 
       if (this.data.ptzCmd || this.data.releasePTZTimer) {
         this.controlDevicePTZ('ptz_release_pre');
+      }
+
+      if (this.data.pusher) {
+        this.data.pusher.stop();
       }
 
       if (this.data.player) {
@@ -201,6 +256,23 @@ Component({
       }
       this.setData({ streamSuccess });
       this.passEvent(e);
+    },
+    // 以下是 pusher 的事件
+    onPusherStateChange(e) {
+      console.log(`[${this.data.innerId}]`, 'onPusherStateChange', e.detail.pusherState);
+      const pusherReady = e.detail.pusherState === 'PusherReady';
+      this.setData({ pusherReady });
+    },
+    onPusherPushError(e) {
+      console.log(`[${this.data.innerId}]`, 'onPusherPushError', e.detail);
+      if (this.data.voiceState && voiceConfigMap[this.data.voiceType].needPusher) {
+        this.stopVoice();
+      }
+      const { errMsg, errDetail } = e.detail;
+      this.showModal({
+        content: `${errMsg || '推流失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常,
+        showCancel: false,
+      });
     },
     // 以下是用户交互
     changeQuality(e) {
@@ -370,8 +442,24 @@ Component({
 
       this.resumePlayer();
     },
-    checkCanStartVoice() {
-      console.log(`[${this.data.innerId}]`, 'checkCanStartVoice');
+    checkAuthCanStartVoice() {
+      console.log(`[${this.data.innerId}]`, 'checkAuthCanStartVoice');
+      return new Promise((resolve, reject) => {
+        xp2pManager
+          .checkRecordAuthorize()
+          .then(() => {
+            console.log(`[${this.data.innerId}]`, 'checkRecordAuthorize success');
+            resolve();
+          })
+          .catch((err) => {
+            console.log(`[${this.data.innerId}]`, 'checkRecordAuthorize err', err);
+            this.showToast('请授权小程序访问麦克风');
+            reject(err);
+          });
+      });
+    },
+    checkDeviceCanStartVoice() {
+      console.log(`[${this.data.innerId}]`, 'checkDeviceCanStartVoice');
       return new Promise((resolve, reject) => {
         xp2pManager
           .sendInnerCommand(this.properties.targetId, {
@@ -385,7 +473,7 @@ Component({
             let errMsg = '';
             const data = res[0]; // 返回的 res 是数组
             const status = parseInt(data && data.status, 10); // 有的设备返回的 status 是字符串，兼容一下
-            console.log(`[${this.data.innerId}]`, 'checkCanStartVoice status', status);
+            console.log(`[${this.data.innerId}]`, 'checkDeviceCanStartVoice status', status);
             switch (status) {
               case 0:
                 canStart = true;
@@ -407,13 +495,13 @@ Component({
             }
           })
           .catch((errmsg) => {
-            console.log(`[${this.data.innerId}]`, 'checkCanStartVoice err', errmsg);
+            console.log(`[${this.data.innerId}]`, 'checkDeviceCanStartVoice error', errmsg);
             this.showToast('获取设备状态失败');
             reject('获取设备状态失败');
           });
       });
     },
-    startVoice(e) {
+    async startVoice(e) {
       console.log(`[${this.data.innerId}]`, 'startVoice');
       if (!this.data.p2pReady) {
         console.log(`[${this.data.innerId}]`, 'p2p not ready');
@@ -424,30 +512,62 @@ Component({
         return;
       }
 
-      // 先检查能否对讲
-      this.setData({ voiceState: 'checking' });
+      const voiceType = e.currentTarget.dataset.voiceType || VoiceTypeEnum.Recorder;
+      const voiceConfig = voiceConfigMap[voiceType] || {};
+      if (voiceConfig.needPusher && !this.data.pusherReady) {
+        this.showToast('pusher not ready');
+        return;
+      }
 
-      this.checkCanStartVoice()
-        .then(() => {
-          if (!this.data.voiceState) {
-            // 已经stop了
-            return;
-          }
-          // 检查通过，开始对讲
-          console.log(`[${this.data.innerId}]`, '==== checkCanStartVoice success');
-          this.doStartVoice(e);
-        })
-        .catch((errmsg) => {
-          if (!this.data.voiceState) {
-            // 已经stop了
-            return;
-          }
-          // 检查失败，前面已经弹过提示了
-          console.log(`[${this.data.innerId}]`, '==== checkCanStartVoice fail', errmsg);
-          this.setData({ voiceState: '' });
-        });
+      // 记录对讲类型
+      this.setData({ voiceType });
+
+      if (voiceConfig.isDuplex) {
+        // 是双向音视频，在demo里省略呼叫应答功能，直接发起
+        this.doStartVoiceByPusher(e);
+        return;
+      }
+
+      // 是普通语音对讲，先检查能否对讲
+      this.setData({ voiceState: VoiceStateEnum.checking });
+
+      try {
+        await this.checkAuthCanStartVoice();
+      } catch (err) {
+        if (!this.data.voiceState) {
+          // 已经stop了
+          return;
+        }
+        console.log(`[${this.data.innerId}]`, '==== checkAuthCanStartVoice error', err);
+        this.stopVoice();
+        return;
+      }
+
+      try {
+        await this.checkDeviceCanStartVoice();
+      } catch (err) {
+        if (!this.data.voiceState) {
+          // 已经stop了
+          return;
+        }
+        console.log(`[${this.data.innerId}]`, '==== checkDeviceCanStartVoice error', err);
+        this.stopVoice();
+        return;
+      }
+
+      if (!this.data.voiceState) {
+        // 已经stop了
+        return;
+      }
+      // 检查通过，开始对讲
+      console.log(`[${this.data.innerId}]`, '==== checkCanStartVoice success');
+      if (voiceConfig.needPusher) {
+        this.doStartVoiceByPusher(e);
+      } else {
+        this.doStartVoiceByRecorder(e);
+      }
     },
-    doStartVoice(e) {
+    doStartVoiceByRecorder(e) {
       // 每种采样率有对应的编码码率范围有效值，设置不合法的采样率或编码码率会导致录音失败
       // 具体参考 https://developers.weixin.qq.com/miniprogram/dev/api/media/recorder/RecorderManager.start.html
       const [numberOfChannels, sampleRate, encodeBitRate] = e.currentTarget.dataset.recorderCfg
@@ -459,8 +579,8 @@ Component({
         encodeBitRate, // 编码码率
       };
 
-      console.log(`[${this.data.innerId}]`, 'do startVoice', this.properties.targetId, recorderOptions);
-      this.setData({ voiceState: 'starting' });
+      console.log(`[${this.data.innerId}]`, 'do doStartVoiceByRecorder', this.properties.targetId, recorderOptions);
+      this.setData({ voiceState: VoiceStateEnum.starting });
       xp2pManager
         .startVoice(this.properties.targetId, recorderOptions, {
           onPause: (res) => {
@@ -470,20 +590,79 @@ Component({
           },
           onStop: (res) => {
             console.log(`[${this.data.innerId}]`, 'voice onStop', res);
-            if (res.willRestart) {
+            if (!res.willRestart) {
               // 如果是到时间触发的，插件会自动续期，不自动restart的才需要stopVoice
               this.stopVoice();
             }
           },
         })
         .then((res) => {
+          if (!this.data.voiceState) {
+            // 已经stop了
+            return;
+          }
           console.log(`[${this.data.innerId}]`, 'startVoice success', res);
-          this.setData({ voiceState: 'sending' });
+          this.setData({ voiceState: VoiceStateEnum.sending });
         })
         .catch((res) => {
+          if (!this.data.voiceState) {
+            // 已经stop了
+            return;
+          }
           console.log(`[${this.data.innerId}]`, 'startVoice fail', res);
-          this.setData({ voiceState: '' });
           this.showToast(res === Xp2pManagerErrorEnum.NoAuth ? '请授权小程序访问麦克风' : '发起语音对讲失败');
+          this.stopVoice();
+        });
+    },
+    doStartVoiceByPusher(_e) {
+      const { options } = voiceConfigMap[this.data.voiceType];
+      // const voiceOptions = { offCrpto: true, ...options };
+      const voiceOptions = { offCrpto: false, ...options };
+
+      console.log(`[${this.data.innerId}]`, 'do doStartVoiceByPusher', this.properties.targetId, voiceOptions);
+      this.setData({ voiceState: VoiceStateEnum.starting });
+      xp2pManager
+        .startVoiceData(this.properties.targetId, voiceOptions, {
+          onStop: () => {
+            if (!this.data.voiceState) {
+              // 已经stop了
+              return;
+            }
+            console.log(`[${this.data.innerId}]`, 'voice onStop');
+            this.stopVoice();
+          },
+          onComplete: () => {
+            if (!this.data.voiceState) {
+              // 已经stop了
+              return;
+            }
+            console.log(`[${this.data.innerId}]`, 'voice onComplete');
+            this.stopVoice();
+          },
+        })
+        .then((writer) => {
+          if (!this.data.voiceState) {
+            // 已经stop了
+            return;
+          }
+          console.log(`[${this.data.innerId}]`, 'startVoiceData success', writer);
+          this.setData({ voiceState: VoiceStateEnum.sending });
+          this.data.pusher.start({
+            writer,
+            fail: (err) => {
+              console.log(`[${this.data.innerId}]`, 'voice pusher start fail', err);
+              this.stopVoice();
+            },
+          });
+        })
+        .catch((res) => {
+          if (!this.data.voiceState) {
+            // 已经stop了
+            return;
+          }
+          console.log(`[${this.data.innerId}]`, 'startVoiceData fail', res);
+          this.showToast('对讲失败');
+          this.stopVoice();
         });
     },
     stopVoice() {
@@ -496,8 +675,19 @@ Component({
         console.log(`[${this.data.innerId}]`, 'not voicing');
         return;
       }
-      console.log(`[${this.data.innerId}]`, 'do stopVoice', this.properties.targetId);
-      this.setData({ voiceState: '' });
+
+      console.log(`[${this.data.innerId}]`, 'do stopVoice', this.properties.targetId, this.data.voiceType, this.data.voiceState);
+
+      const { voiceType, voiceState } = this.data;
+      this.setData({ voiceType: '', voiceState: '' });
+      if (voiceConfigMap[voiceType].needPusher) {
+        // 如果是pusher，先停掉
+        if (voiceState === VoiceStateEnum.sending) {
+          this.data.pusher.stop();
+        }
+      } else {
+        // 如果是recorder，p2p模块里的stopVoice里会停
+      }
       xp2pManager.stopVoice(this.properties.targetId);
     },
     pickDate(e) {
@@ -1043,7 +1233,7 @@ Component({
         return;
       }
 
-      const isSendingVoice = this.data.voiceState === 'sending';
+      const isSendingVoice = this.data.voiceState === VoiceStateEnum.sending;
       if (!isSendingVoice) {
         this.startVoice(e);
       } else {

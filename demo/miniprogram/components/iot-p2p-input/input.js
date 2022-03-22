@@ -10,6 +10,7 @@ Component({
   properties: {
     cfg: {
       type: String,
+      value: '',
     },
   },
   data: {
@@ -26,6 +27,8 @@ Component({
     inputLiveParams: '',
     inputPlaybackParams: '',
     needCheckStreamChecked: false,
+    needPusherChecked: false,
+    needDuplexChecked: false,
 
     // 1v多用
     inputUrl: '',
@@ -68,6 +71,8 @@ Component({
           inputLiveParams: data.liveParams || 'action=live&channel=0&quality=super',
           inputPlaybackParams: data.playbackParams || 'action=playback&channel=0',
           needCheckStreamChecked: typeof data.needCheckStream === 'boolean' ? data.needCheckStream : false,
+          needPusherChecked: typeof data.needPusher === 'boolean' ? data.needPusher : false,
+          needDuplexChecked: typeof data.needDuplex === 'boolean' ? data.needDuplex : false,
           // 1v多用
           inputUrl: data.flvUrl || '',
           inputCodeUrl: data.codeUrl || '',
@@ -130,6 +135,16 @@ Component({
     switchNeedCheckStream(e) {
       this.setData({
         needCheckStreamChecked: e.detail.value,
+      });
+    },
+    switchNeedPusher(e) {
+      this.setData({
+        needPusherChecked: e.detail.value,
+      });
+    },
+    switchNeedDuplex(e) {
+      this.setData({
+        needDuplexChecked: e.detail.value,
       });
     },
     inputServerCodeUrl(e) {
@@ -214,6 +229,8 @@ Component({
 
       const options = {
         needCheckStream: this.data.needCheckStreamChecked,
+        needPusher: this.data.needPusherChecked,
+        needDuplex: this.data.needDuplexChecked,
         onlyp2p: this.data.onlyp2pChecked,
       };
 

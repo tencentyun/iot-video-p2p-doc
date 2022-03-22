@@ -6,8 +6,7 @@
   </view>
   <view class="page-section page-section-gap">
     <iot-p2p-control
-      id="{{controlId}}"
-      show-destroy
+      id="iot-p2p-main-control"
       bind:statechange="onP2PModuleStateChange"
     />
   </view>
@@ -19,6 +18,7 @@
       {{item.title}}
     </button>
   </view>
+  <!-- 调试页面不放在首页了，以免用户疑惑
   <view class="page-section">
     <view wx:for="{{listNav}}" wx:key="cfg">
       <navigator url="/pages/xp2p-demo-debug/demo?cfg={{item.cfg}}" hover-class="navigator-hover">
@@ -29,6 +29,7 @@
   <navigator wx:if="{{firstServerStream}}" url="/pages/xp2p-singleplayer/demo?cfg={{firstServerStream.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 单播放器 {{firstServerStream.cfg}}</navigator>
   <navigator wx:if="{{firstIPCStream}}" url="/pages/xp2p-singleplayer/demo?cfg={{firstIPCStream.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 单播放器 {{firstIPCStream.cfg}}</navigator>
   <navigator wx:if="{{firstServerStream && firstIPCStream}}" url="/pages/xp2p-multiplayers/demo?cfg1={{firstServerStream.cfg}}&cfg2={{firstIPCStream.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 多播放器 {{firstServerStream.cfg}}+{{firstIPCStream.cfg}}</navigator>
+  -->
   <navigator url="/pages/test-live-player/test" hover-class="navigator-hover">跳转到 LivePlayer 测试页</navigator>
   <navigator url="/pages/test-video/test" hover-class="navigator-hover">跳转到 Video 测试页</navigator>
 </view>

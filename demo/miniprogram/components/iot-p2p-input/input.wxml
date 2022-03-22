@@ -56,6 +56,12 @@
         <view class="input-item">
           <label><switch type="checkbox" checked="{{needCheckStreamChecked}}" bindchange="switchNeedCheckStream"/>播放前先检查能否拉流</label>
         </view>
+        <view class="input-item">
+          <label><switch type="checkbox" checked="{{needPusherChecked}}" bindchange="switchNeedPusher"/>对讲回音消除（实验中）</label>
+        </view>
+        <view class="input-item">
+          <label><switch type="checkbox" checked="{{needDuplexChecked}}" bindchange="switchNeedDuplex"/>双向音视频（实验中，开启后无对讲入口）</label>
+        </view>
       </view>
       <view wx:if="{{mode==='server'}}" class="info-inputs">
         <view class="input-item">
@@ -79,7 +85,9 @@
   </view>
   <view class="component-section">
     <view class="component-section-title">调试用</view>
-    <view class="input-item"><label><switch type="checkbox" checked="{{onlyp2pChecked}}" bindchange="switchOnlyP2P"/>onlyp2p</label></view>
+    <view class="input-item">
+      <label><switch type="checkbox" checked="{{onlyp2pChecked}}" bindchange="switchOnlyP2P"/>onlyp2p（仅数据传输，不播放视频）</label>
+    </view>
   </view>
   <view class="component-section">
     <button bindtap="startPlayer" data-type="live" type="primary" class="primary-button">
