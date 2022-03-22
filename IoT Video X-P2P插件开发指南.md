@@ -337,9 +337,9 @@ const filePath = `${wx.env.USER_DATA_PATH}/${file.file_name.replace('/', '_')}`;
 const fileSystemManager = wx.getFileSystemManager();
 
 p2pModule.startLocalDownload(ipcId, { urlParams: params }, {
-  onChunkReceived: (data) => {
+  onChunkReceived: (chunk) => {
     // 接收chunk包并组装文件
-    fileSystemManager.appendFileSync(filePath, data, 'binary')
+    fileSystemManager.appendFileSync(filePath, chunk, 'binary')
   },
   onComplete: () => {
     // 保存组装的临时视频文件到相册
@@ -350,7 +350,10 @@ p2pModule.startLocalDownload(ipcId, { urlParams: params }, {
       },
     });
   },
-  onFailure: (data) => {
+  onFailure: (result) => {
+    // Error handler
+  },
+  onError: (result) => {
     // Error handler
   },
 });
@@ -916,7 +919,7 @@ res 的值
 | 参数 | 类型 | 说明 |
 | - | - | - |
 | ipcId | string | 唯一的Id |
-| options | XP2PLocalDownloadOptions | 下载参数，{ urlParams?: \`_crypto=off&channel=0&file_name=${file.file_name}&offset=0\` } |
+| options | XP2PLocalDownloadOptions | 下载参数，{ urlParams?: \`channel=0&file_name=${file.file_name}&offset=0\` } |
 | callbacks | XP2PLocalDownloadCallbacks | 各种回调函数 |
 
 
