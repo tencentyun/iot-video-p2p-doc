@@ -616,8 +616,9 @@ Component({
     },
     doStartVoiceByPusher(_e) {
       const { options } = voiceConfigMap[this.data.voiceType];
-      // const voiceOptions = { offCrpto: true, ...options };
-      const voiceOptions = { offCrpto: false, ...options };
+
+      // 弄个副本，以免被修改
+      const voiceOptions = { ...options };
 
       console.log(`[${this.data.innerId}]`, 'do doStartVoiceByPusher', this.properties.targetId, voiceOptions);
       this.setData({ voiceState: VoiceStateEnum.starting });

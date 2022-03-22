@@ -25,7 +25,13 @@ const devices = {
     showInHomePageBtn: true,
     productId: '9L1S66FZ3Q',
     deviceName: 'test_34683636_5',
-    xp2pInfo: 'XP2PJjjVY/DtlAy3nRKtrSLDOJqi%2.3.11',
+    xp2pInfo: 'XP2PJjjVY/DtlAy0nTKv9jT8JrC4%2.3.11',
+  },
+  ipc2: {
+    showInHomePageBtn: true,
+    productId: '9L1S66FZ3Q',
+    deviceName: 'test_34683636_3',
+    xp2pInfo: 'XP2PcDd/JhEamiQwtKu7zoKPvVc2%2.3.14',
   },
   debug: {
     // showInHomePageBtn: true,
