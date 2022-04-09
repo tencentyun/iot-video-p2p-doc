@@ -1,4 +1,4 @@
-# 腾讯云IoT Video 小程序 P2P接入指南
+# 腾讯云 IoT Video 小程序 P2P 接入指南
 
 ## 介绍
 
@@ -7,7 +7,7 @@
 ## 准备工作
 
 - 申请腾讯云 IoT Video P2P 服务，获取访问密钥（联调阶段可直接使用demo里的密钥，正式发布时请使用我们邮件提供给您的正式密钥）
-- 向腾讯云IoT Video团队申请使用 [IoT Video X-P2P插件](./IoT%20Video%20X-P2P%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md) 和 [IoT Video P2P-Player插件](./IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
+- 向腾讯云IoT Video团队申请使用 [IoT Video X-P2P插件](https://mp.weixin.qq.com/wxopen/pluginbasicprofile?action=intro&appid=wx1319af22356934bf) 和 [IoT Video P2P-Player插件](https://mp.weixin.qq.com/wxopen/pluginbasicprofile?action=intro&appid=wx9e8fbc98ceac2628)
 - 有使用 live-player 的权限，详见 [官方文档](https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html)
 - 如果使用 1v多 模式，需要将flv流的域名加到小程序的 `request合法域名` 和 `tcp合法域名` 配置中，详见 [服务器域名配置官方文档](https://developers.weixin.qq.com/miniprogram/dev/framework/ability/network.html#1.%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%9F%9F%E5%90%8D%E9%85%8D%E7%BD%AE)
 
@@ -15,9 +15,9 @@
 
 微信 8.0.10 以上，基础库 2.19.3 以上
 
-## 接入指引
+## 开发指引
 
-### 接入流程图
+### 原理介绍
 
 ![](./pic/miniprogram/%E5%B0%8F%E7%A8%8B%E5%BA%8FP2P%E6%9E%B6%E6%9E%84%E5%9B%BE.png)
 
@@ -66,7 +66,7 @@
 
 注意：Demo UI交互可能更新，但主要流程不变
 
-##### 1）进入主页面
+1）进入主页面
 
 <img width="360" src="./pic/miniprogram/demo-v1.0.0.png">
 
@@ -74,7 +74,7 @@
 - “X-P2P Demo 1vN-xntp” 和 “X-P2P Demo 1vN-tcp” 演示1V多 P2P场景
 - “多播放器” 演示多播放器的调用。
 
-##### 2）1V1 P2P 直连摄像头场景：
+2）1V1 P2P 直连摄像头场景：
 
 ![](./pic/miniprogram/demo-1v1-1-v1.0.0.png)
 ![](./pic/miniprogram/demo-1v1-2-v1.0.0.png)
@@ -86,7 +86,7 @@
 - 点击“不加密对讲”和“加密对讲”可演示小程序语音对讲，点击“挂断”停止对讲。
 - 修改信令command的"cmd=xxx“可演示自定义信令。
 
-##### 3）1V多 P2P 直连场景
+3）1V多 P2P 直连场景
 
 ![](./pic/miniprogram/demo-1vN-v1.0.0.png)
 
@@ -98,8 +98,8 @@
 （！注：正式上线时为了server端不暴露UDP端口，请使用1vN-tcp的调用方式。）
 
 
-### 开发说明
+### 插件使用说明
 
 参考:
-- [IoT Video X-P2P插件](./IoT%20Video%20X-P2P%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
-- [IoT Video P2P-Player插件](./IoT%20Video%20P2P-Player%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
+- [IoT Video X-P2P插件开发文档](https://mp.weixin.qq.com/wxopen/plugindevdoc?appid=wx1319af22356934bf)
+- [IoT Video P2P-Player插件开发文档](https://mp.weixin.qq.com/wxopen/plugindevdoc?appid=wx9e8fbc98ceac2628)
