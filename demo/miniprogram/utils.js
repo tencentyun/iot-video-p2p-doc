@@ -50,6 +50,7 @@ function pad(v, l) {
 export const toDateString = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 export const toTimeString = (date) => `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 export const toDateTimeString = (date) => `${toDateString(date)} ${toTimeString(date)}`;
+export const toDateTimeFilename = (date) => `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 
 export const isPeername = (xp2pInfo) => /^\w+$/.test(xp2pInfo) && !/^XP2P/.test(xp2pInfo);
 
@@ -80,3 +81,26 @@ export const getPlayerProperties = (cfg, opts) => {
     ...opts,
   };
 };
+
+export const checkAuthorize = (scope) =>
+  new Promise((resolve, reject) => {
+    wx.getSetting({
+      success(res) {
+        if (!res.authSetting[scope]) {
+          wx.authorize({
+            scope,
+            success() {
+              resolve();
+            },
+            fail(err) {
+              reject(err);
+            },
+          });
+        } else {
+          resolve();
+        }
+      },
+    });
+  });
+
+export const isMP4 = filename => /\.mp4$/i.test(filename);

@@ -1,11 +1,17 @@
 import devices from '../../config/devices';
 import streams from '../../config/streams';
+import { getXp2pManager } from '../../lib/xp2pManager';
 
 const sysInfo = wx.getSystemInfoSync();
+console.log('sysInfo', sysInfo);
 
-// 不用 xp2pManager 是因为它引用了wechat-p2p-player插件，release版没配置这个插件，会报错
-const xp2pPlugin = requirePlugin('xp2p');
-const p2pExports = xp2pPlugin.p2p;
+const accountInfo = wx.getAccountInfoSync();
+const miniProgramInfo = accountInfo.miniProgram;
+console.log('miniProgramInfo', miniProgramInfo);
+
+const xp2pManager = getXp2pManager();
+const xp2pPluginInfo = xp2pManager.getXp2pPluginInfo();
+const playerPluginInfo = xp2pManager.getPlayerPluginInfo();
 
 const getShortFlvName = (flvFile) => {
   const filename = flvFile.split('.')[0];
@@ -19,7 +25,11 @@ Page({
   data: {
     wxVersion: sysInfo.version,
     wxSDKVersion: sysInfo.SDKVersion,
-    xp2pVersion: p2pExports.XP2PVersion,
+    hostInfo: `${miniProgramInfo.appId}-${miniProgramInfo.envVersion}`,
+    xp2pPluginInfo: xp2pPluginInfo ? `${xp2pPluginInfo.appId}-${xp2pPluginInfo.version}` : '',
+    xp2pVersion: xp2pManager.XP2PVersion,
+    playerPluginInfo: playerPluginInfo ? `${playerPluginInfo.appId}-${playerPluginInfo.version}` : '',
+    playerVersion: xp2pManager.P2PPlayerVersion,
 
     // 这些是监控页入口
     listBtn: [],
@@ -28,6 +38,7 @@ Page({
     firstIPCStream: null,
   },
   onLoad() {
+    console.log('index: onLoad');
     const listBtn = [];
     const listNav = [];
     let firstServerStream = null;

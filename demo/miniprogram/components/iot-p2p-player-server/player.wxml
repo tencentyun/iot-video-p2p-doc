@@ -23,10 +23,10 @@
     <view>childrenStr: {{childrenStr}}</view>
     <view>parent: {{parent}}</view>
     <view>errlog:</view>
-    <scroll-view scroll-y="true" style="height: 200rpx; padding: 10rpx; border: solid 1px #dddddd;">{{errLog}}</scroll-view>
+    <scroll-view scroll-y="true" class="log-box" style="height: 200rpx;">{{errLog}}</scroll-view>
     <view>peerlist:</view>
-    <scroll-view scroll-y="true" style="height: 200rpx; padding: 10rpx; border: solid 1px #dddddd;">{{peerlist}}</scroll-view>
+    <scroll-view scroll-y="true" class="log-box" style="height: 200rpx;">{{peerlist}}</scroll-view>
     <view>subscribeLog:</view>
-    <scroll-view scroll-y="true" style="height: 200rpx; padding: 10rpx; border: solid 1px #dddddd;"><text>{{subscribeLog}}</text></scroll-view>
+    <scroll-view scroll-y="true" class="log-box" style="height: 200rpx;"><text>{{subscribeLog}}</text></scroll-view>
   </view>
 </view>

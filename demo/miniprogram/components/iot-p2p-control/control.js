@@ -1,4 +1,4 @@
-import { getXp2pManager } from '../../xp2pManager';
+import { getXp2pManager } from '../../lib/xp2pManager';
 
 const xp2pManager = getXp2pManager();
 

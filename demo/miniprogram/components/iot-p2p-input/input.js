@@ -1,6 +1,6 @@
 import config from '../../config/config';
 import { adjustXp2pInfo, compareVersion } from '../../utils';
-import { getXp2pManager } from '../../xp2pManager';
+import { getXp2pManager } from '../../lib/xp2pManager';
 
 const xp2pManager = getXp2pManager();
 const { XP2PVersion } = xp2pManager;
@@ -26,6 +26,7 @@ Component({
     inputXp2pInfo: '',
     inputLiveParams: '',
     inputPlaybackParams: '',
+    liveStreamDomain: '',
     needCheckStreamChecked: false,
     needPusherChecked: false,
     needDuplexChecked: false,
@@ -132,7 +133,14 @@ Component({
         inputPlaybackParams: e.detail.value,
       });
     },
+    inputIPCLiveStreamDomain(e) {
+      this.resolveConflict({ fieldName: 'liveStreamDomain', value: e.detail.value });
+      this.setData({
+        liveStreamDomain: e.detail.value,
+      });
+    },
     switchNeedCheckStream(e) {
+      this.resolveConflict({ fieldName: 'needCheckStreamChecked', value: e.detail.value });
       this.setData({
         needCheckStreamChecked: e.detail.value,
       });
@@ -161,6 +169,20 @@ Component({
       this.setData({
         onlyp2pChecked: e.detail.value,
       });
+    },
+    resolveConflict({fieldName, value}) {
+      // 互斥的两个配置
+      // 当连接数>=最大连接数的时候, 此时checkstream结果为不能播放, 但是1v1转向1vn却可以播放
+      if (fieldName === 'liveStreamDomain' && value) {
+        this.setData({
+          needCheckStreamChecked: false,
+        });
+      }
+      if (fieldName === 'needCheckStreamChecked' && value) {
+        this.setData({
+          liveStreamDomain: '',
+        });
+      }
     },
     getStreamData(type) {
       if (!this.data.inputTargetId) {
@@ -218,6 +240,7 @@ Component({
           deviceName: this.data.inputDeviceName,
           xp2pInfo: adjustXp2pInfo(this.data.inputXp2pInfo), // 兼容直接填 peername 的情况
           codeUrl: this.data.inputCodeUrl,
+          liveStreamDomain: this.data.liveStreamDomain,
         },
       };
     },

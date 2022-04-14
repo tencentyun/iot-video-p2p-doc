@@ -33,11 +33,26 @@
 .text-btn {
   color: #0052d9;
 }
-.text-btn.right {
+.right {
   position: absolute;
-  right: 20rpx;
+  right: 0rpx;
 }
-.text-btn.float-right {
+.float-right {
   float: right;
-  margin-right: 20rpx;
+}
+.margin-left {
+  margin-left: 20rpx;
+}
+
+.log-box {
+  box-sizing: border-box;
+  border: solid 2rpx #dddddd;
+  padding: 10rpx;
+}
+
+.notice-box {
+  box-sizing: border-box;
+  border: solid 2rpx #dddddd;
+  background-color: lightyellow;
+  padding: 10rpx;
 }

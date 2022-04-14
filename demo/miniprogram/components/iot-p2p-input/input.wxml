@@ -54,10 +54,18 @@
           </view>
         </view>
         <view class="input-item">
+          <view>1v1转1vn server拉流域名(填入开启1v1转1vn):</view>
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_input">
+              <input class="weui-input" type="text" value="{{liveStreamDomain}}" disabled="{{targetId}}" placeholder="和'播放前先检查能否拉流'不兼容" placeholder-class="placeholder" bindinput="inputIPCLiveStreamDomain" />
+            </view>
+          </view>
+        </view>
+        <view class="input-item">
           <label><switch type="checkbox" checked="{{needCheckStreamChecked}}" bindchange="switchNeedCheckStream"/>播放前先检查能否拉流</label>
         </view>
         <view class="input-item">
-          <label><switch type="checkbox" checked="{{needPusherChecked}}" bindchange="switchNeedPusher"/>对讲回音消除（实验中）</label>
+          <label><switch type="checkbox" checked="{{needPusherChecked}}" bindchange="switchNeedPusher"/>对讲回音消除（实验中，AAC编码）</label>
         </view>
         <view class="input-item">
           <label><switch type="checkbox" checked="{{needDuplexChecked}}" bindchange="switchNeedDuplex"/>双向音视频（实验中，开启后无对讲入口）</label>

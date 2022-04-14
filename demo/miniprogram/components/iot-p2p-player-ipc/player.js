@@ -1,8 +1,14 @@
 import config from '../../config/config';
-import { getParamValue, toDateString, toDateTimeString, toTimeString } from '../../utils';
-import { getXp2pManager, Xp2pManagerErrorEnum } from '../../xp2pManager';
+import { getParamValue, toDateString, toTimeString, toDateTimeString, isMP4 } from '../../utils';
+import { getXp2pManager, Xp2pManagerErrorEnum } from '../../lib/xp2pManager';
+import { getRecordManager } from '../../lib/recordManager';
 
 const xp2pManager = getXp2pManager();
+
+const downloadManager = getRecordManager('downloads');
+const fileSystemManager = wx.getFileSystemManager();
+
+const voiceManager = getRecordManager('voices');
 
 const { commandMap } = config;
 
@@ -32,6 +38,7 @@ const voiceConfigMap = {
 const VoiceStateEnum = {
   checking: 'checking', // 检查权限和设备状态
   starting: 'starting', // 发起voice请求
+  startingPusher: 'startingPusher', // 启动pusher
   sending: 'sending', // 发送语音数据(包括等待pusher开始)
   error: 'error',
 };
@@ -68,6 +75,10 @@ Component({
       type: Boolean,
       value: false,
     },
+    liveStreamDomain: {
+      type: String,
+      value: '',
+    },
     // 以下仅供调试，正式组件不需要
     onlyp2p: {
       type: Boolean,
@@ -92,6 +103,7 @@ Component({
     // 语音对讲
     voiceState: '', // VoiceStateEnum
     voiceType: '', // recorder / pusher
+    voiceFileObj: null, // pusher采集时把数据录下来，调试用
 
     // 这些是控制pusher的
     pusherId: 'iot-p2p-common-pusher',
@@ -131,6 +143,12 @@ Component({
 
     // 一些回放进度相关的提示
     playbackProgressStr: '',
+
+    // 下载
+    downloadList: [],
+    downloadFilename: '',
+    downloadTotal: 0,
+    downloadBytes: 0,
   },
   lifetimes: {
     created() {
@@ -194,6 +212,10 @@ Component({
 
       if (this.data.ptzCmd || this.data.releasePTZTimer) {
         this.controlDevicePTZ('ptz_release_pre');
+      }
+
+      if (this.data.downloadList.length > 0) {
+        this.stopDownload();
       }
 
       if (this.data.pusher) {
@@ -263,11 +285,28 @@ Component({
       const pusherReady = e.detail.pusherState === 'PusherReady';
       this.setData({ pusherReady });
     },
+    onPusherStartPush(e) {
+      console.log(`[${this.data.innerId}]`, 'onPusherStartPush', e.detail);
+      // 开始发送语音数据了
+      this.setData({ voiceState: VoiceStateEnum.sending });
+    },
+    onPusherClose(e) {
+      console.log(`[${this.data.innerId}]`, 'onPusherClose', e.detail);
+      if (!this.data.voiceState || !voiceConfigMap[this.data.voiceType].needPusher) {
+        return;
+      }
+      this.stopVoice();
+      this.showModal({
+        content: '推流结束',
+        showCancel: false,
+      });
+    },
     onPusherPushError(e) {
       console.log(`[${this.data.innerId}]`, 'onPusherPushError', e.detail);
-      if (this.data.voiceState && voiceConfigMap[this.data.voiceType].needPusher) {
-        this.stopVoice();
+      if (!this.data.voiceState || !voiceConfigMap[this.data.voiceType].needPusher) {
+        return;
       }
+      this.stopVoice();
       const { errMsg, errDetail } = e.detail;
       this.showModal({
         content: `${errMsg || '推流失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常,
@@ -311,6 +350,11 @@ Component({
     },
     checkCanStartStream({ filename, params = '' }) {
       console.log(`[${this.data.innerId}]`, 'checkCanStartStream', filename, params);
+
+      // 1v1转1v多和检查不共存
+      if (this.data.liveStreamDomain) {
+        this.properties.needCheckStream = false;
+      }
 
       let errMsg = '';
 
@@ -604,13 +648,13 @@ Component({
           console.log(`[${this.data.innerId}]`, 'startVoice success', res);
           this.setData({ voiceState: VoiceStateEnum.sending });
         })
-        .catch((res) => {
+        .catch((errcode) => {
           if (!this.data.voiceState) {
             // 已经stop了
             return;
           }
-          console.log(`[${this.data.innerId}]`, 'startVoice fail', res);
-          this.showToast(res === Xp2pManagerErrorEnum.NoAuth ? '请授权小程序访问麦克风' : '发起语音对讲失败');
+          console.log(`[${this.data.innerId}]`, 'startVoice fail', errcode);
+          this.showToast(errcode === Xp2pManagerErrorEnum.NoAuth ? '请授权小程序访问麦克风' : '发起语音对讲失败');
           this.stopVoice();
         });
     },
@@ -647,21 +691,37 @@ Component({
             return;
           }
           console.log(`[${this.data.innerId}]`, 'startVoiceData success', writer);
-          this.setData({ voiceState: VoiceStateEnum.sending });
+
+          // 写文件，方便验证，正式版本不需要
+          const voiceFileObj = voiceManager.openRecordFile(`voice-${this.properties.productId}-${this.properties.deviceName}`);
+          this.setData({
+            voiceFileObj,
+          });
+
+          // 启动推流，这时还不能发送数据
+          this.setData({ voiceState: VoiceStateEnum.startingPusher });
           this.data.pusher.start({
-            writer,
+            writer: {
+              addChunk: (chunk) => {
+                // 收到pusher的数据
+                // 写文件，方便验证，正式版本不需要
+                voiceManager.writeRecordFile(voiceFileObj, chunk);
+                // 写到xp2p语音请求里
+                writer.addChunk(chunk);
+              },
+            },
             fail: (err) => {
               console.log(`[${this.data.innerId}]`, 'voice pusher start fail', err);
               this.stopVoice();
             },
           });
         })
-        .catch((res) => {
+        .catch((errcode) => {
           if (!this.data.voiceState) {
             // 已经stop了
             return;
           }
-          console.log(`[${this.data.innerId}]`, 'startVoiceData fail', res);
+          console.log(`[${this.data.innerId}]`, 'startVoiceData fail', errcode);
           this.showToast('对讲失败');
           this.stopVoice();
         });
@@ -679,8 +739,11 @@ Component({
 
       console.log(`[${this.data.innerId}]`, 'do stopVoice', this.properties.targetId, this.data.voiceType, this.data.voiceState);
 
-      const { voiceType, voiceState } = this.data;
-      this.setData({ voiceType: '', voiceState: '' });
+      const { voiceType, voiceState, voiceFileObj } = this.data;
+      this.setData({ voiceType: '', voiceState: '', voiceFileObj: null });
+      if (voiceFileObj) {
+        voiceManager.closeRecordFile(voiceFileObj);
+      }
       if (voiceConfigMap[voiceType].needPusher) {
         // 如果是pusher，先停掉
         if (voiceState === VoiceStateEnum.sending) {
@@ -796,6 +859,178 @@ Component({
       const params = 'action=playback&channel=0';
       console.log(`[${this.data.innerId}]`, 'call changeFlv', filename, params);
       this.data.player.changeFlv({ filename, params });
+    },
+    async downloadRecord() {
+      console.log(`[本地下载] [${this.data.innerId}]`, 'downloadRecord');
+      const startTime = parseInt(getParamValue(this.data.inputPlaybackTime, 'start_time'), 10);
+      const endTime = parseInt(getParamValue(this.data.inputPlaybackTime, 'end_time'), 10);
+
+      // Step1 获取文件列表
+      const res = await xp2pManager.sendInnerCommand(this.properties.targetId, {
+        cmd: 'get_file_list',
+        channel: 0, // 固定为0
+        params: {
+          start_time: startTime,
+          end_time: endTime,
+          file_type: '0',
+        },
+      });
+      const fileList = res?.file_list;
+      console.log('[本地下载] fileList: ', fileList);
+      if (Array.isArray(fileList) && fileList.some(item => item.file_type === '0')) {
+        console.log('[本地下载] 已加入下载队列！');
+        wx.showToast({
+          title: '已加入下载队列！',
+          icon: 'none',
+          duration: 2000,
+        });
+      } else {
+        console.log('[本地下载] 该时间段内无录像');
+        wx.showToast({
+          title: '该时间段内无录像',
+          icon: 'none',
+        });
+        return;
+      }
+
+      // 加入downloadList，这里只下载视频，file_type: '0'-视频，'1'-图片
+      this.setData({
+        downloadList: this.data.downloadList.concat(fileList.filter(item => item.file_type === '0')),
+      });
+
+      if (this.data.downloadFilename) {
+        // 正在下载前面的
+        return;
+      }
+
+      this.startSingleDownload();
+    },
+    async startSingleDownload() {
+      if (this.data.downloadList.length === 0 || this.data.downloadFilename) {
+        return;
+      }
+
+      // Step2 下载文件
+      const file = this.data.downloadList[0];
+
+      const downloadFilename = file.file_name;
+      const downloadTotal = parseInt(file.file_size, 10);
+      let downloadBytes = 0;
+      this.setData({
+        downloadFilename,
+        downloadTotal,
+        downloadBytes,
+      });
+
+      let fixedFilename = file.file_name.replace('/', '_');
+      const pos = fixedFilename.lastIndexOf('.');
+      if (pos >= 0) {
+        // 把文件大小加到文件名里方便对比
+        fixedFilename = `${fixedFilename.substring(0, pos)}.${file.file_size}${fixedFilename.substring(pos)}`;
+      }
+      const filePath = downloadManager.prepareFile(fixedFilename);
+
+      await xp2pManager.startLocalDownload(
+        this.properties.targetId,
+        {
+          urlParams: `_crypto=off&channel=0&file_name=${file.file_name}&offset=0`,
+        },
+        {
+          onChunkReceived: (chunk) => {
+            // 显示进度
+            downloadBytes += chunk.byteLength;
+            this.setData({
+              downloadBytes,
+            });
+            // 将chunk包写入临时文件
+            try {
+              fileSystemManager.appendFileSync(filePath, chunk, 'binary');
+            } catch (e) {
+              console.error('[本地下载] onChunkReceived error:\n', e);
+            }
+          },
+          onSuccess: (res) => {
+            console.log('[本地下载] onSuccess', res);
+          },
+          onFailure: (res) => {
+            console.log('[本地下载] onFailure', res);
+          },
+          onError: (res) => {
+            console.log('[本地下载] onError', res);
+          },
+          onComplete: () => {
+            // 不一定下载成功
+            console.log(`[本地下载] onComplete ${downloadBytes}/${downloadTotal}`);
+          },
+        },
+      );
+
+      if (this.data.downloadList[0] !== file) {
+        // 已经停止下载，或者又开始下载其他文件了
+        return;
+      }
+
+      // 保存到相册，注意保存完了再开始下一个，否则多次下载同一个文件时下一个请求会覆盖本次下载的文件
+      if (downloadBytes >= downloadTotal) {
+        try {
+          await this.saveFile(filePath, file.file_type);
+          this.showToast('下载成功');
+        } catch (err) {
+          this.showModal({
+            title: '保存失败',
+            content: err.errMsg,
+            showCancel: false,
+          });
+        };
+      } else {
+        this.showToast(downloadBytes > 0 ? '下载中断' : '下载失败');
+      }
+
+      this.setData({
+        downloadFilename: '',
+        downloadTotal: 0,
+        downloadBytes: 0,
+      });
+      this.setData({
+        downloadList: this.data.downloadList.slice(1),
+      });
+
+      // 下载下一个
+      this.startSingleDownload();
+    },
+    // 保存到相册
+    saveFile(filePath, fileType) {
+      return new Promise((resolve, reject) => {
+        if (fileType === '0') {
+          wx.saveVideoToPhotosAlbum({
+            filePath,
+            success: resolve,
+            fail: reject,
+          });
+        } else if (fileType === '1') {
+          wx.saveImageToPhotosAlbum({
+            filePath,
+            success: resolve,
+            fail: reject,
+          });
+        } else {
+          // anything else.
+          reject({ errMsg: 'invalid file type' });
+        }
+      });
+    },
+    stopDownload() {
+      console.log(`[本地下载] [${this.data.innerId}]`, 'stopDownload', this.data.downloadList.length);
+      if (this.data.downloadList.length <= 0) {
+        return;
+      }
+      this.setData({
+        downloadList: [],
+        downloadFilename: '',
+        downloadTotal: 0,
+        downloadBytes: 0,
+      });
+      xp2pManager.stopLocalDownload(this.properties.targetId);
     },
     sliderProgressChange(e) {
       this.setData({

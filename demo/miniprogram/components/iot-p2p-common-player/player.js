@@ -1,8 +1,11 @@
-import { canUseP2PIPCMode, canUseP2PServerMode } from '../../utils';
-import { getXp2pManager } from '../../xp2pManager';
+import { canUseP2PIPCMode, canUseP2PServerMode, getParamValue } from '../../utils';
+import { getXp2pManager } from '../../lib/xp2pManager';
+import { getRecordManager, MAX_FILE_SIZE_IN_M } from '../../lib/recordManager';
 
 const xp2pManager = getXp2pManager();
 const { XP2PEventEnum, XP2PNotify_SubType } = xp2pManager;
+
+const recordManager = getRecordManager();
 
 // ts才能用enum，先这么处理吧
 const PlayerStateEnum = {
@@ -234,6 +237,10 @@ Component({
       type: String,
       value: '',
     },
+    liveStreamDomain: {
+      type: String,
+      value: '',
+    },
     // 不能直接传函数，只能在数据中包含函数，所以放在 checkFunctions 里
     /*
      checkFunctions: {
@@ -300,6 +307,8 @@ Component({
     // debug用
     showDebugInfo: false,
     isSlow: false,
+    isRecording: false,
+    fileObj: null,
 
     // 统计用
     playResultParams: null,
@@ -365,6 +374,7 @@ Component({
           deviceName: this.properties.deviceName,
           xp2pInfo: this.properties.xp2pInfo,
           codeUrl: this.properties.codeUrl,
+          liveStreamDomain: this.properties.liveStreamDomain,
         },
         canUseP2P,
         needPlayer,
@@ -401,6 +411,9 @@ Component({
       pause: this.pause.bind(this),
       resume: this.resume.bind(this),
       resumeStream: this.resumeStream.bind(this),
+      startRecording: this.startRecording.bind(this),
+      stopRecording: this.stopRecording.bind(this),
+      cancelRecording: this.cancelRecording.bind(this),
     };
   },
   methods: {
@@ -441,7 +454,18 @@ Component({
 
       const oldP2PState = this.data.p2pState;
       const oldStreamState = this.data.streamState;
-      this.setData({ ...newData, playerMsg: this.getPlayerMessage(newData) }, callback);
+      let playerDetail;
+      if (newData.hasPlayer === false) {
+        playerDetail = {
+          playerComp: null,
+          playerCtx: null,
+        };
+      }
+      this.setData({
+        ...newData,
+        ...playerDetail,
+        playerMsg: this.getPlayerMessage(newData),
+      }, callback);
       if (newData.p2pState && newData.p2pState !== oldP2PState) {
         this.triggerEvent('p2pStateChange', {
           p2pState: newData.p2pState,
@@ -717,7 +741,8 @@ Component({
         this.triggerEvent('systemPermissionDenied', detail);
         return;
       }
-      // TODO 什么情况会走到这里？
+      // 其他错误，比如没有开通live-player组件权限
+      // 参考：https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html
       this.handlePlayError(PlayerStateEnum.LivePlayerError, { msg: `livePlayerError: ${detail.errMsg}` });
     },
     // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
@@ -789,7 +814,7 @@ Component({
 
               this.addStep(PlayStepEnum.AutoReconnect);
 
-              // 前面收到playerStop的时候把streamState变成Idle了，这里再改成WaitPul
+              // 前面收到playerStop的时候把streamState变成Idle了，这里再改成WaitPull
               console.log(`[${this.data.innerId}]`, `livePlayer auto reconnect, ${this.data.streamState} -> ${StreamStateEnum.StreamWaitPull}`);
               this.changeState({
                 streamState: StreamStateEnum.StreamWaitPull,
@@ -807,7 +832,7 @@ Component({
               : PlayerStateEnum.LivePlayerStateError,
             streamState: xp2pManager.needResetLocalServer
               ? StreamStateEnum.StreamLocalServerError
-              : this.data.streamState,
+              : StreamStateEnum.StreamIdle,
           });
           this.handlePlayError(PlayerStateEnum.LivePlayerStateError, { msg: `livePlayerStateChange: ${detail.code} ${detail.message}` });
           break;
@@ -934,6 +959,7 @@ Component({
         p2pState: P2PStateEnum.ServicePreparing,
       });
 
+      console.log('=-=------------------------------');
       xp2pManager
         .startP2PService(
           targetId,
@@ -1068,6 +1094,14 @@ Component({
           chunkCount,
           totalBytes,
         });
+        if (this.data.fileObj) {
+          // 写录像文件
+          const writeLen = recordManager.writeRecordFile(this.data.fileObj, data);
+          if (writeLen < 0) {
+            // 写入失败，可能是超过限制了
+            stopRecording();
+          }
+        }
         playerComp.addChunk(data);
       };
 
@@ -1122,6 +1156,9 @@ Component({
       this.resetStreamData(newStreamState);
 
       if (needStopStream) {
+        // 如果在录像，取消
+        this.cancelRecording();
+
         // 拉流中的才需要 xp2pManager.stopStream
         console.log(`[${this.data.innerId}]`, 'do stopStream', this.properties.targetId);
         xp2pManager.stopStream(this.properties.targetId);
@@ -1562,6 +1599,112 @@ Component({
     },
     toggleSlow() {
       this.setData({ isSlow: !this.data.isSlow });
+    },
+    toggleRecording() {
+      if (this.data.isRecording) {
+        this.stopRecording();
+      } else {
+        this.startRecording();
+      }
+    },
+    async startRecording(recordFilename) {
+      if (this.data.isRecording || this.data.fileObj) {
+        // 已经在录像
+        return;
+      }
+
+      const modalRes = await wx.showModal({
+        title: '确定开始录像吗？',
+        content: `录像需要重新拉流，并且可能影响播放性能，请谨慎操作。\n仅保留最新的1个录像，最大支持 ${MAX_FILE_SIZE_IN_M}MB。`,
+      });
+      if (!modalRes || !modalRes.confirm) {
+        return;
+      }
+      console.log(`[${this.data.innerId}] confirm startRecording`);
+
+      // 保存录像文件要有flv头，停掉重新拉流
+      if (this.data.playing) {
+        this.stopStream();
+      }
+      this.tryStopPlayer();
+
+      // 准备录像文件，注意要在 stopStream 之后
+      let realRecordFilename = recordFilename;
+      if (!realRecordFilename) {
+        if (this.data.mode === 'ipc') {
+          const streamType = getParamValue(this.data.flvParams, 'action') || 'live';
+          realRecordFilename = `${this.data.mode}-${this.properties.productId}-${this.properties.deviceName}-${streamType}`;
+        } else {
+          realRecordFilename = `${this.data.mode}-${this.data.flvFilename}`;
+        }
+      }
+      const fileObj = recordManager.openRecordFile(realRecordFilename);
+      this.setData({
+        isRecording: !!fileObj,
+        fileObj,
+      });
+      console.log(`[${this.data.innerId}] record fileName ${fileObj && fileObj.fileName}`);
+
+      // 重新play
+      this.changeState({
+        streamState: StreamStateEnum.StreamWaitPull,
+      });
+      console.log(`[${this.data.innerId}]`, 'trigger record play');
+      this.data.playerCtx.play();
+    },
+    async stopRecording() {
+      if (!this.data.isRecording || !this.data.fileObj) {
+        // 没在录像
+        return;
+      }
+
+      console.log(`[${this.data.innerId}]`, `stopRecording, ${this.data.fileObj.fileName}`);
+      const { fileObj } = this.data;
+      this.setData({
+        isRecording: false,
+        fileObj: null,
+      });
+
+      const fileRes = recordManager.saveRecordFile(fileObj);
+      console.log(`[${this.data.innerId}]`, 'saveRecordFile res', fileRes);
+
+      if (!fileRes) {
+        wx.showToast({
+          title: '录像失败',
+          icon: 'error',
+        });
+        return;
+      }
+
+      // 保存到相册
+      try {
+        await recordManager.saveVideoToAlbum(fileRes.fileName);
+        wx.showModal({
+          title: '录像已保存到相册',
+          showCancel: false,
+        });
+      } catch (err) {
+        wx.showModal({
+          title: '保存录像到相册失败',
+          content: err.errMsg,
+          showCancel: false,
+        });
+      }
+    },
+    cancelRecording() {
+      if (!this.data.isRecording || !this.data.fileObj) {
+        // 没在录像
+        return;
+      }
+
+      console.log(`[${this.data.innerId}]`, `cancelRecording, ${this.data.fileObj.fileName}`);
+      const { fileObj } = this.data;
+      this.setData({
+        isRecording: false,
+        fileObj: null,
+      });
+
+      recordManager.closeRecordFile(fileObj);
     },
   },
 });

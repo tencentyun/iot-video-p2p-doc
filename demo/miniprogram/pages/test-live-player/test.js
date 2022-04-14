@@ -1,7 +1,9 @@
+import { checkAuthorize } from '../../utils';
+
 Page({
   data: {
-    // inputSrc: 'https://iot-public-1256872341.cos.ap-guangzhou.myqcloud.com/hazelchen/test.flv',
-    inputSrc: 'https://dev.ad.qvb.qcloud.com/openlive/6e0b2be040a943489ef0b9bb344b96b8.hd.flv',
+    inputSrc: 'https://iot-public-1256872341.cos.ap-guangzhou.myqcloud.com/hazelchen/test.flv',
+    // inputSrc: 'https://dev.ad.qvb.qcloud.com/openlive/6e0b2be040a943489ef0b9bb344b96b8.hd.flv',
     src: '',
     ctx: null,
     orientation: 'vertical',
@@ -97,111 +99,98 @@ Page({
       },
     });
   },
-  bindSnapshot() {
-    wx.authorize({
-      scope: 'scope.writePhotosAlbum',
-      success: () => {
-        console.log('authorize success');
+  async bindSnapshot() {
+    // 先检查权限
+    try {
+      await checkAuthorize('scope.writePhotosAlbum');
+    } catch (err) {
+      console.log('snapshot checkAuthorize fail', err);
+      const modalRes = await wx.showModal({
+        title: '',
+        content: '拍照需要您授权小程序访问相册',
+        confirmText: '去授权',
+      });
+      if (modalRes.confirm) {
+        wx.openSetting();
+      }
+      return;
+    }
 
-        if (this.data.isSnapshoting) {
-          console.log('isSnapshoting');
-          return;
-        }
+    if (this.data.isSnapshoting) {
+      console.log('isSnapshoting');
+      return;
+    }
 
-        this.setData({ isSnapshoting: true });
-        let timer = setTimeout(() => {
-          if (!this.data.isSnapshoting) {
-            return;
-          }
-          console.log('snapshot timeout');
-          this.setData({ isSnapshoting: false });
-          clearTimeout(timer);
-          timer = null;
-          wx.hideLoading();
-          wx.showToast({
-            title: '拍照超时',
-            icon: 'error',
-          });
-        }, 5000);
-        wx.showLoading({
-          title: '拍照中',
+    this.setData({ isSnapshoting: true });
+    let timer = setTimeout(() => {
+      if (!this.data.isSnapshoting) {
+        return;
+      }
+      console.log('snapshot timeout');
+      this.setData({ isSnapshoting: false });
+      clearTimeout(timer);
+      timer = null;
+      wx.hideLoading();
+      wx.showToast({
+        title: '拍照超时',
+        icon: 'error',
+      });
+    }, 5000);
+    wx.showLoading({
+      title: '拍照中',
+    });
+
+    console.log('do snapshot');
+    let snapshotRes = null;
+    try {
+      snapshotRes = await this.doSnapshot();
+      console.log('snapshot success', snapshotRes);
+    } catch (err) {
+      console.log('snapshot fail', err);
+      wx.showModal({
+        title: '拍照失败',
+        content: err.errMsg,
+        showCancel: false,
+      });
+    }
+
+    if (snapshotRes && snapshotRes.tempImagePath) {
+      console.log('do saveImageToPhotosAlbum');
+      try {
+        const saveRes = await wx.saveImageToPhotosAlbum({
+          filePath: snapshotRes.tempImagePath,
         });
-
-        console.log('do snapshot');
-        this.data.ctx.snapshot({
-          quality: 'raw',
-          success: (snapshotRes) => {
-            console.log('snapshot success', snapshotRes);
-            if (snapshotRes.tempImagePath) {
-              console.log('do saveImageToPhotosAlbum');
-              wx.saveImageToPhotosAlbum({
-                filePath: snapshotRes.tempImagePath,
-                success: (saveRes) => {
-                  console.log('saveImageToPhotosAlbum success', saveRes);
-                  this.setData({ isSnapshoting: false });
-                  clearTimeout(timer);
-                  timer = null;
-                  wx.hideLoading();
-                  wx.showToast({
-                    title: '已保存至相册',
-                    icon: 'success',
-                  });
-                },
-                fail: (err) => {
-                  console.log('saveImageToPhotosAlbum fail', err);
-                  this.setData({ isSnapshoting: false });
-                  clearTimeout(timer);
-                  timer = null;
-                  wx.hideLoading();
-                  wx.showToast({
-                    title: err.errMsg.indexOf('auth deny') ? '请授权小程序访问相册' : '保存失败',
-                    icon: 'error',
-                  });
-                },
-              });
-            } else {
-              this.setData({ isSnapshoting: false });
-              clearTimeout(timer);
-              timer = null;
-              wx.hideLoading();
-              wx.showToast({
-                title: '拍照失败',
-                icon: 'error',
-              });
-            }
-          },
-          fail: (err) => {
-            console.log('snapshot fail', err);
-            this.setData({ isSnapshoting: false });
-            clearTimeout(timer);
-            timer = null;
-            wx.hideLoading();
-            wx.showToast({
-              title: '拍照失败',
-              icon: 'error',
-            });
-          },
-        });
-      },
-      fail: (err) => {
-        console.log('authorize fail', err);
+        console.log('saveImageToPhotosAlbum success', saveRes);
         wx.showModal({
-          title: '',
-          content: '拍照需要您授权小程序访问相册',
-          confirmText: '去授权',
-          success: ({ confirm }) => {
-            if (confirm) {
-              wx.openSetting();
-            }
-          },
-          fail: () => {
-            wx.showToast({
-              title: '请授权小程序访问相册',
-              icon: 'error',
-            });
-          },
+          title: '已保存到相册',
+          showCancel: false,
         });
-      },
+      } catch (err) {
+        console.log('saveImageToPhotosAlbum fail', err);
+        wx.showModal({
+          title: '保存到相册失败',
+          content: err.errMsg.indexOf('auth deny') ? '请授权小程序访问相册' : err.errMsg,
+          showCancel: false,
+        });
+      }
+    }
+
+    wx.hideLoading();
+    clearTimeout(timer);
+    timer = null;
+    this.setData({ isSnapshoting: false });
+  },
+  doSnapshot() {
+    return new Promise((resolve, reject) => {
+      this.data.ctx.snapshot({
+        quality: 'raw',
+        success: (res) => {
+          resolve(res);
+        },
+        fail: (err) => {
+          reject(err);
+        },
+      });
     });
   },
   bindChangeOrientation() {

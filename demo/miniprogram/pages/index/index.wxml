@@ -1,8 +1,12 @@
 <view class="page-body">
   <view class="page-section page-section-gap">
+    <view>hostInfo: {{hostInfo}}</view>
+    <view>xp2pPluginInfo: {{xp2pPluginInfo}}</view>
+    <view>playerPluginInfo: {{playerPluginInfo}}</view>
     <view>WXVersion: {{wxVersion}}</view>
     <view>WXSDKVersion: {{wxSDKVersion}}</view>
     <view>XP2PVersion: {{xp2pVersion}}</view>
+    <view>PlayerVersion: {{playerVersion}}</view>
   </view>
   <view class="page-section page-section-gap">
     <iot-p2p-control
@@ -30,6 +34,9 @@
   <navigator wx:if="{{firstIPCStream}}" url="/pages/xp2p-singleplayer/demo?cfg={{firstIPCStream.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 单播放器 {{firstIPCStream.cfg}}</navigator>
   <navigator wx:if="{{firstServerStream && firstIPCStream}}" url="/pages/xp2p-multiplayers/demo?cfg1={{firstServerStream.cfg}}&cfg2={{firstIPCStream.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 多播放器 {{firstServerStream.cfg}}+{{firstIPCStream.cfg}}</navigator>
   -->
+  <navigator url="/pages/xp2p-records/records?name=downloads" hover-class="navigator-hover">跳转到 下载管理页</navigator>
+  <navigator url="/pages/xp2p-records/records?name=records" hover-class="navigator-hover">跳转到 录像管理页</navigator>
+  <navigator url="/pages/xp2p-records/records?name=voices" hover-class="navigator-hover">跳转到 语音管理页</navigator>
   <navigator url="/pages/test-live-player/test" hover-class="navigator-hover">跳转到 LivePlayer 测试页</navigator>
   <navigator url="/pages/test-video/test" hover-class="navigator-hover">跳转到 Video 测试页</navigator>
 </view>

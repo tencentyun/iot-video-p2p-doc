@@ -4,12 +4,14 @@
     "pages/xp2p-demo-1vN/demo",
     "pages/xp2p-singleplayer/demo",
     "pages/xp2p-multiplayers/demo",
+    "pages/xp2p-records/records",
+    "pages/test-p2p-player/player",
     "pages/test-live-player/test",
     "pages/test-video/test"
   ],
   "plugins": {
     "wechat-p2p-player": {
-      "version": "1.1.0",
+      "version": "1.1.2",
       "provider": "wx9e8fbc98ceac2628"
     },
     "xp2p": {

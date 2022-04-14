@@ -1,0 +1,46 @@
+<view class="page-body">
+  <view class="page-section">
+    <view class="player-container">
+      <p2p-player
+        wx:if="{{playerId}}"
+        id="{{playerId}}"
+        orientation="vertical"
+        minCache="0.2"
+        maxCache="0.8"
+        showLog="{{showPlayerLog}}"
+        bind:playerReady="onPlayerReady"
+        bind:playerStartPull="onPlayerStartPull"
+        bind:playerClose="onPlayerClose"
+        bind:playerError="onPlayerError"
+        bind:error="onLivePlayerError"
+        bind:statechange="onLivePlayerStateChange"
+        bind:netstatus="onLivePlayerNetStatusChange"
+      />
+      <view class="video-info">
+        <view class="text-box lines-3">
+          <text class="text-break">{{livePlayerInfoStr}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view class="page-section">
+    <view class="group-button-area">
+      <button bindtap="bindCreatePlayer" class="group-button" type="primary" size="mini" disabled="{{!dataReady || playerId}}">创建</button>
+      <button bindtap="bindPlay" class="group-button" type="primary" size="mini" disabled="{{!playerReady || playStatus}}">播放</button>
+      <button bindtap="bindStop" class="group-button" type="primary" size="mini" disabled="{{!playerReady || !playStatus}}">停止</button>
+      <button bindtap="bindDestroyPlayer" class="group-button" type="primary" size="mini" disabled="{{!dataReady || !playerId}}">销毁</button>
+    </view>
+  </view>
+  <view class="page-section">
+    <view>requirements: wx 8.0.10 / sdk 2.19.3</view>
+    <view>system: {{systemInfo.system}} / wx {{systemInfo.version}} / sdk {{systemInfo.SDKVersion}}</view>
+    <view>playerPlugin: {{playerPluginVersion}}</view>
+    <view>localRecordName: {{localRecordName}}</view>
+    <view>playStatus: {{playStatus}}</view>
+  </view>
+  <view class="page-section page-section-gap">
+    <view class="page-section-title">Log<text class="text-btn float-right" bindtap="clearLog">clear</text></view>
+    <scroll-view scroll-y="true" class="log-box" style="height: 500rpx;"><text>{{log}}</text></scroll-view>
+  </view>
+</view>
+

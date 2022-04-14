@@ -1,4 +1,5 @@
-import config from './config/config';
+import config from '../config/config';
+import { checkAuthorize } from '../utils';
 
 // ts才能用enum，先这么处理吧
 export const Xp2pManagerErrorEnum = {
@@ -30,36 +31,33 @@ const parseCommandResData = (data) => {
 
 class Xp2pManager {
   get P2PPlayerVersion() {
-    if (!playerPlugin) {
-      playerPlugin = requirePlugin('wechat-p2p-player');
-    }
-    return playerPlugin?.Version;
+    return playerPlugin.Version;
   }
 
   get XP2PVersion() {
-    return p2pExports?.XP2PVersion;
+    return p2pExports.XP2PVersion;
   }
 
   get XP2PLocalEventEnum() {
-    return p2pExports?.XP2PLocalEventEnum;
+    return p2pExports.XP2PLocalEventEnum;
   }
 
   get XP2PEventEnum() {
-    return p2pExports?.XP2PEventEnum;
+    return p2pExports.XP2PEventEnum;
   }
 
   // eslint-disable-next-line camelcase
   get XP2PNotify_SubType() {
-    return p2pExports?.XP2PNotify_SubType;
+    return p2pExports.XP2PNotify_SubType;
   }
 
   // eslint-disable-next-line camelcase
   get XP2PDevNotify_SubType() {
-    return p2pExports?.XP2PDevNotify_SubType;
+    return p2pExports.XP2PDevNotify_SubType;
   }
 
   get uuid() {
-    return p2pExports?.getUUID();
+    return p2pExports.getUUID();
   }
 
   get promise() {
@@ -118,6 +116,11 @@ class Xp2pManager {
 
     console.log('Xp2pManager: XP2PVersion', this.XP2PVersion);
 
+    if (!playerPlugin) {
+      playerPlugin = requirePlugin('wechat-p2p-player');
+    }
+    console.log('Xp2pManager: P2PPlayerVersion', this.P2PPlayerVersion);
+
     wx.getNetworkType({
       success: (res) => {
         console.log('Xp2pManager: getNetworkType res', res);
@@ -154,6 +157,24 @@ class Xp2pManager {
     });
   }
 
+  getXp2pPluginInfo() {
+    try {
+      return xp2pPlugin.getPluginInfo && xp2pPlugin.getPluginInfo();
+    } catch (err) {
+      // 低版本插件没有这个接口
+      console.error('getXp2pPluginInfo error', err);
+    }
+  }
+
+  getPlayerPluginInfo() {
+    try {
+      return playerPlugin.getPluginInfo && playerPlugin.getPluginInfo();
+    } catch (err) {
+      // 低版本插件没有这个接口
+      console.error('getPlayerPluginInfo error', err);
+    }
+  }
+
   checkReset() {
     console.log('Xp2pManager: checkReset');
 
@@ -181,9 +202,6 @@ class Xp2pManager {
     this._needResetLocalServer = false;
 
     try {
-      if (!playerPlugin) {
-        playerPlugin = requirePlugin('wechat-p2p-player');
-      }
       playerPlugin.reset();
     } catch (err) {
       // 低版本插件没有 reset，保护一下
@@ -196,9 +214,6 @@ class Xp2pManager {
     this._needResetLocalRtmpServer = false;
 
     try {
-      if (!playerPlugin) {
-        playerPlugin = requirePlugin('wechat-p2p-player');
-      }
       playerPlugin.resetRtmp();
     } catch (err) {
       // 低版本插件没有 reset，保护一下
@@ -387,8 +402,8 @@ class Xp2pManager {
 
     return new Promise((resolve, reject) => {
       this.checkRecordAuthorize()
-        .then((result) => {
-          console.log('checkRecordAuthorize res', result);
+        .then(() => {
+          console.log('checkRecordAuthorize success');
 
           // 语音对讲需要recorderManager
           const recorderManager = wx.getRecorderManager();
@@ -417,6 +432,17 @@ class Xp2pManager {
   stopVoice(targetId) {
     console.log('Xp2pManager: stopVoice', targetId);
     return p2pExports.stopVoice(targetId);
+  }
+
+  // 本地下载
+  startLocalDownload(targetId, options, callbacks) {
+    console.log('Xp2pManager: startLocalDownload', targetId);
+    return p2pExports.startLocalDownload(targetId, options, callbacks);
+  }
+
+  stopLocalDownload(targetId) {
+    console.log('Xp2pManager: stopLocalDownload', targetId);
+    return p2pExports.stopLocalDownload(targetId);
   }
 
   sendCommand(targetId, command, options = { responseType: 'text' }) {
@@ -516,31 +542,7 @@ class Xp2pManager {
   }
 
   checkRecordAuthorize() {
-    return this._checkAuthorize('scope.record');
-  }
-
-  _checkAuthorize(scope) {
-    return new Promise((resolve, reject) => {
-      wx.getSetting({
-        success(res) {
-          console.log('wx.getSetting res', res);
-          if (!res.authSetting[scope]) {
-            wx.authorize({
-              scope,
-              success() {
-                // 用户已经同意小程序使用录音功能，后续调用 wx.startRecord 接口不会弹窗询问
-                resolve(0);
-              },
-              fail() {
-                reject(Xp2pManagerErrorEnum.NoAuth);
-              },
-            });
-          } else {
-            resolve(0);
-          }
-        },
-      });
-    });
+    return checkAuthorize('scope.record');
   }
 }
 

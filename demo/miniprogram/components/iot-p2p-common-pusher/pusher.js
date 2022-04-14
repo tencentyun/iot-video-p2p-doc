@@ -1,4 +1,4 @@
-import { getXp2pManager } from '../../xp2pManager';
+import { getXp2pManager } from '../../lib/xp2pManager';
 
 const xp2pManager = getXp2pManager();
 
@@ -20,7 +20,7 @@ const totalMsgMap = {
   [PusherStateEnum.LivePusherError]: 'LivePusher错误',
   [PusherStateEnum.LivePusherStateError]: '推流失败',
   [PusherStateEnum.LocalServerError]: '本地RtmpServer错误',
-  PusherWriting: '推流中...'
+  PusherPushing: '推流中...',
 };
 
 let pusherSeq = 0;
@@ -53,8 +53,11 @@ Component({
     pusherCtx: null,
     pusherMsg: '',
 
-    // 写数据
+    // 写数据用
     writer: null,
+
+    // 是否推流中
+    isPushing: false,
 
     // stream状态
     chunkCount: 0,
@@ -101,7 +104,7 @@ Component({
       };
 
       if (realData.pusherState === PusherStateEnum.PusherReady) {
-        return this.data.writer ? totalMsgMap.PusherWriting : '';
+        return this.data.writer ? totalMsgMap.PusherPushing : '';
       }
 
       return totalMsgMap[realData.pusherState] || '';
@@ -109,8 +112,16 @@ Component({
     // 包一层，方便更新 pusherMsg
     changeState(newData, callback) {
       const oldPusherState = this.data.pusherState;
+      let pusherDetail;
+      if (newData.hasPusher === false) {
+        pusherDetail = {
+          pusherComp: null,
+          pusherCtx: null,
+        };
+      }
       this.setData({
         ...newData,
+        ...pusherDetail,
         pusherMsg: this.getPusherMessage(newData),
       }, callback);
       if (newData.pusherState && newData.pusherState !== oldPusherState) {
@@ -138,7 +149,7 @@ Component({
         pusherCtx: detail.livePusherContext,
       });
     },
-    onPusherStartPush({ detail }) {
+    onPusherStartPush({ type, detail }) {
       console.log(`[${this.data.innerId}]`, '==== onPusherStartPush', detail);
       if (!this.data.writer) {
         // 现在不能push
@@ -147,6 +158,8 @@ Component({
         return;
       }
       this.clearStreamData();
+      this.setData({ isPushing: true });
+      this.triggerEvent(type, detail);
     },
     onPusherFlvHeader({ detail }) {
       console.log(`[${this.data.innerId}]`, '==== onPusherFlvHeader', detail);
@@ -162,9 +175,10 @@ Component({
       console.log(`[${this.data.innerId}]`, 'onPusherFlvDataTag', detail);
       this.addChunkInner && this.addChunkInner(detail.data, detail.params);
     },
-    onPusherClose({ detail }) {
+    onPusherClose({ type, detail }) {
       console.log(`[${this.data.innerId}]`, '==== onPusherClose', detail);
-      // const code = detail && detail.error && detail.error.code;
+      this.setData({ isPushing: false });
+      this.triggerEvent(type, detail);
     },
     onPusherError({ detail }) {
       console.error(`[${this.data.innerId}]`, '==== onPusherError', detail);
@@ -197,6 +211,8 @@ Component({
       this.changeState({
         pusherState,
       });
+      // 其他错误，比如没有开通live-pusher组件权限
+      // 参考：https://developers.weixin.qq.com/miniprogram/dev/component/live-pusher.html
       this.handlePushError(pusherState, { msg: `livePusherError: ${detail.errMsg}` });
     },
     onLivePusherStateChange({ detail }) {
@@ -268,8 +284,8 @@ Component({
       this.setData({
         chunkCount: 0,
         totalBytes: 0,
-        livePlayerInfo: null,
-        livePlayerInfoStr: '',
+        livePusherInfo: null,
+        livePusherInfoStr: '',
       });
     },
     checkCanRetry() {
@@ -315,7 +331,7 @@ Component({
       });
     },
     start({ writer, success, fail, complete } = {}) {
-      console.log(`[${this.data.innerId}] start, hasPusherCrx: ${!!this.data.pusherCtx}, hasWriter: ${!!this.data.writer}`);
+      console.log(`[${this.data.innerId}] start, hasPusherCtx: ${!!this.data.pusherCtx}, hasWriter: ${!!this.data.writer}`);
       if (!writer || !writer.addChunk) {
         fail && fail({ errMsg: 'writer invalid' });
         complete && complete();
@@ -366,7 +382,7 @@ Component({
       });
     },
     stop({ success, fail, complete } = {}) {
-      console.log(`[${this.data.innerId}] stop, hasPusherCrx: ${!!this.data.pusherCtx}, hasWriter: ${!!this.data.writer}, totalBytes: ${this.data.totalBytes}`);
+      console.log(`[${this.data.innerId}] stop, hasPusherCtx: ${!!this.data.pusherCtx}, hasWriter: ${!!this.data.writer}, totalBytes: ${this.data.totalBytes}`);
       if (!this.data.pusherCtx) {
         fail && fail({ errMsg: 'pusher not ready' });
         complete && complete();
@@ -380,7 +396,7 @@ Component({
       }
 
       this.clearStreamData();
-      this.setData({ writer: null });
+      this.setData({ writer: null, isPushing: false });
       this.addChunkInner = null;
 
       this.tryStopPusher({ success, fail, complete });

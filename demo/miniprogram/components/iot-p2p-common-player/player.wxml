@@ -53,7 +53,11 @@
       <!-- <view>chunkCount: {{chunkCount}}</view> -->
       <view>
         totalBytes: {{totalBytes}}
-        <text class="text-btn right" bindtap="toggleSlow">{{isSlow ? '恢复' : '模拟丢包'}}</text>
+        <text class="text-btn float-right" bindtap="toggleSlow">{{isSlow ? '恢复' : '模拟丢包'}}</text>
+      </view>
+      <view>
+        record: 
+        <text class="text-btn float-right" wx:if="{{streamState === 'StreamDataReceived' || isRecording}}" bindtap="toggleRecording">{{isRecording ? '停止录像' : '开始录像'}}</text>
       </view>
       <view>
         <view>livePlayerInfo: </view>

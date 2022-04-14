@@ -9,6 +9,7 @@
       productId="{{productId}}"
       deviceName="{{deviceName}}"
       xp2pInfo="{{xp2pInfo}}"
+      liveStreamDomain="{{liveStreamDomain}}"
       checkFunctions="{{checkFunctions}}"
       onlyp2p="{{onlyp2p}}"
       bind:p2pStateChange="onP2PStateChange"
@@ -24,6 +25,8 @@
         id="{{pusherId}}"
         enableCamera="{{true}}"
         bind:pusherStateChange="onPusherStateChange"
+        bind:pusherStartPush="onPusherStartPush"
+        bind:pusherClose="onPusherClose"
         bind:pushError="onPusherPushError"
       />
       <view>voiceType: {{voiceType}}</view>
@@ -97,6 +100,8 @@
           id="{{pusherId}}"
           enableCamera="{{false}}"
           bind:pusherStateChange="onPusherStateChange"
+          bind:pusherStartPush="onPusherStartPush"
+          bind:pusherClose="onPusherClose"
           bind:pushError="onPusherPushError"
           style="display: none"
         />
@@ -193,6 +198,18 @@
         <button bindtap="stopPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime}}">
           停止
         </button>
+        <!-- 本地下载依赖SDK支持 -->
+        <button bindtap="downloadRecord" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !inputPlaybackTime}}">
+          开始下载
+        </button>
+        <button bindtap="stopDownload" class="group-button" type="primary" size="mini" disabled="{{downloadList.length === 0}}">
+          停止下载
+        </button>
+      </view>
+      <view>
+        <view>待下载文件数：{{downloadList.length}}</view>
+        <view>当前下载文件：{{downloadFilename}} <text wx:if="{{downloadFilename}}">({{downloadTotal}})</text></view>
+        <view>当前下载进度：<text wx:if="{{downloadFilename}}">{{downloadBytes}}</text></view>
       </view>
     </view>
     <view class="component-section">

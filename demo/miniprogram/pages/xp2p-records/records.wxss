@@ -1,0 +1,22 @@
+@import '../../common.wxss';
+
+.record-item {
+  padding: 20rpx;
+}
+
+.record-item .info {
+  color: #989898;
+  /* float: right; */
+  margin-left: 20rpx;
+}
+
+.record-item .left-btn {
+  color: #0052d9;
+  margin-right: 20rpx;
+}
+
+.record-item .right-btn {
+  color: #0052d9;
+  float: right;
+  margin-left: 20rpx;
+}
