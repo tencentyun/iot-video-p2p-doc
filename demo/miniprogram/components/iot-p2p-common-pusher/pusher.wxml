@@ -7,6 +7,8 @@
       enableCamera="{{enableCamera}}"
       enableMic="{{enableMic}}"
       enableAns="{{true}}"
+      audioQuality="low"
+      audioVolumeType="voicecall"
       orientation="{{orientation}}"
       bind:pusherReady="onPusherReady"
       bind:pusherStartPush="onPusherStartPush"

@@ -1,5 +1,5 @@
 import config from '../../config/config';
-import { getParamValue, toDateString, toTimeString, toDateTimeString, isMP4 } from '../../utils';
+import { getParamValue, toDateString, toTimeString, toDateTimeString } from '../../utils';
 import { getXp2pManager, Xp2pManagerErrorEnum } from '../../lib/xp2pManager';
 import { getRecordManager } from '../../lib/recordManager';
 
