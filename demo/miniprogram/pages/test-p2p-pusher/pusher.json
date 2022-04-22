@@ -1,0 +1,5 @@
+{
+  "usingComponents": {
+    "p2p-pusher": "plugin://wechat-p2p-player/p2p-pusher"
+  }
+}

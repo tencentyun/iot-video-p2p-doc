@@ -21,7 +21,7 @@
         <!-- <text class="right-btn" bindtap="removeFile" data-index="{{index}}">删除</text> -->
         <text wx:if="{{showSendDoc}}" class="right-btn" bindtap="sendDocument" data-index="{{index}}">发送</text>
         <text class="right-btn" bindtap="saveVideoToAlbum" data-index="{{index}}">保存到相册</text>
-        <text wx:if="{{!item.isMP4}}" class="right-btn" bindtap="renameMP4" data-index="{{index}}">重命名为mp4</text>
+        <!-- <text wx:if="{{!item.isMP4}}" class="right-btn" bindtap="renameMP4" data-index="{{index}}">重命名为mp4</text> -->
       </view>
     </view>
   </view>

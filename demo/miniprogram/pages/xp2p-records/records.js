@@ -108,9 +108,13 @@ Page({
         showCancel: false,
       });
     } catch (err) {
+      let content = err.errMsg || '';
+      if (/invalid video/.test(content)) {
+        content += '\n只支持保存 mp4 格式视频';
+      }
       wx.showModal({
         title: '保存到相册失败',
-        content: err.errMsg || '',
+        content,
         showCancel: false,
       });
     }

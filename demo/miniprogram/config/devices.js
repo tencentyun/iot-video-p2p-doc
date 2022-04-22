@@ -21,23 +21,17 @@ const devices = {
     liveParams: 'action=live&channel=0&quality=standard',
     playbackParams: 'action=playback&channel=0',
   },
-  ipc1: {
-    showInHomePageBtn: true,
-    productId: '9L1S66FZ3Q',
-    deviceName: 'test_34683636_5',
-    xp2pInfo: 'XP2PJjjVY/DtlAy0nTKv9jT8JrC4%2.3.11',
-  },
-  ipc2: {
-    showInHomePageBtn: true,
-    productId: '9L1S66FZ3Q',
-    deviceName: 'test_34683636_3',
-    xp2pInfo: 'XP2PcDd/JhEamiRjtLGL45WThnUQ%2.3.14',
-  },
-  downloadDemo: {
+  ipc_download: {
     showInHomePageBtn: true,
     productId: '65CC3I8Q4G',
     deviceName: 'llynne_41877702_5',
     xp2pInfo: 'XP2PRaiH8GqimBOseoPFEHWCimrd%2.3.11',
+  },
+  ipc_test: {
+    showInHomePageBtn: true,
+    productId: 'ZF39IBNGP2',
+    deviceName: 'KDS_69610537_10',
+    xp2pInfo: 'XP2PxZl3T95gw/QfM4bBv/HA3w==%2.4.23',
   },
   debug: {
     // showInHomePageBtn: true,

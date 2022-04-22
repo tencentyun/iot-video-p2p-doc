@@ -111,13 +111,13 @@
       <view>voiceState: {{voiceState}}</view>
       <view class="group-button-area">
         <button bindtap="startVoice" data-recorder-cfg="1-8000-16000" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState && voiceState !== 'error')}}">
-          单通道录音
+          Recorder-单
         </button>
         <button bindtap="startVoice" data-recorder-cfg="2-44100-192000" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState && voiceState !== 'error')}}">
-          双通道录音
+          Recorder-双
         </button>
-        <button wx:if="{{needPusher}}" bindtap="startVoice" data-voice-type="Pusher" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !pusherReady || (voiceState && voiceState !== 'error')}}">
-          Pusher
+        <button wx:if="{{needPusher}}" bindtap="startVoice" data-voice-type="Pusher" data-need-record="1" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !pusherReady || (voiceState && voiceState !== 'error')}}">
+          Pusher+录制
         </button>
         <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !voiceState || voiceState === 'error'}}">
           挂断

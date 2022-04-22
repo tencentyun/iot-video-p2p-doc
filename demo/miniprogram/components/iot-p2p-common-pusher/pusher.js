@@ -37,10 +37,6 @@ Component({
       type: Boolean,
       value: true,
     },
-    orientation: {
-      type: String,
-      value: 'vertical',
-    },
   },
   data: {
     innerId: '',
@@ -60,10 +56,12 @@ Component({
     isPushing: false,
 
     // stream状态
-    chunkCount: 0,
-    totalBytes: 0,
-    livePusherInfo: '',
+    livePusherInfo: null,
     livePusherInfoStr: '',
+
+    // controls
+    remoteMirror: true,
+    localMirror: 'enable',
   },
   lifetimes: {
     created() {
@@ -165,14 +163,7 @@ Component({
       console.log(`[${this.data.innerId}]`, '==== onPusherFlvHeader', detail);
       this.addChunkInner && this.addChunkInner(detail.data, detail.params);
     },
-    onPusherFlvAudioTag({ detail }) {
-      this.addChunkInner && this.addChunkInner(detail.data, detail.params);
-    },
-    onPusherFlvVideoTag({ detail }) {
-      this.addChunkInner && this.addChunkInner(detail.data, detail.params);
-    },
-    onPusherFlvDataTag({ detail }) {
-      console.log(`[${this.data.innerId}]`, 'onPusherFlvDataTag', detail);
+    onPusherFlvTag({ detail }) {
       this.addChunkInner && this.addChunkInner(detail.data, detail.params);
     },
     onPusherClose({ type, detail }) {
@@ -274,7 +265,7 @@ Component({
       this.setData({
         livePusherInfo,
         livePusherInfoStr: [
-          `size: ${livePusherInfo.videoWidth}x${livePusherInfo.videoHeight}, fps: ${livePusherInfo.videoFPS}`,
+          `size: ${livePusherInfo.videoWidth}x${livePusherInfo.videoHeight}, fps: ${livePusherInfo.videoFPS?.toFixed(2)}, gop: ${livePusherInfo.videoGOP?.toFixed(2)}`,
           `bitrate(kbps): video ${livePusherInfo.videoBitrate}, audio ${livePusherInfo.audioBitrate}`,
           `cache(frames): video ${livePusherInfo.videoCache}, audio ${livePusherInfo.audioCache}`,
         ].join('\n'),
@@ -282,8 +273,6 @@ Component({
     },
     clearStreamData() {
       this.setData({
-        chunkCount: 0,
-        totalBytes: 0,
         livePusherInfo: null,
         livePusherInfoStr: '',
       });
@@ -349,19 +338,11 @@ Component({
         return;
       }
 
-      let chunkCount = 0;
-      let totalBytes = 0;
       const addChunkInner = (data, _params) => {
         if (!data || !data.byteLength) {
           return;
         }
 
-        chunkCount++;
-        totalBytes += data.byteLength;
-        this.setData({
-          chunkCount,
-          totalBytes,
-        });
         writer.addChunk(data);
       };
 
@@ -382,7 +363,7 @@ Component({
       });
     },
     stop({ success, fail, complete } = {}) {
-      console.log(`[${this.data.innerId}] stop, hasPusherCtx: ${!!this.data.pusherCtx}, hasWriter: ${!!this.data.writer}, totalBytes: ${this.data.totalBytes}`);
+      console.log(`[${this.data.innerId}] stop, hasPusherCtx: ${!!this.data.pusherCtx}, hasWriter: ${!!this.data.writer}`);
       if (!this.data.pusherCtx) {
         fail && fail({ errMsg: 'pusher not ready' });
         complete && complete();
@@ -420,9 +401,11 @@ Component({
         enableMic: !this.data.enableMic,
       });
     },
-    changeOrientation() {
+    changeRemoteMirror() {
+      const remoteMirror = !this.data.remoteMirror;
       this.setData({
-        orientation: this.data.orientation === 'horizontal' ? 'vertical' : 'horizontal',
+        remoteMirror,
+        localMirror: remoteMirror ? 'enable' : 'disable',
       });
     },
     // 以下是调试面板相关的

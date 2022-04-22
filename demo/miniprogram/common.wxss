@@ -33,6 +33,9 @@
 .text-btn {
   color: #0052d9;
 }
+.text-btn.disabled {
+  color: rgba(0, 0, 0, 0.3);
+}
 .right {
   position: absolute;
   right: 0rpx;

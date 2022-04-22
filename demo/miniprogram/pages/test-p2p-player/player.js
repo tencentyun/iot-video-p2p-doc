@@ -8,20 +8,21 @@ Page({
   data: {
     systemInfo: {},
     playerPluginVersion: '',
-    recordManager: null,
     localRecordName: '',
     dataReady: false,
-    showPlayerLog: true,
     playerId: '',
     playerReady: false,
     playerComp: null,
     playerCtx: null,
-    liveReq: null,
     playStatus: '', // '' | 'playing' | 'ending'
     canWrite: false, // 能否写数据，比如播放暂时中断时不能写
-    livePlayerInfo: null,
     livePlayerInfoStr: '',
     log: '',
+  },
+  userData: {
+    // 渲染无关的尽量放这里
+    recordManager: null,
+    livePlayerInfo: null,
   },
   onLoad(query) {
     const systemInfo = wx.getSystemInfoSync() || {};
@@ -31,8 +32,8 @@ Page({
     });
 
     const recordManager = getRecordManager(query.dirname);
+    this.userData.recordManager = recordManager;
     this.setData({
-      recordManager,
       localRecordName: query.filename,
     });
 
@@ -56,11 +57,26 @@ Page({
       this.addLog('未指定本地录像文件');
     }
   },
+  setUserData(userData) {
+    Object.assign(this.userData, userData);
+  },
+  showToast(content) {
+    wx.showToast({
+      title: content,
+      icon: 'none',
+    });
+  },
   addLog(str) {
     this.setData({ log: `${this.data.log}${Date.now()} - ${str}\n` });
   },
   clearLog() {
     this.setData({ log: '' });
+  },
+  clearFlvData() {
+    this.userData.livePlayerInfo = null;
+    this.setData({
+      livePlayerInfoStr: '',
+    });
   },
   onPlayerReady({ detail, currentTarget }) {
     console.log('==== onPlayerReady', currentTarget.id, detail);
@@ -81,21 +97,23 @@ Page({
     }
     if (this.data.playStatus === 'ending') {
       // 在播cache
-      const cache = this.data.livePlayerInfo
-        ? Math.max(this.data.livePlayerInfo.videoCache, this.data.livePlayerInfo.audioCache)
+      const { livePlayerInfo } = this.userData;
+      const cache = livePlayerInfo
+        ? Math.max(livePlayerInfo.videoCache, livePlayerInfo.audioCache)
         : 0;
       this.addLog(`is ending, cache: ${cache}`);
-      console.log('now info', this.data.livePlayerInfo);
+      console.log('now info', livePlayerInfo);
       if (cache < 200) {
         this.bindStop();
       }
       return;
     }
+    this.clearFlvData();
     this.setData({
       canWrite: true,
-      livePlayerInfo: null,
-      livePlayerInfoStr: '',
     });
+
+    // 模拟拉流
     this.pullFileVideo();
   },
   onPlayerClose({ detail, currentTarget }) {
@@ -162,7 +180,7 @@ Page({
         break;
       case -2301: // live-player断连，且经多次重连抢救无效，更多重试请自行重启播放
         console.error('==== onLivePlayerStateChange', detail.code, detail);
-        this.addLog(`==== onLivePlayerStateChange ${detail.code}, needResetLocalServer ${xp2pManager.needResetLocalServer}`);
+        this.addLog(`==== onLivePlayerStateChange ${detail.code}, final error, needResetLocalServer ${xp2pManager.needResetLocalServer}`);
         // 到这里应该已经触发过 onPlayerClose 了
         this.setData({
           playStatus: '',
@@ -181,19 +199,24 @@ Page({
   },
   onLivePlayerNetStatusChange({ detail }) {
     // console.log('onLivePlayerNetStatusChange', detail);
+    if (!detail.info) {
+      return;
+    }
     // 不是所有字段都有值，不能直接覆盖整个info，只更新有值的字段
-    const livePlayerInfo = { ...this.data.livePlayerInfo };
+    if (!this.userData.livePlayerInfo) {
+      this.userData.livePlayerInfo = {};
+    }
+    const { livePlayerInfo } = this.userData;
     for (const key in detail.info) {
       if (detail.info[key] !== undefined) {
         livePlayerInfo[key] = detail.info[key];
       }
     }
     this.setData({
-      livePlayerInfo,
       livePlayerInfoStr: (
         detail.info
           ? [
-            `size: ${livePlayerInfo.videoWidth}x${livePlayerInfo.videoHeight}, fps: ${livePlayerInfo.videoFPS}`,
+            `size: ${livePlayerInfo.videoWidth}x${livePlayerInfo.videoHeight}, fps: ${livePlayerInfo.videoFPS?.toFixed(2)}`,
             `bitrate(kbps): video ${livePlayerInfo.videoBitrate}, audio ${livePlayerInfo.audioBitrate}`,
             `cache(ms): video ${livePlayerInfo.videoCache}, audio ${livePlayerInfo.audioCache}`,
           ].join('\n')
@@ -232,14 +255,13 @@ Page({
     this.bindStop();
 
     this.addLog('destroy player');
+    this.clearFlvData();
     this.setData({
       playerId: '',
       playerReady: false,
       playerComp: null,
       playerCtx: null,
       playStatus: '',
-      livePlayerInfo: null,
-      livePlayerInfoStr: '',
     });
   },
   bindPlay() {
@@ -252,10 +274,9 @@ Page({
       return;
     }
     this.addLog('start play');
+    this.clearFlvData();
     this.setData({
       playStatus: 'playing',
-      livePlayerInfo: null,
-      livePlayerInfoStr: '',
     });
     // 这个会触发 onPlayerStartPull
     this.data.playerCtx.play({

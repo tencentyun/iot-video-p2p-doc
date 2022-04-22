@@ -658,11 +658,13 @@ Component({
           this.stopVoice();
         });
     },
-    doStartVoiceByPusher(_e) {
+    doStartVoiceByPusher(e) {
       const { options } = voiceConfigMap[this.data.voiceType];
 
       // 弄个副本，以免被修改
       const voiceOptions = { ...options };
+
+      const needRecord = parseInt(e.currentTarget.dataset.needRecord, 10);
 
       console.log(`[${this.data.innerId}]`, 'do doStartVoiceByPusher', this.properties.targetId, voiceOptions);
       this.setData({ voiceState: VoiceStateEnum.starting });
@@ -692,24 +694,28 @@ Component({
           }
           console.log(`[${this.data.innerId}]`, 'startVoiceData success', writer);
 
-          // 写文件，方便验证，正式版本不需要
-          const voiceFileObj = voiceManager.openRecordFile(`voice-${this.properties.productId}-${this.properties.deviceName}`);
-          this.setData({
-            voiceFileObj,
-          });
-
-          // 启动推流，这时还不能发送数据
-          this.setData({ voiceState: VoiceStateEnum.startingPusher });
-          this.data.pusher.start({
-            writer: {
+          let writerForPusher = writer;
+          if (needRecord) {
+            // 录制，方便验证，正式版本不需要
+            const voiceFileObj = voiceManager.openRecordFile(`voice-${this.properties.productId}-${this.properties.deviceName}`);
+            this.setData({
+              voiceFileObj,
+            });
+            writerForPusher = {
               addChunk: (chunk) => {
                 // 收到pusher的数据
-                // 写文件，方便验证，正式版本不需要
+                // 写文件
                 voiceManager.writeRecordFile(voiceFileObj, chunk);
                 // 写到xp2p语音请求里
                 writer.addChunk(chunk);
               },
-            },
+            };
+          }
+
+          // 启动推流，这时还不能发送数据
+          this.setData({ voiceState: VoiceStateEnum.startingPusher });
+          this.data.pusher.start({
+            writer: writerForPusher,
             fail: (err) => {
               console.log(`[${this.data.innerId}]`, 'voice pusher start fail', err);
               this.stopVoice();

@@ -6,6 +6,7 @@
     "pages/xp2p-multiplayers/demo",
     "pages/xp2p-records/records",
     "pages/test-p2p-player/player",
+    "pages/test-p2p-pusher/pusher",
     "pages/test-live-player/test",
     "pages/test-video/test"
   ],

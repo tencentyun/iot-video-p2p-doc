@@ -7,7 +7,6 @@
         orientation="vertical"
         minCache="0.2"
         maxCache="0.8"
-        showLog="{{showPlayerLog}}"
         bind:playerReady="onPlayerReady"
         bind:playerStartPull="onPlayerStartPull"
         bind:playerClose="onPlayerClose"

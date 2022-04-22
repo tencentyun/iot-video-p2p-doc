@@ -16,7 +16,7 @@
 .video-info {
   position: absolute;
   left: 20rpx;
-  bottom: 20rpx;
+  top: 20rpx;
   background-color: rgba(0, 0, 0, 0.3);
   color: white;
   z-index: 10;

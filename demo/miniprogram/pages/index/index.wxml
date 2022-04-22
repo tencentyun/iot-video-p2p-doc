@@ -3,10 +3,10 @@
     <view>hostInfo: {{hostInfo}}</view>
     <view>xp2pPluginInfo: {{xp2pPluginInfo}}</view>
     <view>playerPluginInfo: {{playerPluginInfo}}</view>
-    <view>WXVersion: {{wxVersion}}</view>
-    <view>WXSDKVersion: {{wxSDKVersion}}</view>
-    <view>XP2PVersion: {{xp2pVersion}}</view>
-    <view>PlayerVersion: {{playerVersion}}</view>
+    <view>wxVersion: {{wxVersion}}</view>
+    <view>wxSDKVersion: {{wxSDKVersion}}</view>
+    <view>xp2pPluginVersion: {{xp2pVersion}}</view>
+    <view>playerPluginVersion: {{playerVersion}}</view>
   </view>
   <view class="page-section page-section-gap">
     <iot-p2p-control
@@ -22,14 +22,14 @@
       {{item.title}}
     </button>
   </view>
-  <!-- 调试页面不放在首页了，以免用户疑惑
   <view class="page-section">
     <view wx:for="{{listNav}}" wx:key="cfg">
-      <navigator url="/pages/xp2p-demo-debug/demo?cfg={{item.cfg}}" hover-class="navigator-hover">
-        跳转到 X-P2P Debug 1v1 {{item.cfg}}
+      <navigator url="/pages/xp2p-demo-1vN/demo?cfg={{item.cfg}}" hover-class="navigator-hover">
+        跳转到 {{item.title}}
       </navigator>
     </view>
   </view>
+  <!-- 调试页面不放在首页了，以免用户疑惑
   <navigator wx:if="{{firstServerStream}}" url="/pages/xp2p-singleplayer/demo?cfg={{firstServerStream.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 单播放器 {{firstServerStream.cfg}}</navigator>
   <navigator wx:if="{{firstIPCStream}}" url="/pages/xp2p-singleplayer/demo?cfg={{firstIPCStream.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 单播放器 {{firstIPCStream.cfg}}</navigator>
   <navigator wx:if="{{firstServerStream && firstIPCStream}}" url="/pages/xp2p-multiplayers/demo?cfg1={{firstServerStream.cfg}}&cfg2={{firstIPCStream.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 多播放器 {{firstServerStream.cfg}}+{{firstIPCStream.cfg}}</navigator>
@@ -37,6 +37,7 @@
   <navigator url="/pages/xp2p-records/records?name=downloads" hover-class="navigator-hover">跳转到 下载管理页</navigator>
   <navigator url="/pages/xp2p-records/records?name=records" hover-class="navigator-hover">跳转到 录像管理页</navigator>
   <navigator url="/pages/xp2p-records/records?name=voices" hover-class="navigator-hover">跳转到 语音管理页</navigator>
+  <navigator url="/pages/test-p2p-pusher/pusher" hover-class="navigator-hover">跳转到 P2P-Pusher 测试页</navigator>
   <navigator url="/pages/test-live-player/test" hover-class="navigator-hover">跳转到 LivePlayer 测试页</navigator>
   <navigator url="/pages/test-video/test" hover-class="navigator-hover">跳转到 Video 测试页</navigator>
 </view>

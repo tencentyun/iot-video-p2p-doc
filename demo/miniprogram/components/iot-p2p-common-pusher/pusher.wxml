@@ -13,9 +13,9 @@
       bind:pusherReady="onPusherReady"
       bind:pusherStartPush="onPusherStartPush"
       bind:pusherFlvHeader="onPusherFlvHeader"
-      bind:pusherFlvAudioTag="onPusherFlvAudioTag"
-      bind:pusherFlvVideoTag="onPusherFlvVideoTag"
-      bind:pusherFlvDataTag="onPusherFlvDataTag"
+      bind:pusherFlvAudioTag="onPusherFlvTag"
+      bind:pusherFlvVideoTag="onPusherFlvTag"
+      bind:pusherFlvDataTag="onPusherFlvTag"
       bind:pusherClose="onPusherClose"
       bind:pusherError="onPusherError"
       bind:error="onLivePusherError"
@@ -27,7 +27,7 @@
       <view class="pusher-controls">
         <view class="pusher-control-item" bindtap="changeEnableCamera">{{enableCamera ? 'enableCamera' : 'disableCamera'}}</view>
         <view class="pusher-control-item" bindtap="changeEnableMic">{{enableMic ? 'enableMic' : 'disableMic'}}</view>
-        <view class="pusher-control-item" bindtap="changeOrientation">{{orientation}}</view>
+        <view class="pusher-control-item" bindtap="changeRemoteMirror">{{remoteMirror ? 'mirror' : 'notMirror'}}</view>
       </view>
     </view>
     <view class="debug-info-switch-container">
@@ -38,7 +38,6 @@
     <view class="debug-info">
       <view>pusherState: {{pusherState}}</view>
       <view>hasWriter: {{!!writer}}</view>
-      <view>totalBytes: {{!!totalBytes}}</view>
       <view>
         <view>livePusherInfo: </view>
         <view class="text-box lines-3">

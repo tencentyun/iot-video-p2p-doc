@@ -1,0 +1,60 @@
+<view class="page-body">
+  <view class="page-section">
+    <view class="pusher-container {{aspectClass}}">
+      <p2p-pusher
+        wx:if="{{pusherId}}"
+        id="{{pusherId}}"
+        enableAns="{{true}}"
+        audioQuality="low"
+        audioVolumeType="voicecall"
+        aspect="{{aspect}}"
+        remoteMirror="{{remoteMirror}}"
+        localMirror="{{localMirror}}"
+        bind:pusherReady="onPusherReady"
+        bind:pusherStartPush="onPusherStartPush"
+        bind:pusherFlvHeader="onPusherFlvHeader"
+        bind:pusherFlvAudioTag="onPusherFlvAudioTag"
+        bind:pusherFlvVideoTag="onPusherFlvVideoTag"
+        bind:pusherFlvDataTag="onPusherFlvDataTag"
+        bind:pusherClose="onPusherClose"
+        bind:pusherError="onPusherError"
+        bind:error="onLivePusherError"
+        bind:statechange="onLivePusherStateChange"
+        bind:netstatus="onLivePusherNetStatusChange"
+      />
+      <view class="video-info">
+        <view class="text-box lines-3">
+          <text class="text-break">{{livePusherInfoStr}}</text>
+        </view>
+      </view>
+      <view class="controls-container right">
+        <view class="controls-inner">
+          <view class="control-item" bindtap="changeRemoteMirror">{{remoteMirror ? 'mirror' : 'notMirror'}}</view>
+          <!-- <view class="control-item" bindtap="changeAspect">{{aspect}}</view> -->
+        </view>
+      </view>
+    </view>
+  </view>
+  <view class="page-section">
+    <view class="group-button-area">
+      <button bindtap="bindCreatePusher" class="group-button" type="primary" size="mini" disabled="{{pusherId}}">创建</button>
+      <button bindtap="bindStart" class="group-button" type="primary" size="mini" disabled="{{!pusherReady || pushStatus}}">推流</button>
+      <button bindtap="bindStart" data-need-record="1" class="group-button" type="primary" size="mini" disabled="{{!pusherReady || pushStatus}}">推流并录制</button>
+      <button bindtap="bindStop" class="group-button" type="primary" size="mini" disabled="{{!pusherReady || !pushStatus}}">停止</button>
+      <button bindtap="bindDestroyPusher" class="group-button" type="primary" size="mini" disabled="{{!pusherId}}">销毁</button>
+    </view>
+    <navigator url="/pages/xp2p-records/records?name=pusher" style="color: blue;" hover-class="navigator-hover">打开pusher录像管理页</navigator>
+  </view>
+  <view class="page-section">
+    <view>requirements: wx 8.0.10 / sdk 2.19.3</view>
+    <view>system: {{systemInfo.system}} / wx {{systemInfo.version}} / sdk {{systemInfo.SDKVersion}}</view>
+    <view>playerPlugin: {{playerPluginVersion}}</view>
+    <view>pushStatus: {{pushStatus}}</view>
+    <view>recordFile: {{recordFileName}}</view>
+  </view>
+  <view class="page-section page-section-gap">
+    <view class="page-section-title">Log<text class="text-btn float-right" bindtap="clearLog">clear</text></view>
+    <scroll-view scroll-y="true" class="log-box" style="height: 500rpx;"><text>{{log}}</text></scroll-view>
+  </view>
+</view>
+

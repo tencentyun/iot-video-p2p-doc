@@ -858,7 +858,7 @@ Component({
       this.setData({
         livePlayerInfo,
         livePlayerInfoStr: [
-          `size: ${detail.info.videoWidth}x${detail.info.videoHeight}, fps: ${detail.info.videoFPS}`,
+          `size: ${detail.info.videoWidth}x${detail.info.videoHeight}, fps: ${detail.info.videoFPS?.toFixed(2)}`,
           `bitrate(kbps): video ${detail.info.videoBitrate}, audio ${detail.info.audioBitrate}`,
           `cache(ms): video ${detail.info.videoCache}, audio ${detail.info.audioCache}`,
         ].join('\n'),
