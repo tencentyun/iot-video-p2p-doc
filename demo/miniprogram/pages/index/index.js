@@ -1,5 +1,6 @@
 import devices from '../../config/devices';
 import streams from '../../config/streams';
+import config from '../../config/config';
 import { getXp2pManager } from '../../lib/xp2pManager';
 
 const sysInfo = wx.getSystemInfoSync();
@@ -12,6 +13,8 @@ console.log('miniProgramInfo', miniProgramInfo);
 const xp2pManager = getXp2pManager();
 const xp2pPluginInfo = xp2pManager.getXp2pPluginInfo();
 const playerPluginInfo = xp2pManager.getPlayerPluginInfo();
+
+const { totalData } = config;
 
 const getShortFlvName = (flvFile) => {
   const filename = flvFile.split('.')[0];
@@ -32,6 +35,7 @@ Page({
     playerVersion: xp2pManager.P2PPlayerVersion,
 
     // 这些是监控页入口
+    recentIPCItem: null,
     listBtn: [],
     listNav: [],
     firstServerStream: null,
@@ -76,8 +80,23 @@ Page({
       item.showInHomePageNav && listNav.push(navItem);
     }
     this.setData({ listBtn, listNav, firstServerStream, firstIPCStream });
+
+    this.refreshRecnetIPC();
   },
-  onUnload() {},
+  onShow() {
+    this.refreshRecnetIPC();
+  },
+  refreshRecnetIPC() {
+    const cfg = totalData.recentIPC || wx.getStorageSync('recentIPC');
+    this.setData({
+      recentIPCItem: cfg ? {
+        mode: 'ipc',
+        cfg: 'recentIPC',
+        title: `${cfg.productId}/${cfg.deviceName}`,
+        ...cfg,
+      } : null,
+    });
+  },
   onP2PModuleStateChange({ detail }) {
     console.log('index: onP2PModuleStateChange', detail);
   },

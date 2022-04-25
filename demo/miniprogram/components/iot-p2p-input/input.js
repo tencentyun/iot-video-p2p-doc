@@ -5,6 +5,8 @@ import { getXp2pManager } from '../../lib/xp2pManager';
 const xp2pManager = getXp2pManager();
 const { XP2PVersion } = xp2pManager;
 
+const { totalData } = config;
+
 Component({
   behaviors: ['wx://component-export'],
   properties: {
@@ -26,7 +28,7 @@ Component({
     inputXp2pInfo: '',
     inputLiveParams: '',
     inputPlaybackParams: '',
-    liveStreamDomain: '',
+    inputLiveStreamDomain: '',
     needCheckStreamChecked: false,
     needPusherChecked: false,
     needDuplexChecked: false,
@@ -53,7 +55,6 @@ Component({
         this.id = 'iot-p2p-input';
       }
       console.log(`[${this.id}]`, 'attached', this.id, this.properties);
-      const { totalData } = config;
       const data = this.properties.cfg && totalData[this.properties.cfg];
       if (!data) {
         console.log(`[${this.id}]`, 'invalid cfg');
@@ -71,7 +72,9 @@ Component({
           inputXp2pInfo: data.xp2pInfo || data.peername || '',
           inputLiveParams: data.liveParams || 'action=live&channel=0&quality=super',
           inputPlaybackParams: data.playbackParams || 'action=playback&channel=0',
-          needCheckStreamChecked: typeof data.needCheckStream === 'boolean' ? data.needCheckStream : false,
+          inputLiveStreamDomain: data.liveStreamDomain || '',
+          needCheckStreamChecked:
+            (!data.liveStreamDomain && typeof data.needCheckStream === 'boolean') ? data.needCheckStream : false,
           needPusherChecked: typeof data.needPusher === 'boolean' ? data.needPusher : false,
           needDuplexChecked: typeof data.needDuplex === 'boolean' ? data.needDuplex : false,
           // 1v多用
@@ -134,9 +137,9 @@ Component({
       });
     },
     inputIPCLiveStreamDomain(e) {
-      this.resolveConflict({ fieldName: 'liveStreamDomain', value: e.detail.value });
+      this.resolveConflict({ fieldName: 'inputLiveStreamDomain', value: e.detail.value });
       this.setData({
-        liveStreamDomain: e.detail.value,
+        inputLiveStreamDomain: e.detail.value,
       });
     },
     switchNeedCheckStream(e) {
@@ -173,14 +176,14 @@ Component({
     resolveConflict({fieldName, value}) {
       // 互斥的两个配置
       // 当连接数>=最大连接数的时候, 此时checkstream结果为不能播放, 但是1v1转向1vn却可以播放
-      if (fieldName === 'liveStreamDomain' && value) {
+      if (fieldName === 'inputLiveStreamDomain' && value) {
         this.setData({
           needCheckStreamChecked: false,
         });
       }
       if (fieldName === 'needCheckStreamChecked' && value) {
         this.setData({
-          liveStreamDomain: '',
+          inputLiveStreamDomain: '',
         });
       }
     },
@@ -239,8 +242,8 @@ Component({
           productId: this.data.inputProductId,
           deviceName: this.data.inputDeviceName,
           xp2pInfo: adjustXp2pInfo(this.data.inputXp2pInfo), // 兼容直接填 peername 的情况
+          liveStreamDomain: this.data.inputLiveStreamDomain,
           codeUrl: this.data.inputCodeUrl,
-          liveStreamDomain: this.data.liveStreamDomain,
         },
       };
     },
@@ -256,6 +259,23 @@ Component({
         needDuplex: this.data.needDuplexChecked,
         onlyp2p: this.data.onlyp2pChecked,
       };
+
+      if (this.data.mode === 'ipc') {
+        // 注意字段和totalData的里一致
+        const recentIPC = {
+          mode: 'ipc',
+          targetId: 'recentIPC',
+          productId: this.data.inputProductId,
+          deviceName: this.data.inputDeviceName,
+          xp2pInfo: this.data.inputXp2pInfo,
+          liveParams: this.data.inputLiveParams,
+          playbackParams: this.data.inputPlaybackParams,
+          liveStreamDomain: this.data.inputLiveStreamDomain,
+          ...options,
+        };
+        totalData.recentIPC = recentIPC;
+        wx.setStorageSync('recentIPC', recentIPC);
+      }
 
       console.log(`[${this.id}]`, 'startPlayer', streamData, options);
       this.setData(streamData);

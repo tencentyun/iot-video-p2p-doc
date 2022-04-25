@@ -85,6 +85,11 @@ for (const key in devices) {
     ...devices[key],
   };
 }
+// 最近查看的ipc设备
+const recentIPC = wx.getStorageSync('recentIPC');
+if (recentIPC) {
+  totalData.recentIPC = recentIPC;
+}
 
 // server流都加进去
 for (const key in serverStreams) {

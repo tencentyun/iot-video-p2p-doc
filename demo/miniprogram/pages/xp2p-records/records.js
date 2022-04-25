@@ -61,6 +61,13 @@ Page({
   playRecord(e) {
     const { index } = e.currentTarget.dataset;
     const fileRes = this.data.recordList[index];
+    if (!(fileRes.size > 0)) {
+      wx.showToast({
+        title: '文件为空或读取失败',
+        icon: 'none',
+      });
+      return;
+    }
     wx.navigateTo({
       url: [
         `/pages/test-p2p-player/player?dirname=${encodeURIComponent(this.data.recordManager.name)}`,

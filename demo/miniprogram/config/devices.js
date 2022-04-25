@@ -9,6 +9,9 @@
  * xp2pInfo: string 摄像头的 xp2pInfo
  * liveParams: string 摄像头的直播参数，默认 action=live&channel=0&quality=super
  * playbackParams: string 摄像头的回放参数，默认 action=playback&channel=0
+ * liveStreamDomain: string 1v1连接过多时自动转到1v多模式的server域名
+ * needCheckStream: boolean 播放前先检查能否拉流，默认false
+ * needPusher: boolean 语音对讲使用pusher采集数据，默认false
  */
 
 // 这些是预置的ipc设备
@@ -17,7 +20,7 @@ const devices = {
     showInHomePageBtn: true,
     productId: '9L1S66FZ3Q',
     deviceName: 'test_34683636_4',
-    xp2pInfo: 'XP2P1Xl5RwePR/g3S0FO8VxUuatq%2.3.5',
+    xp2pInfo: 'XP2P1Xl5RwePR/gacCZqsX8aladI%2.3.5',
     liveParams: 'action=live&channel=0&quality=standard',
     playbackParams: 'action=playback&channel=0',
   },
@@ -32,6 +35,7 @@ const devices = {
     productId: 'ZF39IBNGP2',
     deviceName: 'KDS_69610537_10',
     xp2pInfo: 'XP2PxZl3T95gw/QfM4bBv/HA3w==%2.4.23',
+    needPusher: true,
   },
   debug: {
     // showInHomePageBtn: true,

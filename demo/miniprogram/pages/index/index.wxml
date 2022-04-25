@@ -3,16 +3,22 @@
     <view>hostInfo: {{hostInfo}}</view>
     <view>xp2pPluginInfo: {{xp2pPluginInfo}}</view>
     <view>playerPluginInfo: {{playerPluginInfo}}</view>
-    <view>wxVersion: {{wxVersion}}</view>
-    <view>wxSDKVersion: {{wxSDKVersion}}</view>
-    <view>xp2pPluginVersion: {{xp2pVersion}}</view>
-    <view>playerPluginVersion: {{playerVersion}}</view>
+    <view>wxVersion: wx {{wxVersion}} / sdk {{wxSDKVersion}}</view>
+    <view>pluginVersion: xp2p {{xp2pVersion}} / p2p-player {{playerVersion}}</view>
   </view>
   <view class="page-section page-section-gap">
     <iot-p2p-control
       id="iot-p2p-main-control"
       bind:statechange="onP2PModuleStateChange"
     />
+  </view>
+  <view class="page-section">
+    <button wx:if="{{recentIPCItem}}" type="primary" class="page-body-button"
+      bindtap="gotoDemoPage"
+      data-url="/pages/xp2p-demo-1vN/demo?cfg={{recentIPCItem.cfg}}"
+    >
+      recnet: {{recentIPCItem.title}}
+    </button>
   </view>
   <view class="page-section">
     <button wx:for="{{listBtn}}" wx:key="cfg" type="primary" class="page-body-button"
