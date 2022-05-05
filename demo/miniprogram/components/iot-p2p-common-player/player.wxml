@@ -19,7 +19,6 @@
     />
     <view wx:if="{{!needPlayer}}" class="mock-player">
       <view wx:if="{{playerState === 'PlayerReady'}}">
-        <view>chunkCount: {{chunkCount}}</view>
         <view>totalBytes: {{totalBytes}}</view>
       </view>
       <view wx:else>
@@ -50,7 +49,6 @@
       <view>playerState: {{playerState}} <text wx:if="{{playerPaused}}">pauseType: {{playerPaused}}</text></view>
       <view>p2pState: {{p2pState}}</view>
       <view>streamState: {{streamState}} {{playing ? 'playing' : ''}}</view>
-      <!-- <view>chunkCount: {{chunkCount}}</view> -->
       <view>
         totalBytes: {{totalBytes}}
         <text class="text-btn float-right" bindtap="toggleSlow">{{isSlow ? '恢复' : '模拟丢包'}}</text>

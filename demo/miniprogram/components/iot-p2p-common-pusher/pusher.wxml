@@ -37,7 +37,7 @@
   <view wx:if="{{showDebugInfo}}" class="debug-info-container">
     <view class="debug-info">
       <view>pusherState: {{pusherState}}</view>
-      <view>hasWriter: {{!!writer}}</view>
+      <view>hasWriter: {{hasWriter}}</view>
       <view>
         <view>livePusherInfo: </view>
         <view class="text-box lines-3">

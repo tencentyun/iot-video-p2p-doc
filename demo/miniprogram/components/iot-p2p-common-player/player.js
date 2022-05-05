@@ -296,19 +296,15 @@ Component({
     // stream状态
     streamState: StreamStateEnum.StreamIdle,
     playing: false,
-    chunkTime: 0,
-    chunkCount: 0,
-    totalBytes: 0,
+    totalBytes: 0, // 仅显示用，计算用 this.userData.totalBytes
 
     // 这些是播放相关信息，清空时机同 totalBytes
-    livePlayerInfo: null,
     livePlayerInfoStr: '',
 
     // debug用
     showDebugInfo: false,
     isSlow: false,
     isRecording: false,
-    fileObj: null,
 
     // 统计用
     playResultParams: null,
@@ -338,6 +334,15 @@ Component({
       playerSeq++;
       this.setData({ innerId: `common-player-${playerSeq}` });
       console.log(`[${this.data.innerId}]`, '==== created');
+
+      // 渲染无关，不放在data里，以免影响性能
+      this.userData = {
+        chunkTime: 0,
+        chunkCount: 0,
+        totalBytes: 0,
+        livePlayerInfo: null,
+        fileObj: null,
+      };
     },
     attached() {
       // 在组件实例进入页面节点树时执行
@@ -775,7 +780,7 @@ Component({
             this.data.idrResultParams.timeCost = timeCost;
             this.setData({
               hasReceivedIDR: true,
-              idrResultStr: `${PlayStepEnum.WaitIDR}: ${timeCost} ms, ${this.data.chunkCount} chunks, ${this.data.totalBytes} bytes`,
+              idrResultStr: `${PlayStepEnum.WaitIDR}: ${timeCost} ms, ${this.userData.chunkCount} chunks, ${this.userData.totalBytes} bytes`,
             });
           }
           break;
@@ -849,14 +854,16 @@ Component({
         return;
       }
       // 不是所有字段都有值，不能直接覆盖整个info，只更新有值的字段
-      const livePlayerInfo = { ...this.data.livePlayerInfo };
+      if (!this.userData.livePlayerInfo) {
+        this.userData.livePlayerInfo = {};
+      }
+      const { livePlayerInfo } = this.userData;
       for (const key in detail.info) {
         if (detail.info[key] !== undefined) {
           livePlayerInfo[key] = detail.info[key];
         }
       }
       this.setData({
-        livePlayerInfo,
         livePlayerInfoStr: [
           `size: ${detail.info.videoWidth}x${detail.info.videoHeight}, fps: ${detail.info.videoFPS?.toFixed(2)}`,
           `bitrate(kbps): video ${detail.info.videoBitrate}, audio ${detail.info.audioBitrate}`,
@@ -880,12 +887,19 @@ Component({
       });
     },
     clearStreamData() {
+      if (this.refreshTimer) {
+        clearTimeout(this.refreshTimer);
+        this.refreshTimer = null;
+      }
+      if (this.userData) {
+        this.userData.chunkTime = 0;
+        this.userData.chunkCount = 0;
+        this.userData.totalBytes = 0;
+        this.userData.livePlayerInfo = null;
+      }
       this.setData({
         firstChunkDataInPaused: null,
-        chunkTime: 0,
-        chunkCount: 0,
         totalBytes: 0,
-        livePlayerInfo: null,
         livePlayerInfoStr: '',
       });
     },
@@ -1073,6 +1087,11 @@ Component({
         chunkTime = Date.now();
         chunkCount++;
         totalBytes += data.byteLength;
+        if (this.userData) {
+          this.userData.chunkTime = chunkTime;
+          this.userData.chunkCount = chunkCount;
+          this.userData.totalBytes = totalBytes;
+        }
         if (chunkCount === 1) {
           console.log(`[${this.data.innerId}]`, '==== firstChunk', data.byteLength);
           if (this.data.playResultParams) {
@@ -1088,15 +1107,15 @@ Component({
           this.changeState({
             streamState: StreamStateEnum.StreamDataReceived,
           });
+          this.setData({
+            totalBytes, // 第一个立刻刷新
+          });
         }
-        this.setData({
-          chunkTime,
-          chunkCount,
-          totalBytes,
-        });
-        if (this.data.fileObj) {
+        // 控制刷新频率
+        this.refreshBytesDelay();
+        if (this.userData?.fileObj) {
           // 写录像文件
-          const writeLen = recordManager.writeRecordFile(this.data.fileObj, data);
+          const writeLen = recordManager.writeRecordFile(this.userData.fileObj, data);
           if (writeLen < 0) {
             // 写入失败，可能是超过限制了
             stopRecording();
@@ -1147,6 +1166,17 @@ Component({
           this.tryStopPlayer();
           this.handlePlayError(StreamStateEnum.StreamStartError, { msg: `startStream err ${errcode}` });
         });
+    },
+    refreshBytesDelay() {
+      if (this.refreshTimer) {
+        return;
+      }
+      this.refreshTimer = setTimeout(() => {
+        this.refreshTimer = null;
+        this.setData({
+          totalBytes: this.userData?.totalBytes || 0, // 把数据更新到界面
+        });
+      }, 1000);
     },
     stopStream(newStreamState = StreamStateEnum.StreamIdle) {
       console.log(`[${this.data.innerId}]`, `stopStream, ${this.data.streamState} -> ${newStreamState}`);
@@ -1551,7 +1581,7 @@ Component({
         case XP2PNotify_SubType.Eof:
           // 数据传输正常结束
           console.log(`[${this.data.innerId}]`,
-            `==== Notify ${type} in p2pState ${this.data.p2pState}, chunkCount ${this.data.chunkCount}, time after last chunk ${Date.now() - this.data.chunkTime}`,
+            `==== Notify ${type} in p2pState ${this.data.p2pState}, chunkCount ${this.userData.chunkCount}, time after last chunk ${Date.now() - this.userData.chunkTime}`,
             detail,
           );
           this.handlePlayEnd(StreamStateEnum.StreamDataEnd);
@@ -1608,7 +1638,7 @@ Component({
       }
     },
     async startRecording(recordFilename) {
-      if (this.data.isRecording || this.data.fileObj) {
+      if (this.data.isRecording || this.userData.fileObj) {
         // 已经在录像
         return;
       }
@@ -1639,9 +1669,9 @@ Component({
         }
       }
       const fileObj = recordManager.openRecordFile(realRecordFilename);
+      this.userData.fileObj = fileObj;
       this.setData({
         isRecording: !!fileObj,
-        fileObj,
       });
       console.log(`[${this.data.innerId}] record fileName ${fileObj && fileObj.fileName}`);
 
@@ -1653,16 +1683,16 @@ Component({
       this.data.playerCtx.play();
     },
     async stopRecording() {
-      if (!this.data.isRecording || !this.data.fileObj) {
+      if (!this.data.isRecording || !this.userData.fileObj) {
         // 没在录像
         return;
       }
 
-      console.log(`[${this.data.innerId}]`, `stopRecording, ${this.data.fileObj.fileName}`);
-      const { fileObj } = this.data;
+      console.log(`[${this.data.innerId}]`, `stopRecording, ${this.userData.fileObj.fileName}`);
+      const { fileObj } = this.userData;
+      this.userData = null;
       this.setData({
         isRecording: false,
-        fileObj: null,
       });
 
       const fileRes = recordManager.saveRecordFile(fileObj);
@@ -1692,16 +1722,16 @@ Component({
       }
     },
     cancelRecording() {
-      if (!this.data.isRecording || !this.data.fileObj) {
+      if (!this.data.isRecording || !this.userData.fileObj) {
         // 没在录像
         return;
       }
 
-      console.log(`[${this.data.innerId}]`, `cancelRecording, ${this.data.fileObj.fileName}`);
-      const { fileObj } = this.data;
+      console.log(`[${this.data.innerId}]`, `cancelRecording, ${this.userData.fileObj.fileName}`);
+      const { fileObj } = this.userData;
+      this.userData = null;
       this.setData({
         isRecording: false,
-        fileObj: null,
       });
 
       recordManager.closeRecordFile(fileObj);

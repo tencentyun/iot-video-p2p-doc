@@ -49,14 +49,13 @@ Component({
     pusherCtx: null,
     pusherMsg: '',
 
-    // 写数据用
-    writer: null,
+    // 有writer才能推流
+    hasWriter: false,
 
     // 是否推流中
     isPushing: false,
 
     // stream状态
-    livePusherInfo: null,
     livePusherInfoStr: '',
 
     // controls
@@ -69,6 +68,12 @@ Component({
       pusherSeq++;
       this.setData({ innerId: `common-pusher-${pusherSeq}` });
       console.log(`[${this.data.innerId}]`, '==== created');
+
+      // 渲染无关，不放在data里，以免影响性能
+      this.userData = {
+        writer: null,
+        livePlayerInfo: null,
+      };
     },
     attached() {
       // 在组件实例进入页面节点树时执行
@@ -102,7 +107,7 @@ Component({
       };
 
       if (realData.pusherState === PusherStateEnum.PusherReady) {
-        return this.data.writer ? totalMsgMap.PusherPushing : '';
+        return this.userData?.writer ? totalMsgMap.PusherPushing : '';
       }
 
       return totalMsgMap[realData.pusherState] || '';
@@ -149,7 +154,7 @@ Component({
     },
     onPusherStartPush({ type, detail }) {
       console.log(`[${this.data.innerId}]`, '==== onPusherStartPush', detail);
-      if (!this.data.writer) {
+      if (!this.userData.writer) {
         // 现在不能push
         console.warn(`[${this.data.innerId}]`, 'onPusherStartPush but can not push, stop pusher');
         this.tryStopPusher();
@@ -208,7 +213,7 @@ Component({
     },
     onLivePusherStateChange({ detail }) {
       // console.log('onLivePusherStateChange', detail);
-      if (!this.data.writer) {
+      if (!this.userData.writer) {
         // 现在不能push
         return;
       }
@@ -252,7 +257,7 @@ Component({
     },
     onLivePusherNetStatusChange({ detail }) {
       // console.log('onLivePusherNetStatusChange', detail);
-      if (!this.data.writer || !detail.info) {
+      if (!this.userData.writer || !detail.info) {
         return;
       }
       // 不是所有字段都有值，不能直接覆盖整个info，只更新有值的字段
@@ -320,7 +325,7 @@ Component({
       });
     },
     start({ writer, success, fail, complete } = {}) {
-      console.log(`[${this.data.innerId}] start, hasPusherCtx: ${!!this.data.pusherCtx}, hasWriter: ${!!this.data.writer}`);
+      console.log(`[${this.data.innerId}] start, hasPusherCtx: ${!!this.data.pusherCtx}, hasWriter: ${!!this.userData.writer}`);
       if (!writer || !writer.addChunk) {
         fail && fail({ errMsg: 'writer invalid' });
         complete && complete();
@@ -332,7 +337,7 @@ Component({
         return;
       }
 
-      if (this.data.writer) {
+      if (this.userData.writer) {
         fail && fail({ errMsg: 'already started' });
         complete && complete();
         return;
@@ -347,38 +352,41 @@ Component({
       };
 
       this.clearStreamData();
-      this.setData({ writer });
+      this.userData.writer = writer;
       this.addChunkInner = addChunkInner;
+      this.setData({ hasWriter: true });
 
       console.log(`[${this.data.innerId}] pusherCtx.start`);
       this.data.pusherCtx.start({
         success,
         fail: (err) => {
           console.log(`[${this.data.innerId}] pusherCtx.start fail`, err);
-          this.setData({ writer: null });
+          this.userData.writer = null;
           this.addChunkInner = null;
+          this.setData({ hasWriter: false });
           fail && fail(err);
         },
         complete,
       });
     },
     stop({ success, fail, complete } = {}) {
-      console.log(`[${this.data.innerId}] stop, hasPusherCtx: ${!!this.data.pusherCtx}, hasWriter: ${!!this.data.writer}`);
+      console.log(`[${this.data.innerId}] stop, hasPusherCtx: ${!!this.data.pusherCtx}, hasWriter: ${!!this.userData.writer}`);
       if (!this.data.pusherCtx) {
         fail && fail({ errMsg: 'pusher not ready' });
         complete && complete();
         return;
       }
 
-      if (!this.data.writer) {
+      if (!this.userData.writer) {
         fail && fail({ errMsg: 'not started' });
         complete && complete();
         return;
       }
 
       this.clearStreamData();
-      this.setData({ writer: null, isPushing: false });
+      this.userData.writer = null;
       this.addChunkInner = null;
+      this.setData({ hasWriter: false, isPushing: false });
 
       this.tryStopPusher({ success, fail, complete });
     },

@@ -19,12 +19,13 @@ Page({
     livePlayerInfoStr: '',
     log: '',
   },
-  userData: {
-    // 渲染无关的尽量放这里
-    recordManager: null,
-    livePlayerInfo: null,
-  },
   onLoad(query) {
+    this.userData = {
+      // 渲染无关的尽量放这里
+      recordManager: null,
+      livePlayerInfo: null,
+    };
+
     const systemInfo = wx.getSystemInfoSync() || {};
     this.setData({
       systemInfo,
@@ -57,8 +58,11 @@ Page({
       this.addLog('未指定本地录像文件');
     }
   },
+  onUnload() {
+    this.data.playerId && this.bindDestroyPlayer();
+  },
   setUserData(userData) {
-    Object.assign(this.userData, userData);
+    this.userData && Object.assign(this.userData, userData);
   },
   showToast(content) {
     wx.showToast({
@@ -73,7 +77,9 @@ Page({
     this.setData({ log: '' });
   },
   clearFlvData() {
-    this.userData.livePlayerInfo = null;
+    this.setUserData({
+      livePlayerInfo: null,
+    });
     this.setData({
       livePlayerInfoStr: '',
     });

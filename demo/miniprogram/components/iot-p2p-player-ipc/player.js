@@ -178,11 +178,13 @@ Component({
         console.error(`[${this.data.innerId}]`, 'create player error', this.data.playerId);
       }
 
-      const pusher = this.selectComponent(`#${this.data.pusherId}`);
-      if (pusher) {
-        this.setData({ pusher });
-      } else {
-        console.error(`[${this.data.innerId}]`, 'create pusher error', this.data.pusherId);
+      if (this.properties.needPusher || this.properties.needDuplex) {
+        const pusher = this.selectComponent(`#${this.data.pusherId}`);
+        if (pusher) {
+          this.setData({ pusher });
+        } else {
+          console.error(`[${this.data.innerId}]`, 'create pusher error', this.data.pusherId);
+        }
       }
     },
     ready() {

@@ -12,15 +12,17 @@
       bind:statechange="onP2PModuleStateChange"
     />
   </view>
-  <view class="page-section">
-    <button wx:if="{{recentIPCItem}}" type="primary" class="page-body-button"
+  <view class="page-section" wx:if="{{recentIPCItem}}">
+    <view class="page-section-title">Recent</view>
+    <button type="primary" class="page-body-button"
       bindtap="gotoDemoPage"
       data-url="/pages/xp2p-demo-1vN/demo?cfg={{recentIPCItem.cfg}}"
     >
-      recnet: {{recentIPCItem.title}}
+      {{recentIPCItem.title}}
     </button>
   </view>
   <view class="page-section">
+    <view class="page-section-title">List</view>
     <button wx:for="{{listBtn}}" wx:key="cfg" type="primary" class="page-body-button"
       bindtap="gotoDemoPage"
       data-url="/pages/xp2p-demo-1vN/demo?cfg={{item.cfg}}"

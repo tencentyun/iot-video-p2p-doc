@@ -1,7 +1,7 @@
 /**
  * device属性说明：
- * showInHomePageBtn: boolean 是否显示在首页大按钮，产品用
- * showInHomePageNav: boolean 是否显示在首页导航，有onlyp2p入口，开发用
+ * showInHomePageBtn: boolean 是否显示在首页大按钮
+ * showInHomePageNav: boolean 是否显示在首页导航
  *
  * 下面这些会自动填到player组件的输入框里，也可以手动修改
  * productId: string 摄像头的 productId
@@ -32,9 +32,9 @@ const devices = {
   },
   ipc_test: {
     showInHomePageBtn: true,
-    productId: 'ZF39IBNGP2',
-    deviceName: 'KDS_69610537_10',
-    xp2pInfo: 'XP2PxZl3T95gw/QfM4bBv/HA3w==%2.4.23',
+    productId: 'LWY363KD9E',
+    deviceName: 'K20_72261264_7',
+    xp2pInfo: 'XP2PX9jEb4ktpH7AGkeYG6FQ4w==%2.4.23',
     needPusher: true,
   },
   debug: {

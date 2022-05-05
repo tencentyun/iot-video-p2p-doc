@@ -29,23 +29,27 @@ Page({
     localMirror: 'enable',
     log: '',
   },
-  userData: {
-    // 渲染无关的尽量放这里
-    hasReceivedAudio: false,
-    hasReceivedVideo: false,
-    flvTotalBytes: 0,
-    livePusherInfo: null,
-    fileObj: null, // 收到startpush时创建
-  },
   onLoad() {
+    this.userData = {
+      // 渲染无关的尽量放这里
+      hasReceivedAudio: false,
+      hasReceivedVideo: false,
+      flvTotalBytes: 0,
+      livePusherInfo: null,
+      fileObj: null, // 收到startpush时创建
+    };
+
     const systemInfo = wx.getSystemInfoSync() || {};
     this.setData({
       systemInfo,
       playerPluginVersion: xp2pManager.P2PPlayerVersion,
     });
   },
+  onUnload() {
+    this.data.pusherId && this.bindDestroyPusher();
+  },
   setUserData(userData) {
-    Object.assign(this.userData, userData);
+    this.userData && Object.assign(this.userData, userData);
   },
   showToast(content) {
     wx.showToast({
@@ -71,7 +75,7 @@ Page({
     });
   },
   openRecordFile() {
-    if (this.userData.fileObj) {
+    if (this.userData?.fileObj) {
       this.closeRecordFile();
       return;
     }
@@ -83,7 +87,7 @@ Page({
     this.addLog(`openRecordFile, ${fileObj?.fileName}`);
   },
   closeRecordFile() {
-    if (!this.userData.fileObj) {
+    if (!this.userData?.fileObj) {
       return;
     }
     const tmpObj = this.userData.fileObj;
@@ -129,6 +133,7 @@ Page({
   onPusherFlvAudioTag({ detail, currentTarget }) {
     if (!this.userData.hasReceivedAudio) {
       this.userData.hasReceivedAudio = true;
+      console.log('first audioTag', currentTarget.id, detail);
       this.addLog(`first audioTag, byteLength: ${detail.data.byteLength}`);
     }
     this.handleFlvData(detail.data);
@@ -136,6 +141,7 @@ Page({
   onPusherFlvVideoTag({ detail, currentTarget }) {
     if (!this.userData.hasReceivedVideo) {
       this.userData.hasReceivedVideo = true;
+      console.log('first videoTag', currentTarget.id, detail);
       this.addLog(`first videoTag, byteLength: ${detail.data.byteLength}`);
     }
     this.handleFlvData(detail.data);
