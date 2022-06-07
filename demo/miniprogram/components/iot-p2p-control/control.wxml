@@ -15,6 +15,7 @@
       <view>uuid: {{uuid}}</view>
       <view>moduleState: {{state}}</view>
       <view>localPeername: {{localPeername}}</view>
+      <view>localPeername2: {{localPeername2}}</view>
     </view>
   </view>
 </view>

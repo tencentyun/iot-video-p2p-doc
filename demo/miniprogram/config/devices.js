@@ -24,6 +24,18 @@ const devices = {
     liveParams: 'action=live&channel=0&quality=standard',
     playbackParams: 'action=playback&channel=0',
   },
+  'ipc-2': {
+    showInHomePageBtn: true,
+    productId: 'AQTV2839QJ',
+    deviceName: 'sp02_33925210_13',
+    xp2pInfo: 'XP2PYYAldyTto1r7aAieJhFUjw==%2.4.x',
+  },
+  'ipc-1': {
+    showInHomePageBtn: true,
+    productId: 'AQTV2839QJ',
+    deviceName: 'sp02_33925210_13',
+    xp2pInfo: 'XP2PJsQdaV/urH2mQgPtCSBfvmjs%2.3.x',
+  },
   ipc_download: {
     showInHomePageBtn: true,
     productId: '65CC3I8Q4G',

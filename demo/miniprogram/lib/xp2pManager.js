@@ -14,6 +14,12 @@ const { appParams } = config;
 
 const xp2pPlugin = requirePlugin('xp2p');
 const p2pExports = xp2pPlugin.p2p;
+// p2pExports.enableHttpLog(true);
+// p2pExports.enableNetLog(true);
+// p2pExports.enableXNTPLog(true);
+// p2pExports.enableAPP_P2PLog(true);
+// p2pExports.enableADP2PLog(true);
+
 const p2pTimeout = 6000;
 
 let playerPlugin;
@@ -31,7 +37,7 @@ const parseCommandResData = (data) => {
 
 class Xp2pManager {
   get P2PPlayerVersion() {
-    return playerPlugin.Version;
+    return playerPlugin?.Version;
   }
 
   get XP2PVersion() {
@@ -70,6 +76,10 @@ class Xp2pManager {
 
   get localPeername() {
     return this._localPeername;
+  }
+
+  get localPeername2() {
+    return this._localPeername2;
   }
 
   get networkChanged() {
@@ -118,6 +128,8 @@ class Xp2pManager {
 
     if (!playerPlugin) {
       playerPlugin = requirePlugin('wechat-p2p-player');
+      // playerPlugin.enableHttpLog(false);
+      // playerPlugin.enableRtmpLog(false);
     }
     console.log('Xp2pManager: P2PPlayerVersion', this.P2PPlayerVersion);
 
@@ -257,11 +269,33 @@ class Xp2pManager {
         return reject(Xp2pManagerErrorEnum.Timeout);
       }, p2pTimeout);
 
-      p2pExports
-        .init({
-          appParams,
-          eventHandler: this._eventHandler.bind(this), // 需要xp2p插件1.1.1以上版本
-        })
+      // p2pExports
+      //   .init({
+      //     appParams,
+      //     initParams: {
+      //       deviceP2PVersion: p2pExports.DeviceVersion.Device_2_4,
+      //       eventHandler: this._eventHandler.bind(this), // 需要xp2p插件1.1.1以上版本
+      //     }
+      //   })
+
+      Promise.all([
+        p2pExports
+          .init({
+            appParams,
+            initParams: {
+              deviceP2PVersion: p2pExports.DeviceVersion.Device_2_3,
+              eventHandler: this._eventHandler.bind(this), // 需要xp2p插件1.1.1以上版本
+            }
+          }),
+        p2pExports
+          .init({
+            appParams,
+            initParams: {
+              deviceP2PVersion: p2pExports.DeviceVersion.Device_2_4,
+              eventHandler: this._eventHandler.bind(this), // 需要xp2p插件1.1.1以上版本
+            }
+          })
+      ])
         .then((res) => {
           clearTimeout(timer);
           if (this._promise !== promise) {
@@ -269,17 +303,25 @@ class Xp2pManager {
           }
           console.log('Xp2pManager: init res', res, 'delay', Date.now() - start);
 
-          if (res === 0) {
-            const localPeername = p2pExports.getLocalXp2pInfo();
-            console.log('Xp2pManager: localPeername', localPeername);
-            this._state = 'inited';
-            this._localPeername = localPeername;
-            this._promise = null;
-          } else {
-            this._resetXP2PData();
-          }
+          this._state = 'inited';
+          this._localPeername = res[0].localXp2pInfo;
+          this._localPeername2 = res[1].localXp2pInfo;
+          // this._localPeername2 = res.localXp2pInfo;
+          this._promise = null;
 
-          return resolve(res);
+          // p2pExports.getModule(p2pExports.DeviceVersion.Device_2_4).reset().then(res => {
+          //   console.log('Xp2pManager: reset res', res);
+          //   this._localPeername2 = res.localXp2pInfo;
+          // });
+
+          // setTimeout(() => {
+          //   res.reset().then(r => {
+          //     console.log('Xp2pManager: module inner reset res', r);
+          //     this._localPeername2 = r.localXp2pInfo;
+          //   });
+          // }, 5000);
+
+          return resolve(0);
         })
         .catch((errcode) => {
           clearTimeout(timer);
@@ -332,8 +374,14 @@ class Xp2pManager {
         return reject(Xp2pManagerErrorEnum.Timeout);
       }, p2pTimeout);
 
-      p2pExports
-        .resetP2P()
+      Promise.all([
+        p2pExports
+          .getModule(p2pExports.DeviceVersion.Device_2_3)
+          .reset(),
+        p2pExports
+          .getModule(p2pExports.DeviceVersion.Device_2_4)
+          .reset()
+      ])
         .then((res) => {
           clearTimeout(timer);
           if (this._promise !== promise) {
@@ -341,15 +389,12 @@ class Xp2pManager {
           }
           console.log('Xp2pManager: resetP2P res', res, 'delay', Date.now() - start);
 
-          if (res === 0) {
-            const localPeername = p2pExports.getLocalXp2pInfo();
-            console.log('Xp2pManager: localPeername', localPeername);
-            this._state = 'inited';
-            this._localPeername = localPeername;
-            this._promise = null;
-          } else {
-            this.destroyModule();
-          }
+          this._state = 'inited';
+          // eslint-disable-next-line max-len
+          this._localPeername = res.find(item => item.deviceP2PVersion === p2pExports.DeviceVersion.Device_2_3).localXp2pInfo;
+          // eslint-disable-next-line max-len
+          this._localPeername2 = res.find(item => item.deviceP2PVersion === p2pExports.DeviceVersion.Device_2_4).localXp2pInfo;
+          this._promise = null;
 
           return resolve(res);
         })
@@ -549,9 +594,6 @@ class Xp2pManager {
 let xp2pManager = null;
 export const getXp2pManager = () => {
   if (!xp2pManager) {
-    p2pExports.enableHttpLog(false);
-    p2pExports.enableNetLog(false);
-    p2pExports.enableXNTPLog(false);
     xp2pManager = new Xp2pManager();
   }
   return xp2pManager;
