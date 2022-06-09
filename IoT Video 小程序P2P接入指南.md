@@ -68,7 +68,10 @@
 - 体验二维码
 
 <img width="191" alt="Demo 二维码" src="./pic/miniprogram/demo-qrcode.png">
+<br />
+<br />
 
+> 该体验版二维码对应3.x.x版本的xp2p插件
 #### Demo使用
 
 注意：Demo UI交互可能更新，但主要流程不变
