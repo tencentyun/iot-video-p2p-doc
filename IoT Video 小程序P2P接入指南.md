@@ -66,6 +66,7 @@
 - [源码](./demo/miniprogram)
 
 - 体验二维码
+
 <img width="191" alt="Demo 二维码" src="./pic/miniprogram/demo-qrcode.png">
 
 #### Demo使用
