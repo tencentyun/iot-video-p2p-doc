@@ -74,17 +74,19 @@ Component({
         // uuid: '', // reset 不用清uuid
         state: '',
         localPeername: '',
+        localPeername2: ''
       });
     },
     printData() {
       console.log(`[${this.id}]`, 'now p2p data', this.data);
     },
     changeState(newData) {
-      this.triggerEvent('statechange', { state: newData.state, localPeername: newData.localPeername });
+      this.triggerEvent('statechange', { state: newData.state, localPeername: newData.localPeername, localPeername2: newData.localPeername2 });
       this.setData(newData);
     },
     refreshState() {
-      if (xp2pManager.state === this.data.state && xp2pManager.localPeername === this.data.localPeername) {
+      // eslint-disable-next-line max-len
+      if (xp2pManager.state === this.data.state && xp2pManager.localPeername === this.data.localPeername && xp2pManager.localPeername2 === this.data.localPeername2) {
         // 无变化
         return;
       }
@@ -92,13 +94,14 @@ Component({
         uuid: xp2pManager.uuid,
         state: xp2pManager.state,
         localPeername: xp2pManager.localPeername,
+        localPeername2: xp2pManager.localPeername2
       });
 
       if (xp2pManager.state === 'initing' || xp2pManager.state === 'reseting') {
         xp2pManager.promise
           .then((res) => {
             if (res === 0) {
-              this.changeState({ state: 'inited', localPeername: xp2pManager.localPeername });
+              this.changeState({ state: 'inited', localPeername: xp2pManager.localPeername, localPeername2: xp2pManager.localPeername2 });
             } else {
               this.destroyModule();
             }
@@ -117,26 +120,18 @@ Component({
       }
 
       const start = Date.now();
-      this.changeState({ state: 'initing', localPeername: '' });
+      this.changeState({ state: 'initing', localPeername: '', localPeername2: '' });
 
       xp2pManager
         .initModule()
         .then((res) => {
           console.log(`[${this.id}]`, 'init res', res);
 
-          if (res === 0) {
-            const now = Date.now();
-            console.log(`[${this.id}]`, 'init delay', now - start);
-            const { localPeername } = xp2pManager;
-            console.log(`[${this.id}]`, 'localPeername', localPeername);
-            this.changeState({ state: 'inited', localPeername });
-          } else {
-            this.destroyModule();
-            wx.showModal({
-              content: `init 失败, res=${res}`,
-              showCancel: false,
-            });
-          }
+          const now = Date.now();
+          console.log(`[${this.id}]`, 'init delay', now - start);
+          const { localPeername, localPeername2 } = xp2pManager;
+          console.log(`[${this.id}]`, 'localPeername', localPeername, localPeername2);
+          this.changeState({ state: 'inited', localPeername, localPeername2 });
         })
         .catch((errcode) => {
           console.error(`[${this.id}]`, 'init error', errcode);
@@ -169,26 +164,18 @@ Component({
       }
 
       const start = Date.now();
-      this.changeState({ state: 'reseting', localPeername: '' });
+      this.changeState({ state: 'reseting', localPeername: '', localPeername2: '' });
 
       xp2pManager
         .resetP2P()
         .then((res) => {
           console.log(`[${this.id}]`, 'resetP2P res', res);
 
-          if (res === 0) {
-            const now = Date.now();
-            console.log(`[${this.id}]`, 'resetP2P delay', now - start);
-            const { localPeername } = xp2pManager;
-            console.log(`[${this.id}]`, 'localPeername', localPeername);
-            this.changeState({ state: 'inited', localPeername });
-          } else {
-            this.destroyModule();
-            wx.showModal({
-              content: `resetP2P 失败, res=${res}`,
-              showCancel: false,
-            });
-          }
+          const now = Date.now();
+          console.log(`[${this.id}]`, 'resetP2P delay', now - start);
+          const { localPeername, localPeername2 } = xp2pManager;
+          console.log(`[${this.id}]`, 'localPeername', localPeername, localPeername2);
+          this.changeState({ state: 'inited', localPeername, localPeername2 });
         })
         .catch((errcode) => {
           console.error(`[${this.id}]`, 'resetP2P error', errcode);

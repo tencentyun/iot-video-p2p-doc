@@ -7,45 +7,50 @@
  * productId: string 摄像头的 productId
  * deviceName: string 摄像头的 deviceName
  * xp2pInfo: string 摄像头的 xp2pInfo
- * liveParams: string 摄像头的直播参数，默认 action=live&channel=0&quality=super
+ * liveParams: string 摄像头的直播参数，默认 action=live&channel=0&quality=standard
  * playbackParams: string 摄像头的回放参数，默认 action=playback&channel=0
  * liveStreamDomain: string 1v1连接过多时自动转到1v多模式的server域名
- * needCheckStream: boolean 播放前先检查能否拉流，默认false
- * needPusher: boolean 语音对讲使用pusher采集数据，默认false
+ * options:
+ *   needMjpg: boolean 需要图片流，默认false
+ *   needCheckStream: boolean 播放前先检查能否拉流，默认false
+ *   intercomType: string 对讲类型，Recorder/Pusher/DuplexVideo，默认Recorder
  */
 
 // 这些是预置的ipc设备
 const devices = {
-  ipc0: {
+  test_mjpg: {
     showInHomePageBtn: true,
-    productId: '9L1S66FZ3Q',
-    deviceName: 'test_34683636_4',
-    xp2pInfo: 'XP2P1Xl5RwePR/gacCZqsX8aladI%2.3.5',
-    liveParams: 'action=live&channel=0&quality=standard',
-    playbackParams: 'action=playback&channel=0',
+    productName: 'Mjpg',
+    productId: 'AQTV2839QJ',
+    deviceName: 'sp02_33925210_16',
+    xp2pInfo: 'XP2PDhFRfd+PLWpEndXBeTPv9g==%2.4.29',
+    liveParams: 'action=live-audio&channel=0',
+    liveMjpgParams: 'action=live-mjpg&channel=0',
+    playbackParams: 'action=playback-audio&channel=0',
+    playbackMjpgParams: 'action=playback-mjpg&channel=0',
+    options: {
+      needMjpg: true,
+    },
   },
-  ipc_download: {
+  test_mjpg2: {
     showInHomePageBtn: true,
-    productId: '65CC3I8Q4G',
-    deviceName: 'llynne_41877702_5',
-    xp2pInfo: 'XP2PRaiH8GqimBOseoPFEHWCimrd%2.3.11',
-  },
-  ipc_test: {
-    showInHomePageBtn: true,
-    productId: 'LWY363KD9E',
-    deviceName: 'K20_72261264_7',
-    xp2pInfo: 'XP2PX9jEb4ktpH7AGkeYG6FQ4w==%2.4.23',
-    needPusher: true,
-  },
-  debug: {
-    // showInHomePageBtn: true,
-    // showInHomePageNav: true,
-    productId: '9L1S66FZ3Q',
-    deviceName: 'test_34683636_3',
-    xp2pInfo: 'XP2PcDd3JlQPiXxDzaKo4YvCqnUq%2.3.5',
-    liveParams: 'action=live&channel=0&quality=super',
-    playbackParams: 'action=playback&channel=0',
+    productName: 'Mjpg',
+    productId: '1FV89F1U7U',
+    deviceName: 'evanxy_43610521_2',
+    xp2pInfo: 'XP2Ptcng6Y/kQJVj+Wo/Hb/Z1g==%2.4.29m',
+    liveParams: 'action=live-audio&channel=0',
+    liveMjpgParams: 'action=live-mjpg&channel=0',
+    playbackParams: 'action=playback-audio&channel=0',
+    playbackMjpgParams: 'action=playback-mjpg&channel=0',
+    options: {
+      needMjpg: true,
+    },
   },
 };
+
+Object.values(devices).forEach((device) => {
+  device.liveParams = device.liveParams || 'action=live&channel=0&quality=standard';
+  device.playbackParams = device.playbackParams || 'action=playback&channel=0';
+});
 
 export default devices;

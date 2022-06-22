@@ -7,6 +7,8 @@ const { XP2PVersion } = xp2pManager;
 
 const { totalData } = config;
 
+const isDevTools = wx.getSystemInfoSync().platform === 'devtools';
+
 Component({
   behaviors: ['wx://component-export'],
   properties: {
@@ -17,33 +19,126 @@ Component({
   },
   data: {
     // 这是onLoad时就固定的
-    mode: '',
+    p2pMode: '',
+    cfgTargetId: '',
 
-    // 这些是不同的流，注意改变输入值不应该改变已经启动的p2p服务
-    inputTargetId: '',
+    // 场景
+    scene: 'live',
+    sceneList: [
+      {
+        value: 'live',
+        text: '直播',
+        checked: true,
+      },
+      {
+        value: 'playback',
+        text: '回放',
+        checked: false,
+      },
+    ],
 
     // 1v1用
-    inputProductId: '',
-    inputDeviceName: '',
-    inputXp2pInfo: '',
-    inputLiveParams: '',
-    inputPlaybackParams: '',
-    inputLiveStreamDomain: '',
-    needCheckStreamChecked: false,
-    needPusherChecked: false,
-    needDuplexChecked: false,
+    simpleInputs: [
+      {
+        field: 'productId',
+        text: 'productId',
+        value: '',
+      },
+      {
+        field: 'deviceName',
+        text: 'deviceName',
+        value: '',
+      },
+      {
+        field: 'xp2pInfo',
+        text: 'xp2pInfo',
+        value: '',
+      },
+      {
+        field: 'liveParams',
+        text: 'liveParams',
+        value: '',
+        scene: 'live',
+      },
+      {
+        field: 'liveMjpgParams',
+        text: 'liveMjpgParams',
+        value: '',
+        scene: 'live',
+      },
+      {
+        field: 'playbackParams',
+        text: 'playbackParams',
+        value: '',
+        scene: 'playback',
+      },
+      {
+        field: 'playbackMjpgParams',
+        text: 'playbackMjpgParams',
+        value: '',
+        scene: 'playback',
+      },
+      {
+        field: 'liveStreamDomain',
+        text: '1v1转1vn server拉流域名(填入开启1v1转1vn)',
+        value: '',
+        placeholder: '和`播放前先检查能否拉流`不兼容',
+        scene: 'live',
+      },
+    ],
+    simpleChecks: [
+      {
+        field: 'needCheckStream',
+        text: '播放前先检查能否拉流',
+        checked: false,
+      },
+      {
+        field: 'needMjpg',
+        text: '播放图片流',
+        checked: false,
+      },
+      {
+        field: 'playerRTC',
+        text: '播放使用RTC模式',
+        checked: false,
+      },
+    ],
+    intercomType: 'Recorder',
+    intercomTypeList: [
+      {
+        value: 'Recorder',
+        text: 'Recorder',
+        desc: 'RecorderManager采集，PCM编码',
+        checked: true,
+      },
+      {
+        value: 'Pusher',
+        text: 'Pusher',
+        desc: 'LivePusher采集，AAC编码，支持回音消除',
+        checked: false,
+      },
+      // {
+      //   value: 'DuplexVideo',
+      //   text: '双向音视频（实验中）',
+      //   desc: 'LivePusher采集，视频H.264，音频AAC',
+      //   checked: false,
+      // },
+    ],
 
     // 1v多用
     inputUrl: '',
-    inputCodeUrl: '',
-    needCode: false,
 
-    // 调试用
-    onlyp2pChecked: wx.getSystemInfoSync().platform === 'devtools', // 开发者工具里不支持 live-player 和 TCPServer，默认勾选 onlyp2p
+    // 调试用，开发者工具里不支持 live-player 和 TCPServer，默认只拉数据不播放
+    isDevTools,
+    playStreamChecked: {
+      flv: !isDevTools,
+      mjpg: !isDevTools,
+    },
 
     // 这些是p2p状态
     targetId: '',
     flvUrl: '',
+    mjpgFile: '',
   },
   lifetimes: {
     created() {
@@ -62,25 +157,36 @@ Component({
       }
 
       console.log(`[${this.id}]`, 'setData from cfg data', data);
+      // 基础字段
+      const { simpleInputs } = this.data;
+      simpleInputs.forEach((item) => {
+        item.value = typeof data[item.field] === 'string' ? data[item.field] : '';
+      });
+
+      // 小程序里可以调整的字段
+      const options = data.options || {};
+      const { simpleChecks } = this.data;
+      simpleChecks.forEach((item) => {
+        item.checked = typeof options[item.field] === 'boolean' ? options[item.field] : false;
+      });
+      const intercomType = options.intercomType || 'Recorder';
+      const { intercomTypeList } = this.data;
+      intercomTypeList.forEach((item) => {
+        item.checked = item.value === intercomType;
+      });
+
+      // setData
       this.setData(
         {
-          mode: data.mode,
-          inputTargetId: data.targetId || '',
+          p2pMode: data.p2pMode,
+          cfgTargetId: data.targetId || '',
           // 1v1用
-          inputProductId: data.productId || '',
-          inputDeviceName: data.deviceName || '',
-          inputXp2pInfo: data.xp2pInfo || data.peername || '',
-          inputLiveParams: data.liveParams || 'action=live&channel=0&quality=super',
-          inputPlaybackParams: data.playbackParams || 'action=playback&channel=0',
-          inputLiveStreamDomain: data.liveStreamDomain || '',
-          needCheckStreamChecked:
-            (!data.liveStreamDomain && typeof data.needCheckStream === 'boolean') ? data.needCheckStream : false,
-          needPusherChecked: typeof data.needPusher === 'boolean' ? data.needPusher : false,
-          needDuplexChecked: typeof data.needDuplex === 'boolean' ? data.needDuplex : false,
+          simpleInputs,
+          simpleChecks,
+          intercomType,
+          intercomTypeList,
           // 1v多用
           inputUrl: data.flvUrl || '',
-          inputCodeUrl: data.codeUrl || '',
-          needCode: /^http:/.test(data.flvUrl),
         },
         () => {
           console.log(`[${this.id}]`, 'now data', this.data);
@@ -106,185 +212,190 @@ Component({
         icon: 'none',
       });
     },
-    inputP2PTargetId(e) {
+    // 1v1用
+    changeSceneRadio(e) {
+      const { sceneList } = this.data;
+      sceneList.forEach((item) => {
+        item.checked = item.value === e.detail.value;
+      });
       this.setData({
-        inputTargetId: e.detail.value,
+        scene: e.detail.value,
+        sceneList,
       });
     },
-    inputIPCProductId(e) {
+    inputSimpleInput(e) {
+      const { index } = e.currentTarget.dataset;
+      const item = this.data.simpleInputs[index];
+      item.value = e.detail.value;
       this.setData({
-        inputProductId: e.detail.value,
+        simpleInputs: this.data.simpleInputs,
       });
     },
-    inputIPCDeviceName(e) {
+    switchSimpleCheck(e) {
+      const { index } = e.currentTarget.dataset;
+      const item = this.data.simpleChecks[index];
+      item.checked = e.detail.value;
       this.setData({
-        inputDeviceName: e.detail.value,
+        simpleChecks: this.data.simpleChecks,
       });
     },
-    inputIPCXp2pInfo(e) {
+    changeIntercomTypeRadio(e) {
+      const { intercomTypeList } = this.data;
+      intercomTypeList.forEach((item) => {
+        item.checked = item.value === e.detail.value;
+      });
       this.setData({
-        inputXp2pInfo: e.detail.value,
+        intercomType: e.detail.value,
+        intercomTypeList,
       });
     },
-    inputIPCLiveParams(e) {
-      this.setData({
-        inputLiveParams: e.detail.value,
-      });
-    },
-    inputIPCPlaybackParams(e) {
-      this.setData({
-        inputPlaybackParams: e.detail.value,
-      });
-    },
-    inputIPCLiveStreamDomain(e) {
-      this.resolveConflict({ fieldName: 'inputLiveStreamDomain', value: e.detail.value });
-      this.setData({
-        inputLiveStreamDomain: e.detail.value,
-      });
-    },
-    switchNeedCheckStream(e) {
-      this.resolveConflict({ fieldName: 'needCheckStreamChecked', value: e.detail.value });
-      this.setData({
-        needCheckStreamChecked: e.detail.value,
-      });
-    },
-    switchNeedPusher(e) {
-      this.setData({
-        needPusherChecked: e.detail.value,
-      });
-    },
-    switchNeedDuplex(e) {
-      this.setData({
-        needDuplexChecked: e.detail.value,
-      });
-    },
-    inputServerCodeUrl(e) {
-      this.setData({
-        inputCodeUrl: e.detail.value,
-      });
-    },
+    // 1v多用
     inputStreamUrl(e) {
       this.setData({
         inputUrl: e.detail.value,
       });
     },
-    switchOnlyP2P(e) {
+    // 调试用
+    switchPlayStream(e) {
+      const { playStreamChecked } = this.data;
+      playStreamChecked[e.currentTarget.dataset.stream] = e.detail.value;
       this.setData({
-        onlyp2pChecked: e.detail.value,
+        playStreamChecked,
       });
     },
-    resolveConflict({fieldName, value}) {
-      // 互斥的两个配置
-      // 当连接数>=最大连接数的时候, 此时checkstream结果为不能播放, 但是1v1转向1vn却可以播放
-      if (fieldName === 'inputLiveStreamDomain' && value) {
-        this.setData({
-          needCheckStreamChecked: false,
-        });
-      }
-      if (fieldName === 'needCheckStreamChecked' && value) {
-        this.setData({
-          inputLiveStreamDomain: '',
-        });
-      }
-    },
-    getStreamData(type) {
-      if (!this.data.inputTargetId) {
-        this.showToast('please input targetId');
+    getStreamData(sceneType, inputValues, options) {
+      if (!this.data.cfgTargetId) {
+        this.showToast('no targetId');
         return;
       }
 
-      if (this.data.mode === 'ipc') {
-        if (!this.data.inputXp2pInfo) {
+      if (this.data.p2pMode === 'ipc') {
+        if (!inputValues.productId) {
+          this.showToast('please input productId');
+          return;
+        }
+        if (!inputValues.deviceName) {
+          this.showToast('please input deviceName');
+          return;
+        }
+        if (!inputValues.xp2pInfo) {
           this.showToast('please input xp2pInfo');
           return;
         }
-        if (type === 'live' && !this.data.inputLiveParams) {
-          this.showToast('please input live params');
-          return;
+        if (sceneType === 'live') {
+          if (!inputValues.liveParams) {
+            this.showToast('please input live params');
+            return;
+          }
+          if (options.needMjpg && !inputValues.liveMjpgParams) {
+            this.showToast('please input live mjpg params');
+            return;
+          }
+          if (options.needMjpg && inputValues.liveStreamDomain) {
+            this.showToast('图片流不支持`1v1转1vn`');
+            return;
+          }
+          if (inputValues.liveStreamDomain && options.needCheckStream) {
+            this.showToast('开启`1v1转1vn`时需取消`播放前先检查能否拉流`');
+            return;
+          }
         }
-        if (type === 'playback' && !this.data.inputPlaybackParams) {
-          this.showToast('please input playback params');
-          return;
+        if (sceneType === 'playback') {
+          if (!inputValues.playbackParams) {
+            this.showToast('please input playback params');
+            return;
+          }
+          if (options.needMjpg && !inputValues.playbackMjpgParams) {
+            this.showToast('please input playback mjpg params');
+            return;
+          }
         }
       } else {
-        if (!this.data.inputUrl) {
-          this.showToast('please input url');
-          return;
-        }
         const supportHttps = compareVersion(XP2PVersion, '1.1.0') >= 0;
-        if (supportHttps && !/^https:/.test(this.data.inputUrl)) {
-          this.showToast('only support https url');
+        if (!supportHttps) {
+          this.showToast('please update xp2p plugin');
           return;
         }
-        if (!supportHttps && !/^http:/.test(this.data.inputUrl)) {
-          this.showToast('only support http url');
+        if (!this.data.inputUrl) {
+          this.showToast('please input stream url');
+          return;
+        }
+        if (!/^https:/.test(this.data.inputUrl)) {
+          this.showToast('only support https url');
           return;
         }
       }
 
       let flvUrl = '';
-      if (this.data.mode === 'ipc') {
+      let mjpgFile = '';
+      if (this.data.p2pMode === 'ipc') {
         let flvParams = '';
-        if (type === 'live') {
-          flvParams = this.data.inputLiveParams;
-        } else if (type === 'playback') {
-          flvParams = this.data.inputPlaybackParams;
+        let mjpgParams = '';
+        if (sceneType === 'live') {
+          flvParams = inputValues.liveParams;
+          mjpgParams = inputValues.liveMjpgParams;
+        } else if (sceneType === 'playback') {
+          flvParams = inputValues.playbackParams;
+          mjpgParams = inputValues.playbackMjpgParams;
         }
         flvUrl = `http://XP2P_INFO.xnet/ipc.p2p.com/ipc.flv?${flvParams}`;
+        mjpgFile = `ipc.flv?${mjpgParams}`;
       } else {
         flvUrl = this.data.inputUrl;
       }
 
       return {
-        targetId: this.data.inputTargetId,
+        targetId: this.data.cfgTargetId,
+        productId: inputValues.productId,
+        deviceName: inputValues.deviceName,
+        xp2pInfo: adjustXp2pInfo(inputValues.xp2pInfo), // 兼容直接填 peername 的情况
+        liveStreamDomain: inputValues.liveStreamDomain,
         flvUrl,
-        streamExInfo: {
-          productId: this.data.inputProductId,
-          deviceName: this.data.inputDeviceName,
-          xp2pInfo: adjustXp2pInfo(this.data.inputXp2pInfo), // 兼容直接填 peername 的情况
-          liveStreamDomain: this.data.inputLiveStreamDomain,
-          codeUrl: this.data.inputCodeUrl,
-        },
+        mjpgFile,
       };
     },
-    startPlayer(e) {
-      const streamData = this.getStreamData(e.currentTarget.dataset.type || 'live');
+    startPlayer() {
+      const inputValues = {};
+      this.data.simpleInputs.forEach(({ field, value }) => {
+        inputValues[field] = value;
+      });
+      const options = {
+        intercomType: this.data.intercomType, // 对讲方式
+      };
+      this.data.simpleChecks.forEach((item) => {
+        options[item.field] = item.checked;
+      });
+      const onlyp2pMap = {};
+      for (const stream in this.data.playStreamChecked) {
+        onlyp2pMap[stream] = !this.data.playStreamChecked[stream];
+      }
+
+      const sceneType = this.data.scene || 'live';
+      const streamData = this.getStreamData(sceneType, inputValues, options);
       if (!streamData) {
         return;
       }
 
-      const options = {
-        needCheckStream: this.data.needCheckStreamChecked,
-        needPusher: this.data.needPusherChecked,
-        needDuplex: this.data.needDuplexChecked,
-        onlyp2p: this.data.onlyp2pChecked,
-      };
-
-      if (this.data.mode === 'ipc') {
+      if (this.data.p2pMode === 'ipc') {
         // 注意字段和totalData的里一致
         const recentIPC = {
-          mode: 'ipc',
+          p2pMode: 'ipc',
           targetId: 'recentIPC',
-          productId: this.data.inputProductId,
-          deviceName: this.data.inputDeviceName,
-          xp2pInfo: this.data.inputXp2pInfo,
-          liveParams: this.data.inputLiveParams,
-          playbackParams: this.data.inputPlaybackParams,
-          liveStreamDomain: this.data.inputLiveStreamDomain,
-          ...options,
+          ...inputValues,
+          options,
         };
         totalData.recentIPC = recentIPC;
         wx.setStorageSync('recentIPC', recentIPC);
       }
 
-      console.log(`[${this.id}]`, 'startPlayer', streamData, options);
+      console.log(`[${this.id}]`, 'startPlayer', this.data.p2pMode, sceneType, streamData, options);
       this.setData(streamData);
       this.triggerEvent('startPlayer', {
-        mode: this.data.mode,
-        targetId: streamData.targetId,
-        flvUrl: streamData.flvUrl,
-        ...streamData.streamExInfo,
-        ...options,
+        p2pMode: this.data.p2pMode,
+        sceneType,
+        ...streamData,
+        options,
+        onlyp2pMap,
       });
     },
   },

@@ -1,5 +1,10 @@
 @import '../../common.wxss';
 
+.iot-pusher {
+  box-sizing: border-box;
+  position: relative;
+}
+
 .pusher-container {
   box-sizing: border-box;
   position: relative;

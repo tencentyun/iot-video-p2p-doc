@@ -138,6 +138,40 @@ class RecordManager {
     }
   }
 
+  // 添加文件
+  addFile(fileName, srcFilePath) {
+    if (!fileName) {
+      return Promise.reject({ errMsg: 'invalid fileName' });
+    }
+    if (!srcFilePath) {
+      return Promise.reject({ errMsg: 'invalid srcFilePath' });
+    }
+    const filePath = `${this.baseDir}/${fileName}`;
+    console.log('RecordManager: addFile', fileName, filePath);
+
+    this.prepareDir();
+
+    let isExist = false;
+    try {
+      fileSystemManager.accessSync(filePath);
+      isExist = true;
+    } catch (err) {}
+
+    if (isExist) {
+      console.log('RecordManager: addFile fail, file exist');
+      return Promise.reject({ errMsg: 'file already exist' });
+    }
+
+    return new Promise((resolve, reject) => {
+      fileSystem.saveFile({
+        tempFilePath: srcFilePath,
+        filePath,
+        success: resolve,
+        fail: reject,
+      });
+    });
+  }
+
   // 创建文件
   prepareFile(fileName) {
     if (!fileName) {
@@ -216,6 +250,20 @@ class RecordManager {
   }
   */
 
+  // 按文件名写文件
+  writeFile(fileName, data) {
+    if (!fileSystem || !fileName || !data?.byteLength) {
+      return -1;
+    }
+    try {
+      const filePath = `${this.baseDir}/${fileName}`;
+      fileSystem.writeFileSync(filePath, data, 'binary');
+      return data.byteLength;
+    } catch (err) {
+      return -1;
+    }
+  }
+
   // 打开文件（通用，不改文件名，也不清理之前的文件）
   openFile(fileName) {
     if (!fileName) {
@@ -245,18 +293,18 @@ class RecordManager {
   }
 
   // 打开录像文件
-  openRecordFile(recordFilename) {
+  openRecordFile(recordFilename, fileType = 'flv') {
     if (!recordFilename) {
       return null;
     }
     console.log('RecordManager: openRecordFile', recordFilename);
 
-    // 每次录之前清掉之前的录像，避免占用过多空间
-    this.removeSavedRecordList();
+    // 每次录之前清掉之前的录像，避免占用过多空间，demo就不清了，方便定位问题
+    // this.removeSavedRecordList();
 
     // 录像文件名自动带上录制时间
-    const fixedFilename = recordFilename.replace(/\.flv$/, '').replace(/\W/g, '-');
-    const fileName = `${fixedFilename}.${toDateTimeFilename(new Date())}.flv`;
+    const fixedFilename = recordFilename.replace(new RegExp(`\\.${fileType}$`), '').replace(/\W/g, '-');
+    const fileName = `${fixedFilename}.${toDateTimeFilename(new Date())}.${fileType || 'flv'}`;
 
     return this.openFile(fileName);
   }
@@ -326,23 +374,34 @@ class RecordManager {
     }
   }
 
-  async saveVideoToAlbum(fileName) {
+  async saveToAlbum(fileName) {
     const filePath = `${this.baseDir}/${fileName}`;
+
+    let api = '';
+    if (/\.mp4$/i.test(fileName) || /\.flv$/i.test(fileName) || /\.mjpg$/i.test(fileName)) {
+      api = 'saveVideoToPhotosAlbum';
+    } else if (/\.jpg$/i.test(fileName) || /\.jpeg$/i.test(fileName)) {
+      api = 'saveImageToPhotosAlbum';
+    } else {
+      console.log('RecordManager: saveToAlbum, invalid format');
+      throw new Error('invalid format');
+    }
 
     try {
       await checkAuthorize('scope.writePhotosAlbum');
     } catch (err) {
-      console.log('RecordManager: saveVideoToAlbum, checkAuthorize fail', err);
+      console.log('RecordManager: saveToAlbum, checkAuthorize fail', err);
       throw err;
     }
+
     try {
-      const res = await wx.saveVideoToPhotosAlbum({
+      const res = await wx[api]({
         filePath,
       });
-      console.log('RecordManager: saveVideoToAlbum, saveVideoToPhotosAlbum success', res);
+      console.log(`RecordManager: saveToAlbum, ${api} success`, res);
       return res;
     } catch (err) {
-      console.log('RecordManager: saveVideoToAlbum, saveVideoToPhotosAlbum fail', err);
+      console.log(`RecordManager: saveToAlbum, ${api} fail`, err);
       throw err;
     }
   }

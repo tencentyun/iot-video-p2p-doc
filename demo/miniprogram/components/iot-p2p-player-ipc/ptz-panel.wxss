@@ -2,7 +2,7 @@
   position: relative;
 }
 .ptz-panel .ptz-controls {
-  padding: 32rpx;
+  padding: 0;
 }
 .ptz-panel .ptz-controls .ptz-controls-top {
   position: relative;

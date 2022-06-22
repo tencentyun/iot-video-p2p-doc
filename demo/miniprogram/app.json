@@ -8,23 +8,29 @@
     "pages/test-p2p-player/player",
     "pages/test-p2p-pusher/pusher",
     "pages/test-live-player/test",
-    "pages/test-video/test"
+    "pages/test-video/test",
+    "pages/test-mjpg-canvas/test",
+    "pages/test-local-mjpg-player/player"
   ],
   "plugins": {
     "wechat-p2p-player": {
-      "version": "1.1.3",
-      "provider": "wx9e8fbc98ceac2628"
+      "version": "1.2.2",
+      "provider": "wx9e8fbc98ceac2628",
+      "export": "exportForPlugin.js"
     },
     "xp2p": {
-      "version": "1.3.0",
+      "version": "dev-2ab4d90af1eb829c286c2ee501e298be",
       "provider": "wx1319af22356934bf"
     }
   },
   "usingComponents": {
     "p2p-player": "plugin://wechat-p2p-player/p2p-player",
     "p2p-pusher": "plugin://wechat-p2p-player/p2p-pusher",
+    "p2p-mjpg-player": "plugin://wechat-p2p-player/p2p-mjpg-player",
+    "mock-p2p-player": "components/mock-p2p-player/player",
     "iot-p2p-common-player": "components/iot-p2p-common-player/player",
     "iot-p2p-common-pusher": "components/iot-p2p-common-pusher/pusher",
+    "iot-p2p-mjpg-player": "components/iot-p2p-mjpg-player/player",
     "iot-p2p-player-ipc": "components/iot-p2p-player-ipc/player",
     "iot-p2p-player-server": "components/iot-p2p-player-server/player",
     "iot-p2p-control": "components/iot-p2p-control/control",

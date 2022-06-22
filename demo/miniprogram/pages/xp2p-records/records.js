@@ -1,4 +1,4 @@
-import { isMP4 } from '../../utils';
+import { isFLV, isMP4, isMJPG } from '../../utils';
 import { getRecordManager } from '../../lib/recordManager';
 
 Page({
@@ -26,7 +26,12 @@ Page({
     this.setData({ isRefreshing: true });
 
     const files = this.data.recordManager.getSavedRecordList();
-    const recordList = files.map(fileName => ({ fileName, size: NaN, isMP4: isMP4(fileName) }));
+    const recordList = files.map(fileName => ({
+      fileName, size: NaN,
+      isFLV: isFLV(fileName),
+      isMP4: isMP4(fileName),
+      isMJPG: isMJPG(fileName),
+    }));
     this.setData({
       recordList,
       totalBytes: files.length > 0 ? NaN : 0,
@@ -46,6 +51,40 @@ Page({
     }
 
     this.setData({ isRefreshing: false });
+  },
+
+  async addFile() {
+    let file;
+    try {
+      const res = await wx.chooseMessageFile({
+        count: 1,
+        type: 'file',
+        extension: ['flv', 'mjpg', 'mp4', 'aac'],
+      });
+      file = res.tempFiles[0];
+      console.log('choose file res', file);
+      if (!file?.size) {
+        wx.showToast({
+          title: 'file empty',
+          icon: 'error',
+        });
+        return;
+      }
+    } catch (err) {
+      console.error('choose file fail', err);
+      return;
+    }
+    try {
+      const addRes = await this.data.recordManager.addFile(file.name, file.path);
+      console.log('add file res', addRes);
+      wx.showToast({
+        title: '添加成功',
+        icon: 'none',
+      });
+      this.getRecordList();
+    } catch (err) {
+      console.error('add file fail', err);
+    }
   },
   removeAllRecords() {
     if (this.data.isRefreshing) {
@@ -68,12 +107,27 @@ Page({
       });
       return;
     }
-    wx.navigateTo({
-      url: [
-        `/pages/test-p2p-player/player?dirname=${encodeURIComponent(this.data.recordManager.name)}`,
-        `&filename=${encodeURIComponent(fileRes.fileName)}`,
-      ].join(''),
-    });
+    if (fileRes.isFLV) {
+      wx.navigateTo({
+        url: [
+          `/pages/test-p2p-player/player?dirname=${encodeURIComponent(this.data.recordManager.name)}`,
+          `&filename=${encodeURIComponent(fileRes.fileName)}`,
+        ].join(''),
+      });
+    } else if (fileRes.isMJPG) {
+      wx.navigateTo({
+        url: [
+          `/pages/test-local-mjpg-player/player?dirname=${encodeURIComponent(this.data.recordManager.name)}`,
+          `&filename=${encodeURIComponent(fileRes.fileName)}`,
+        ].join(''),
+      });
+    } else {
+      console.error('can not play record', fileRes);
+      wx.showToast({
+        title: '不支持的文件类型',
+        icon: 'none',
+      });
+    }
   },
   renameMP4(e) {
     const { index } = e.currentTarget.dataset;
@@ -93,7 +147,9 @@ Page({
         icon: 'none',
       });
       fileRes.fileName = newFileName;
+      fileRes.isFLV = isFLV(fileRes.fileName);
       fileRes.isMP4 = isMP4(fileRes.fileName);
+      fileRes.isMJPG = isMJPG(fileRes.fileName);
       this.setData({
         recordList: [...this.data.recordList],
       });
@@ -105,11 +161,11 @@ Page({
       });
     }
   },
-  async saveVideoToAlbum(e) {
+  async saveToAlbum(e) {
     const { index } = e.currentTarget.dataset;
     const fileRes = this.data.recordList[index];
     try {
-      await this.data.recordManager.saveVideoToAlbum(fileRes.fileName);
+      await this.data.recordManager.saveToAlbum(fileRes.fileName);
       wx.showModal({
         title: '已保存到相册',
         showCancel: false,

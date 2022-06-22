@@ -1,30 +1,30 @@
-<view class="component">
+<view class="iot-player">
   <view class="player-container">
     <p2p-player
-      wx:if="{{needPlayer && hasPlayer}}"
+      wx:if="{{canUseP2P && needPlayer && hasPlayer}}"
       id="{{playerId}}"
       autoplay="{{autoPlay}}"
-      mode="live"
-      minCache="0.2"
-      maxCache="0.5"
-      muted="{{muted}}"
+      mode="{{mode}}"
+      minCache="{{minCache}}"
+      maxCache="{{maxCache}}"
+      muted="{{superMuted || muted}}"
       orientation="{{orientation}}"
+      acceptLivePlayerEvents="{{acceptLivePlayerEvents}}"
       bind:playerReady="onPlayerReady"
       bind:playerStartPull="onPlayerStartPull"
       bind:playerClose="onPlayerClose"
       bind:playerError="onPlayerError"
       bind:error="onLivePlayerError"
       bind:statechange="onLivePlayerStateChange"
-      bind:netstatus="onLivePlayerNetStatusChange"
+      bind:netstatus="onLivePlayerNetStatus"
     />
-    <view wx:if="{{!needPlayer}}" class="mock-player">
-      <view wx:if="{{playerState === 'PlayerReady'}}">
-        <view>totalBytes: {{totalBytes}}</view>
-      </view>
-      <view wx:else>
-        <view>playerState: {{playerState}}</view>
-      </view>
-    </view>
+    <mock-p2p-player
+      wx:if="{{canUseP2P && !needPlayer}}"
+      bind:playerReady="onPlayerReady"
+      bind:playerStartPull="onPlayerStartPull"
+      bind:playerClose="onPlayerClose"
+      bind:playerError="onPlayerError"
+    />
     <view class="player-message" bindtap="onClickRetry">{{playerMsg}}</view>
     <view class="player-controls-container right">
       <view class="player-controls">
@@ -48,9 +48,9 @@
       </view>
       <view>playerState: {{playerState}} <text wx:if="{{playerPaused}}">pauseType: {{playerPaused}}</text></view>
       <view>p2pState: {{p2pState}}</view>
-      <view>streamState: {{streamState}} {{playing ? 'playing' : ''}}</view>
+      <view>streamState: {{streamState}}</view>
       <view>
-        totalBytes: {{totalBytes}}
+        playing: {{playing}}
         <text class="text-btn float-right" bindtap="toggleSlow">{{isSlow ? '恢复' : '模拟丢包'}}</text>
       </view>
       <view>

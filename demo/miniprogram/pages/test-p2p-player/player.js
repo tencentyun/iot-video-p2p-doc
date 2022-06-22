@@ -32,16 +32,18 @@ Page({
       playerPluginVersion: xp2pManager.P2PPlayerVersion,
     });
 
-    const recordManager = getRecordManager(query.dirname);
-    this.userData.recordManager = recordManager;
-    this.setData({
-      localRecordName: query.filename,
-    });
+    if (query.dirname && query.filename) {
+      const recordManager = getRecordManager(query.dirname);
+      this.userData.recordManager = recordManager;
+      this.setData({
+        localRecordName: query.filename,
+      });
+    }
 
     if (this.data.localRecordName) {
       // 拉取本地录像
       this.addLog('正在读取本地录像...');
-      recordManager
+      this.userData.recordManager
         .readFile(this.data.localRecordName)
         .then((res) => {
           this.addLog(`读取本地录像成功, size: ${res.data.byteLength}`);
@@ -84,17 +86,17 @@ Page({
       livePlayerInfoStr: '',
     });
   },
-  onPlayerReady({ detail, currentTarget }) {
-    console.log('==== onPlayerReady', currentTarget.id, detail);
-    this.addLog(`==== onPlayerReady, id: ${currentTarget.id}, innerId: ${detail.playerInnerId}`);
+  onPlayerReady({ detail }) {
+    console.log('==== onPlayerReady', detail);
+    this.addLog('==== onPlayerReady');
     this.setData({
       playerReady: true,
       playerComp: detail.playerExport,
       playerCtx: detail.livePlayerContext,
     });
   },
-  onPlayerStartPull({ detail, currentTarget }) {
-    console.log('==== onPlayerStartPull', currentTarget.id, detail);
+  onPlayerStartPull({ detail }) {
+    console.log('==== onPlayerStartPull', detail);
     this.addLog('==== onPlayerStartPull');
     if (!this.data.playStatus) {
       this.addLog('not playing');
@@ -110,6 +112,7 @@ Page({
       this.addLog(`is ending, cache: ${cache}`);
       console.log('now info', livePlayerInfo);
       if (cache < 200) {
+        console.log('start pull and cache end, stop', livePlayerInfo);
         this.bindStop();
       }
       return;
@@ -122,8 +125,8 @@ Page({
     // 模拟拉流
     this.pullFileVideo();
   },
-  onPlayerClose({ detail, currentTarget }) {
-    console.log('==== onPlayerClose', currentTarget.id, detail);
+  onPlayerClose({ detail }) {
+    console.log('==== onPlayerClose', detail);
     const code = detail && detail.error && detail.error.code;
     this.addLog(`==== onPlayerClose, code: ${code}`);
     this.setData({
@@ -136,8 +139,8 @@ Page({
       });
     }
   },
-  onPlayerError({ detail, currentTarget }) {
-    console.error('==== onPlayerError', currentTarget.id, detail);
+  onPlayerError({ detail }) {
+    console.error('==== onPlayerError', detail);
     const code = detail && detail.error && detail.error.code;
     this.addLog(`==== onPlayerError, code: ${code}`);
     this.setData({
@@ -146,10 +149,11 @@ Page({
       playerCtx: null,
       playStatus: '',
     });
+    this.bindDestroyPlayer();
+
     if (code === 'WECHAT_SERVER_ERROR') {
       xp2pManager.needResetLocalServer = true;
       this.addLog(`set needResetLocalServer ${xp2pManager.needResetLocalServer}`);
-      this.bindDestroyPlayer();
     }
     wx.showModal({
       content: `player错误: ${code}`,
@@ -203,8 +207,8 @@ Page({
         console.log('==== onLivePlayerStateChange', detail.code, detail);
     }
   },
-  onLivePlayerNetStatusChange({ detail }) {
-    // console.log('onLivePlayerNetStatusChange', detail);
+  onLivePlayerNetStatus({ detail }) {
+    // console.log('onLivePlayerNetStatus', detail);
     if (!detail.info) {
       return;
     }
@@ -218,6 +222,9 @@ Page({
         livePlayerInfo[key] = detail.info[key];
       }
     }
+    if (livePlayerInfo.videoCache > 0 || livePlayerInfo.audioCache > 0) {
+      livePlayerInfo.hasCacheData = true;
+    }
     this.setData({
       livePlayerInfoStr: (
         detail.info
@@ -229,10 +236,11 @@ Page({
           : ''
       ),
     });
-    if (typeof detail.info.videoCache === 'number' && this.data.playStatus === 'ending') {
+    if (typeof detail.info.audioCacheThreshold === 'number' && this.data.playStatus === 'ending' && livePlayerInfo.hasCacheData) {
       // 在播cache
-      const cache = Math.max(detail.info.videoCache, detail.info.audioCache);
+      const cache = Math.max(livePlayerInfo.videoCache, livePlayerInfo.audioCache);
       if (cache < 200) {
+        console.log('net status and cache end, stop', livePlayerInfo);
         this.bindStop();
       }
     }
@@ -317,26 +325,31 @@ Page({
       },
     });
   },
-  loopWrite(data, offset = 0, addChunkCBK = null, chunkSize, chunkInterval) {
+  loopWrite(data, offset = 0, addChunkCBK = null, chunkSize, chunkInterval, loopCount = 1) {
     if (!this.data.canWrite) {
       // 不能写
       return;
     }
     if (offset >= data.byteLength) {
-      this.addLog('loopWrite end');
-      this.data.playerComp.finishMedia();
-      return;
+      loopCount--;
+      this.addLog(`loopWrite end, ${loopCount} left`);
+      if (loopCount > 0) {
+        offset = 0;
+      } else {
+        this.data.playerComp.finishMedia();
+        return;
+      }
     }
     const chunkLen = Math.min(data.byteLength - offset, chunkSize);
     const videoData = data.slice(offset, offset + chunkLen);
     addChunkCBK && addChunkCBK(videoData);
     setTimeout(() => {
-      this.loopWrite(data, offset + chunkLen, addChunkCBK, chunkSize, chunkInterval);
+      this.loopWrite(data, offset + chunkLen, addChunkCBK, chunkSize, chunkInterval, loopCount);
     }, chunkInterval);
   },
   pullFileVideo() {
-    const chunkSize = 200 * 1024;
-    const chunkInterval = 200;
+    const chunkSize = 10 * 1024;
+    const chunkInterval = 30;
     if (this.data.fileData) {
       this.addLog('start loopWrite');
       this.loopWrite(

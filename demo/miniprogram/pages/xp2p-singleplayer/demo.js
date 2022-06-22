@@ -6,7 +6,7 @@ const xp2pManager = getXp2pManager();
 Page({
   data: {
     // 这是onLoad时就固定的
-    mode: '',
+    p2pMode: '',
     targetId: '',
     flvUrl: '',
     productId: '',
@@ -38,7 +38,7 @@ Page({
       return;
     }
 
-    if (newData.mode === 'ipc') {
+    if (newData.p2pMode === 'ipc') {
       newData.playerTitle = `${newData.productId}/${newData.deviceName}`;
     }
 

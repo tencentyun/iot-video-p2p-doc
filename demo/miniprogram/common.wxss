@@ -59,3 +59,7 @@
   background-color: lightyellow;
   padding: 10rpx;
 }
+
+.hide {
+  display: none;
+}

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import devices from './devices';
 import serverStreams from './streams';
 
@@ -56,6 +57,17 @@ const config = {
         return { start_time, end_time };
       },
     },
+    getVideoList: {
+      cmd: 'get_file_list',
+      params: (date) => {
+        const startDate = new Date(date);
+        startDate.setHours(0, 0, 0, 0);
+        const start_time = startDate.getTime() / 1000;
+        const end_time = start_time + 3600 * 24 - 1;
+        // file_type: '0'-视频，'1'-图片
+        return { start_time, end_time, file_type: '0' };
+      },
+    },
     getPlaybackStatus: {
       cmd: 'get_device_st',
       params: {
@@ -80,7 +92,7 @@ const totalData = {};
 // ipc设备都加进去
 for (const key in devices) {
   totalData[key] = {
-    mode: 'ipc',
+    p2pMode: 'ipc',
     targetId: key,
     ...devices[key],
   };
@@ -94,7 +106,7 @@ if (recentIPC) {
 // server流都加进去
 for (const key in serverStreams) {
   totalData[key] = {
-    mode: 'server',
+    p2pMode: 'server',
     targetId: key,
     ...serverStreams[key],
   };

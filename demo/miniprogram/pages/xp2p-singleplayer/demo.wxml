@@ -1,8 +1,8 @@
 <view class="page-body">
-  <view class="page-section page-section-gap" wx:if="{{playerId && mode && targetId}}">
+  <view class="page-section page-section-gap" wx:if="{{playerId && p2pMode && targetId}}">
     <view class="page-section-title player-title">{{playerTitle || targetId}}</view>
     <iot-p2p-player-ipc
-      wx:if="{{mode === 'ipc'}}"
+      wx:if="{{p2pMode === 'ipc'}}"
       id="{{playerId}}"
       targetId="{{targetId}}" 
       flvUrl="{{flvUrl}}" 
@@ -14,7 +14,7 @@
       bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
     />
     <iot-p2p-player-server
-      wx:if="{{mode === 'server'}}"
+      wx:if="{{p2pMode === 'server'}}"
       id="{{playerId}}"
       targetId="{{targetId}}" 
       flvUrl="{{flvUrl}}" 

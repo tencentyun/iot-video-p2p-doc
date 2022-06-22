@@ -1,5 +1,10 @@
 @import '../../common.wxss';
 
+.iot-player {
+  box-sizing: border-box;
+  position: relative;
+}
+
 .player-container {
   box-sizing: border-box;
   position: relative;
@@ -10,13 +15,6 @@
 .player-container live-player {
   width: 100%  !important;
   height: 100%  !important;
-}
-.player-container .mock-player {
-  box-sizing: border-box;
-  color: white;
-  width: 100%;
-  height: 100%;
-  padding: 20rpx;
 }
 
 .player-container .player-message {

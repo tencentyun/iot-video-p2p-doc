@@ -1,0 +1,50 @@
+<view class="iot-mjpg-player">
+  <view class="mjpg-player-container">
+    <p2p-mjpg-player
+      wx:if="{{needPlayer && hasPlayer}}"
+      showLog="{{false}}"
+      needParseFrame="{{false}}"
+      frameLogGroup="{{25}}"
+      bind:playerReady="onPlayerReady"
+      bind:playerStartPull="onPlayerStartPull"
+      bind:playerClose="onPlayerClose"
+      bind:playerError="onPlayerError"
+      bind:load="onImageLoad"
+      bind:error="onImageError"
+    />
+    <mock-p2p-player
+      wx:if="{{!needPlayer}}"
+      type="mjpgPlayer"
+      bind:playerReady="onPlayerReady"
+      bind:playerStartPull="onPlayerStartPull"
+      bind:playerClose="onPlayerClose"
+      bind:playerError="onPlayerError"
+    />
+    <view class="player-message" bindtap="onClickRetry">{{playerMsg}}</view>
+    <view class="debug-info-switch-container">
+      <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
+    </view>
+  </view>
+  <view wx:if="{{showDebugInfo}}" class="debug-info-container">
+    <view class="debug-info">
+      <view>plugin: xp2p {{xp2pVersion}} / p2p-player {{p2pPlayerVersion}}</view>
+      <view>
+        <view>mjpgFile: </view>
+        <view class="text-box lines-2">
+          <text class="text-break">{{mjpgFile}}</text>
+        </view>
+      </view>
+      <view>mainStreamType: {{mainStreamType}}</view>
+      <view>mainStreamState: {{mainStreamState}}</view>
+      <view>playerState: {{playerState}}</view>
+      <view>isPlaying: {{isPlaying}}</view>
+      <view>playResult: {{playResult}}</view>
+      <view>imgInfo: {{imgInfoStr}}</view>
+      <view>
+        record: 
+        <text wx:if="{{playResult === 'success' || isRecording}}" class="text-btn float-right" bindtap="toggleRecording">{{isRecording ? '停止录制' : '录制图片流'}}</text>
+        <text wx:else class="text-btn float-right disabled">开始播放后才可以录制图片流</text>
+      </view>
+    </view>
+  </view>
+</view>

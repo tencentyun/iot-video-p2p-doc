@@ -29,6 +29,10 @@ Component({
   behaviors: ['wx://component-export'],
   properties: {
     // 以下是 live-pusher 的属性
+    mode: {
+      type: String, // RTC / SD / HD / FHD
+      value: 'RTC',
+    },
     enableCamera: {
       type: Boolean,
       value: true,
@@ -36,6 +40,18 @@ Component({
     enableMic: {
       type: Boolean,
       value: true,
+    },
+    enableAgc: {
+      type: Boolean,
+      value: true,
+    },
+    enableAns: {
+      type: Boolean,
+      value: true,
+    },
+    audioQuality: {
+      type: String,
+      value: 'low',
     },
   },
   data: {
@@ -48,6 +64,13 @@ Component({
     pusherComp: null,
     pusherCtx: null,
     pusherMsg: '',
+    acceptLivePusherEvents: {
+      // 太多事件log了，只接收这3个
+      error: true,
+      statechange: true,
+      netstatus: true,
+      // audiovolumenotify: true,
+    },
 
     // 有writer才能推流
     hasWriter: false,
@@ -178,7 +201,7 @@ Component({
     },
     onPusherError({ detail }) {
       console.error(`[${this.data.innerId}]`, '==== onPusherError', detail);
-      const code = detail && detail.error && detail.error.code;
+      const code = detail?.error?.code;
       let pusherState = PusherStateEnum.PusherError;
       if (code === 'WECHAT_SERVER_ERROR') {
         pusherState = PusherStateEnum.LocalServerError;
@@ -255,8 +278,8 @@ Component({
           console.log(`[${this.data.innerId}]`, 'onLivePusherStateChange', detail.code, detail);
       }
     },
-    onLivePusherNetStatusChange({ detail }) {
-      // console.log('onLivePusherNetStatusChange', detail);
+    onLivePusherNetStatus({ detail }) {
+      // console.log('onLivePusherNetStatus', detail);
       if (!this.userData.writer || !detail.info) {
         return;
       }

@@ -20,6 +20,10 @@
       </view>
     </view>
     <view class="group-button-area">
+      <button bindtap="bindChoose" data-from="album" class="group-button" type="primary" size="mini" disabled="{{src}}">ChooseAlbumVideo</button>
+      <button bindtap="bindChoose" data-from="message" class="group-button" type="primary" size="mini" disabled="{{src}}">ChooseMessageFile</button>
+    </view>
+    <view class="group-button-area">
       <button bindtap="bindSetSrc" class="group-button" type="primary" size="mini" disabled="{{src}}">SetSrc</button>
       <button bindtap="bindClearSrc" class="group-button" type="primary" size="mini" disabled="{{!src}}">ClearSrc</button>
     </view>

@@ -2,10 +2,29 @@
 @import '../../input.wxss';
 @import './ptz-panel.wxss';
 
+.iot-p2p-player-ipc {
+  box-sizing: border-box;
+  padding-top: 420rpx;
+  height: calc(100vh - 50rpx);
+  overflow: scroll;
+}
+
+.player-wrap {
+  position: absolute;
+  top: 0;
+  width: 750rpx;
+  height: 420rpx;
+  z-index: 1;
+}
+
 .ptz-panel-wrap {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
+}
+
+.player-prop-item, .pusher-prop-item {
+  margin-bottom: 10rpx;
 }

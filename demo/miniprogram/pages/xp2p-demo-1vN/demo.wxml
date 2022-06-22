@@ -5,25 +5,25 @@
       cfg="{{cfg}}"
       bind:startPlayer="onStartPlayer"
     />
-    <view wx:if="{{playerId && mode && targetId}}">
+    <view wx:if="{{playerId && p2pMode && targetId}}">
       <iot-p2p-player-ipc
-        wx:if="{{mode === 'ipc'}}"
+        wx:if="{{p2pMode === 'ipc'}}"
         id="{{playerId}}"
         targetId="{{targetId}}"
+        sceneType="{{sceneType}}"
         flvUrl="{{flvUrl}}"
+        mjpgFile="{{mjpgFile}}"
         productId="{{productId}}"
         deviceName="{{deviceName}}"
         xp2pInfo="{{xp2pInfo}}"
-        needCheckStream="{{needCheckStream}}"
         liveStreamDomain="{{liveStreamDomain}}"
-        needPusher="{{needPusher}}"
-        needDuplex="{{needDuplex}}"
-        onlyp2p="{{onlyp2p}}"
+        options="{{options}}"
+        onlyp2pMap="{{onlyp2pMap}}"
         bind:playError="onPlayError"
         bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
       />
       <iot-p2p-player-server
-        wx:if="{{mode === 'server'}}"
+        wx:if="{{p2pMode === 'server'}}"
         id="{{playerId}}"
         targetId="{{targetId}}"
         flvUrl="{{flvUrl}}"
