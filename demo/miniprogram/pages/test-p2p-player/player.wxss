@@ -13,7 +13,7 @@
   height: 100% !important;
 }
 
-.video-info {
+.player-container .video-info {
   position: absolute;
   left: 20rpx;
   top: 20rpx;

@@ -11,7 +11,6 @@
       xp2pInfo="{{xp2pInfo}}" 
       onlyp2p="{{onlyp2p}}"
       bind:playError="onPlayError"
-      bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
     />
     <iot-p2p-player-server
       wx:if="{{p2pMode === 'server'}}"
@@ -21,7 +20,6 @@
       codeUrl="{{codeUrl}}" 
       onlyp2p="{{onlyp2p}}"
       bind:playError="onPlayError"
-      bind:systemPermissionDenied="onPlayerSystemPermissionDenied"
     />
   </view>
 </view>

@@ -19,7 +19,7 @@
       "export": "exportForPlugin.js"
     },
     "xp2p": {
-      "version": "dev-2ab4d90af1eb829c286c2ee501e298be",
+      "version": "dev-2c6f5f52aa6697e4c28692bf4e02d61a",
       "provider": "wx1319af22356934bf"
     }
   },

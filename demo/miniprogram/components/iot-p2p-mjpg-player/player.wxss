@@ -39,7 +39,7 @@
   margin-right: 20rpx;
 }
 
-.debug-info-container {
+.iot-mjpg-player .debug-info-container {
   position: absolute;
   width: 100%;
   max-height: 720rpx;

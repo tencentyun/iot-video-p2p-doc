@@ -4,6 +4,7 @@
 
 .iot-p2p-player-ipc {
   box-sizing: border-box;
+  position: relative;
   padding-top: 420rpx;
   height: calc(100vh - 50rpx);
   overflow: scroll;

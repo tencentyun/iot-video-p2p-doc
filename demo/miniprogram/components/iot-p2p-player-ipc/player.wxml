@@ -3,7 +3,7 @@
     <iot-p2p-common-player
       wx:if="{{innerOptions}}"
       id="{{playerId}}"
-      class="{{playerClass}}"
+      class="{{innerOptions.needMjpg ? 'hide' : ''}}"
       p2pMode="ipc"
       mode="{{innerOptions.playerRTC ? 'RTC' : 'live'}}"
       targetId="{{targetId}}"
@@ -20,8 +20,7 @@
       onlyp2p="{{onlyp2pMap && onlyp2pMap.flv}}"
       bind:p2pStateChange="onP2PStateChange"
       bind:streamStateChange="onStreamStateChange"
-      bind:playError="passEvent"
-      bind:systemPermissionDenied="passEvent"
+      bind:playError="onPlayError"
     />
     <iot-p2p-mjpg-player
       wx:if="{{innerOptions && innerOptions.needMjpg}}"
@@ -31,13 +30,14 @@
       deviceName="{{deviceName}}"
       mainStreamType="{{streamType}}"
       mainStreamState="{{streamState}}"
+      mainStreamErrMsg="{{playErrMsg}}"
       mjpgFile="{{mjpgFile}}"
       onlyp2p="{{onlyp2pMap && onlyp2pMap.mjpg}}"
       bind:playerStateChange="onMjpgPlayerStateChange"
       bind:playError="onMjpgPlayError"
+      bind:clickRetry="onMjpgClickRetry"
     />
   </view>
-  <view>playerMode: {{innerOptions.playerRTC ? 'RTC' : 'live'}}</view>
   <view wx:if="{{sceneType === 'live'}}">
     <view wx:if="{{needDuplex}}" class="component-section">
       <view class="component-section-title">双向音视频</view>
@@ -102,6 +102,7 @@
         <view class="component-section-title">{{needPusher ? 'Pusher' : 'Recorder'}}语音对讲</view>
         <view wx:if="{{needPusher}}">
           <iot-p2p-common-pusher
+            wx:if="{{!isModifyPusher}}"
             id="{{pusherId}}"
             mode="{{pusherProps.isRTC ? 'RTC' : 'SD'}}"
             enableCamera="{{false}}"
@@ -116,14 +117,16 @@
             style="display: none"
           />
           <view>pusherReady: {{pusherReady}}</view>
-          <view>pusherProps:</view>
+          <view>pusherProps:
+            <text class="text-btn float-right" bindtap="toggleModifyPusher">{{!isModifyPusher ? '修改 pusher 属性' : '修改完成'}}</text>
+          </view>
           <view wx:for="{{pusherPropChecks}}" wx:key="field" class="pusher-prop-item">
             <label>
               <switch type="checkbox"
                 checked="{{pusherProps[item.field]}}"
                 data-field="{{item.field}}"
                 data-index="{{index}}"
-                disabled="{{voiceState && voiceState !== 'error'}}"
+                disabled="{{!isModifyPusher || voiceState && voiceState !== 'error'}}"
                 bindchange="switchPusherPropCheck"
               />
               {{item.text}}

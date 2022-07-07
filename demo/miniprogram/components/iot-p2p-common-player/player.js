@@ -1,3 +1,4 @@
+/* eslint-disable camelcase, @typescript-eslint/naming-convention */
 import { canUseP2PIPCMode, canUseP2PServerMode, getParamValue } from '../../utils';
 import { getXp2pManager } from '../../lib/xp2pManager';
 import { getRecordManager, MAX_FILE_SIZE_IN_M } from '../../lib/recordManager';
@@ -125,6 +126,7 @@ Component({
     autoPlay: false,
     playerId: '', // 这是 p2p-player 组件的id，不是自己的id
     playerState: PlayerStateEnum.PlayerIdle,
+    playerDenied: false,
     playerComp: null,
     playerCtx: null,
     playerMsg: '',
@@ -164,7 +166,6 @@ Component({
     // 控件
     muted: false,
     orientation: 'vertical',
-    mode: 'live',
   },
   pageLifetimes: {
     show() {
@@ -316,6 +317,8 @@ Component({
     return {
       changeFlv: this.changeFlv.bind(this),
       stopAll: this.stopAll.bind(this),
+      reset: this.reset.bind(this),
+      retry: this.onClickRetry.bind(this),
       pause: this.pause.bind(this),
       resume: this.resume.bind(this),
       resumeStream: this.resumeStream.bind(this),
@@ -372,7 +375,7 @@ Component({
       this.setData({
         ...newData,
         ...playerDetail,
-        playerMsg: this.getPlayerMessage(newData),
+        playerMsg: typeof newData.playerMsg === 'string' ? newData.playerMsg : this.getPlayerMessage(newData),
       }, callback);
       if (newData.p2pState && newData.p2pState !== oldP2PState) {
         this.triggerEvent('p2pStateChange', {
@@ -433,9 +436,12 @@ Component({
       }
 
       const checkIsFlvValid = this.properties.checkFunctions && this.properties.checkFunctions.checkIsFlvValid;
-      if (this.data.p2pState !== P2PStateEnum.ServiceStarted
-        || (checkIsFlvValid && !checkIsFlvValid({ filename: this.data.flvFilename, params: this.data.flvParams }))
-      ) {
+      if (checkIsFlvValid && !checkIsFlvValid({ filename: this.data.flvFilename, params: this.data.flvParams })) {
+        console.warn(`[${this.data.innerId}]`, 'flv invalid, return');
+        return;
+      }
+
+      if (this.data.p2pState !== P2PStateEnum.ServiceStarted) {
         // 因为各种各样的原因，player在状态不对的时候又触发播放了，停掉
         this.console.warn(`[${this.data.innerId}]`, 'onPlayerStartPull but can not play, stop player');
         this.tryStopPlayer();
@@ -498,19 +504,17 @@ Component({
       }
       this.handlePlayError(playerState, { msg: `p2pPlayerError: ${code}` });
     },
-    // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
     onLivePlayerError({ detail }) {
+      // 参考：https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html
       this.console.error(`[${this.data.innerId}]`, '==== onLivePlayerError', detail);
-      this.changeState({
+      const newData = {
         playerState: PlayerStateEnum.LivePlayerError,
-      });
+      };
       if (detail.errMsg && detail.errMsg.indexOf('system permission denied') >= 0) {
         // 如果liveplayer是RTC模式，当微信没有系统录音权限时会出错，但是没有专用的错误码，微信侧建议先判断errMsg来兼容
-        this.triggerEvent('systemPermissionDenied', detail);
-        return;
+        newData.playerDenied = true;
       }
-      // 其他错误，比如没有开通live-player组件权限
-      // 参考：https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html
+      this.changeState(newData);
       this.handlePlayError(PlayerStateEnum.LivePlayerError, { msg: `livePlayerError: ${detail.errMsg}` });
     },
     // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
@@ -724,6 +728,11 @@ Component({
 
       const { targetId } = this.properties;
       const { flvUrl, streamExInfo } = this.data;
+      if (!targetId || !flvUrl) {
+        this.console.log(`can not start service with invalid params: targetId ${targetId}, flvUrl ${flvUrl}`);
+        return;
+      }
+
       this.console.log(`[${this.data.innerId}]`, 'startP2PService', targetId, flvUrl, streamExInfo);
 
       const msgCallback = (event, subtype, detail) => {
@@ -735,7 +744,6 @@ Component({
         p2pState: P2PStateEnum.ServicePreparing,
       });
 
-      this.console.log('=-=------------------------------');
       xp2pManager
         .startP2PService(
           targetId,
@@ -919,7 +927,7 @@ Component({
           this.console.error(`[${this.data.innerId}]`, '==== startStream error', res);
           this.resetStreamData(StreamStateEnum.StreamStartError);
           this.tryStopPlayer();
-          this.handlePlayError(StreamStateEnum.StreamStartError, { msg: `startStream err ${res}` });
+          this.handlePlayError(StreamStateEnum.StreamStartError, { msg: `startStream err ${res.errcode}` });
         });
     },
     stopStream(newStreamState = StreamStateEnum.StreamIdle) {
@@ -938,13 +946,12 @@ Component({
         xp2pManager.stopStream(this.properties.targetId, this.data.streamType);
       }
     },
-    changeFlv({ filename = '', params = '' }) {
-      this.console.log(`[${this.data.innerId}]`, 'changeFlv', filename, params);
-      const streamType = filename ? (getParamValue(params, 'action') || 'live') : '';
+    changeFlv({ params = '' }) {
+      this.console.log(`[${this.data.innerId}]`, 'changeFlv', params);
+      const streamType = getParamValue(params, 'action') || 'live';
       this.setData(
         {
-          flvFile: `${filename}${params ? `?${params}` : ''}`,
-          flvFilename: filename,
+          flvFile: `${this.data.flvFilename}${params ? `?${params}` : ''}`,
           flvParams: params,
           streamType,
         },
@@ -956,14 +963,14 @@ Component({
 
           const checkIsFlvValid = this.properties.checkFunctions && this.properties.checkFunctions.checkIsFlvValid;
           if (checkIsFlvValid && !checkIsFlvValid({ filename: this.data.flvFilename, params: this.data.flvParams })) {
-            this.console.log(`[${this.data.innerId}]`, 'flv invalid, return');
+            this.console.warn(`[${this.data.innerId}]`, 'flv invalid, return');
             // 无效，停止播放
             return;
           }
 
           // 有效，触发播放
           this.console.log(`[${this.data.innerId}]`, '==== trigger play', this.data.flvFilename, this.data.flvParams);
-          this.makeResultParams({ startAction: 'changeFlv', flvParams: params });
+          this.makeResultParams({ startAction: 'changeFlv', flvParams: this.data.flvParams });
           this.tryTriggerPlay('changeFlv');
         },
       );
@@ -1003,6 +1010,27 @@ Component({
       xp2pManager.stopP2PService(this.properties.targetId);
 
       this.tryStopPlayer();
+    },
+    reset() {
+      if (!this.data.canUseP2P) {
+        // 不可用的不需要reset
+        return;
+      }
+
+      this.console.log(`[${this.data.innerId}]`, 'reset in state', this.data.playerState, this.data.p2pState, this.data.streamState);
+
+      // 一般是 isFatalError 之后重来，msg 保留
+      const oldMsg = this.data.playerMsg;
+
+      // 所有的状态都重置
+      this.changeState({
+        hasPlayer: false,
+        playerDenied: false,
+        playerState: PlayerStateEnum.PlayerIdle,
+        p2pState: P2PStateEnum.P2PIdle,
+        streamState: StreamStateEnum.StreamIdle,
+        playerMsg: oldMsg,
+      });
     },
     pause({ success, fail, complete, needPauseStream = false }) {
       this.console.log(`[${this.data.innerId}] pause, hasPlayerCrx: ${!!this.data.playerCtx}, needPauseStream ${needPauseStream}`);
@@ -1126,7 +1154,7 @@ Component({
 
       const checkIsFlvValid = this.properties.checkFunctions && this.properties.checkFunctions.checkIsFlvValid;
       if (checkIsFlvValid && !checkIsFlvValid({ filename: this.data.flvFilename, params: this.data.flvParams })) {
-        this.console.log(`[${this.data.innerId}]`, 'flv invalid, return');
+        this.console.warn(`[${this.data.innerId}]`, 'flv invalid, return');
         return;
       }
 
@@ -1164,6 +1192,9 @@ Component({
         if (wx.getSystemInfoSync().platform === 'devtools') {
           // 开发者工具里不支持 live-player 和 TCPServer，明确提示
           msg = '不支持在开发者工具中创建p2p-player';
+        } else if (this.data.playerDenied) {
+          // 如果liveplayer是RTC模式，当微信没有系统录音权限时会出错
+          msg = '请开启微信的系统录音权限';
         }
         isFatalError = true;
       } else if (this.data.p2pState === P2PStateEnum.P2PInitError) {
@@ -1183,7 +1214,13 @@ Component({
         isFatalError = true;
       }
       if (isFatalError) {
-        // 不可恢复错误，退出重来
+        // 不可恢复错误，销毁player
+        if (!this.isP2PInErrorState(this.data.p2pState)) {
+          this.stopAll();
+        }
+        if (this.data.hasPlayer) {
+          this.changeState({ hasPlayer: false });
+        }
         this.console.log(`[${this.data.innerId}] ${errType} isFatalError, trigger playError`);
         this.triggerEvent('playError', {
           errType,
@@ -1217,10 +1254,23 @@ Component({
     },
     // 手动retry
     onClickRetry() {
-      if (this.data.playerState !== PlayerStateEnum.PlayerReady) {
-        // player 没ready不能retry
-        this.console.log(`[${this.data.innerId}]`, `can not retry in ${this.data.playerState}`);
+      if (!this.data.canUseP2P) {
+        // 不可用的不需要reset
         return;
+      }
+
+      let needCreatePlayer;
+      if (this.data.playerState !== PlayerStateEnum.PlayerReady) {
+        if (this.data.needPlayer && this.data.canUseP2P && !this.data.hasPlayer
+          && this.data.playerState === PlayerStateEnum.PlayerIdle
+        ) {
+          // reset了
+          needCreatePlayer = true;
+        } else {
+          // player 没ready不能retry
+          this.console.log(`[${this.data.innerId}]`, `can not retry in ${this.data.playerState}`);
+          return;
+        }
       }
       if (this.data.playing || this.data.streamState === StreamStateEnum.StreamWaitPull) {
         // 播放中不能retry
@@ -1234,6 +1284,11 @@ Component({
 
       this.console.log(`[${this.data.innerId}]`, 'click retry');
       this.makeResultParams({ startAction: 'clickRetry' });
+      if (needCreatePlayer) {
+        this.changeState({
+          hasPlayer: true,
+        });
+      }
       if (this.data.p2pState === P2PStateEnum.ServiceStarted) {
         this.tryTriggerPlay('clickRetry');
       } else if (this.data.p2pState === P2PStateEnum.P2PInited

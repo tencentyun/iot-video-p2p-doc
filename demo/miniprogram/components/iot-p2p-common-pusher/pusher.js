@@ -1,27 +1,7 @@
 import { getXp2pManager } from '../../lib/xp2pManager';
+import { PusherStateEnum, totalMsgMap } from './common';
 
 const xp2pManager = getXp2pManager();
-
-// ts才能用enum，先这么处理吧
-const PusherStateEnum = {
-  PusherIdle: 'PusherIdle',
-  PusherPreparing: 'PusherPreparing',
-  PusherReady: 'PusherReady',
-  PusherError: 'PusherError',
-  LivePusherError: 'LivePusherError',
-  LivePusherStateError: 'LivePusherStateError',
-  LocalServerError: 'LocalServerError',
-};
-
-const totalMsgMap = {
-  [PusherStateEnum.PusherPreparing]: '正在创建Pusher...',
-  [PusherStateEnum.PusherReady]: '创建Pusher成功',
-  [PusherStateEnum.PusherError]: '创建Pusher失败',
-  [PusherStateEnum.LivePusherError]: 'LivePusher错误',
-  [PusherStateEnum.LivePusherStateError]: '推流失败',
-  [PusherStateEnum.LocalServerError]: '本地RtmpServer错误',
-  PusherPushing: '推流中...',
-};
 
 let pusherSeq = 0;
 
@@ -324,7 +304,10 @@ Component({
         isFatalError = true;
       }
       if (isFatalError) {
-        // 不可恢复错误，退出重来
+        // 不可恢复错误，销毁pusher
+        if (this.data.hasPusher) {
+          this.changeState({ hasPusher: false });
+        }
         this.triggerEvent('pushError', {
           errType,
           errMsg: totalMsgMap[errType],

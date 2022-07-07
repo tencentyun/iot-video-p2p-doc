@@ -12,7 +12,7 @@
 .group-button-area {
   padding-top: 10rpx;
 }
-.group-button {
+.group-button-area .group-button {
   margin-right: 10rpx;
 }
 

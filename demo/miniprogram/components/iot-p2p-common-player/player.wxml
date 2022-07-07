@@ -46,6 +46,7 @@
           <text class="text-break">{{flvFile}}</text>
         </view>
       </view>
+      <view>playerMode: {{mode}}</view>
       <view>playerState: {{playerState}} <text wx:if="{{playerPaused}}">pauseType: {{playerPaused}}</text></view>
       <view>p2pState: {{p2pState}}</view>
       <view>streamState: {{streamState}}</view>
@@ -54,7 +55,7 @@
         <text class="text-btn float-right" bindtap="toggleSlow">{{isSlow ? '恢复' : '模拟丢包'}}</text>
       </view>
       <view>
-        record: 
+        record:
         <text wx:if="{{streamState === 'StreamDataReceived' || isRecording}}" class="text-btn float-right" bindtap="toggleRecording">{{isRecording ? '停止录像' : '开始录像'}}</text>
         <text wx:else class="text-btn float-right disabled">开始播放后才可以录像</text>
       </view>

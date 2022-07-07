@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable camelcase, @typescript-eslint/naming-convention */
 import devices from './devices';
 import serverStreams from './streams';
 

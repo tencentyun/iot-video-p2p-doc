@@ -49,6 +49,10 @@ Component({
       type: String,
       value: '',
     },
+    mainStreamErrMsg: {
+      type: String,
+      value: '',
+    },
     mjpgFile: {
       type: String,
       value: '',
@@ -120,6 +124,12 @@ Component({
     isPlaying(val) {
       console.log(`[${this.data.innerId}]`, 'isPlaying changed', val);
     },
+    mainStreamErrMsg(val) {
+      console.log(`[${this.data.innerId}]`, 'mainStreamErrMsg changed', val);
+      if (this.properties.targetId && this.properties.mjpgFile && !this.data.isMainStreamPlaying) {
+        this.setData({ playerMsg: this.properties.mainStreamErrMsg || '加载中...' });
+      }
+    },
   },
   lifetimes: {
     created() {
@@ -185,7 +195,7 @@ Component({
       };
 
       if (!realData.isMainStreamPlaying) {
-        return 'mainStream未播放';
+        return this.properties.mainStreamErrMsg || '加载中...'; // 'mainStream未播放';
       }
 
       let msg = '';
@@ -503,6 +513,7 @@ Component({
     // 手动retry
     onClickRetry() {
       console.log(`[${this.data.innerId}]`, 'onClickRetry', this.data);
+      this.triggerEvent('clickRetry');
     },
     // 以下是调试面板相关的
     toggleDebugInfo() {
