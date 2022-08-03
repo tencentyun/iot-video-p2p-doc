@@ -1,11 +1,13 @@
-import { getParamValue } from '../../utils';
+import { getParamValue, snapshotAndSave } from '../../utils';
 import { getXp2pManager } from '../../lib/xp2pManager';
 import { getRecordManager } from '../../lib/recordManager';
+import { StreamStateEnum, isStreamPlaying, httpStatusErrorMsgMap } from '../iot-p2p-common-player/common';
 
 const xp2pManager = getXp2pManager();
 const { XP2PEventEnum, XP2PNotify_SubType } = xp2pManager;
 
 const recordManager = getRecordManager('mjpgs');
+const snapshotManager = getRecordManager('snapshots');
 
 const MjpgPlayerStateEnum = {
   MjpgPlayerIdle: 'MjpgPlayerIdle',
@@ -17,10 +19,10 @@ const MjpgPlayerStateEnum = {
 };
 
 const totalMsgMap = {
-  [MjpgPlayerStateEnum.MjpgPlayerPreparing]: '正在创建播放器...',
-  [MjpgPlayerStateEnum.MjpgPlayerReady]: '创建播放器成功',
-  [MjpgPlayerStateEnum.MjpgPlayerError]: '播放器错误',
-  [MjpgPlayerStateEnum.MjpgImageError]: '播放失败',
+  [MjpgPlayerStateEnum.MjpgPlayerPreparing]: '正在创建图片流播放器...',
+  [MjpgPlayerStateEnum.MjpgPlayerReady]: '创建图片流播放器成功',
+  [MjpgPlayerStateEnum.MjpgPlayerError]: '图片流播放器错误',
+  [MjpgPlayerStateEnum.MjpgImageError]: '播放图片流失败',
   [MjpgPlayerStateEnum.LocalServerError]: '本地HttpServer错误',
 };
 
@@ -30,6 +32,10 @@ Component({
   behaviors: ['wx://component-export'],
   properties: {
     targetId: {
+      type: String,
+      value: '',
+    },
+    playerClass: {
       type: String,
       value: '',
     },
@@ -56,6 +62,10 @@ Component({
     mjpgFile: {
       type: String,
       value: '',
+    },
+    showControlRightBtns: {
+      type: Boolean,
+      value: true,
     },
     // TODO 透传 image 的属性
     // 以下仅供调试，正式组件不需要
@@ -98,14 +108,7 @@ Component({
   observers: {
     mainStreamState(val) {
       // console.log(`[${this.data.innerId}]`, 'mainStreamState changed', val);
-      const isMainStreamPlaying = [
-        'StreamPreparing',
-        'StreamStarted',
-        'StreamRequest',
-        'StreamHeaderParsed',
-        'StreamDataReceived',
-        'StreamDataPause',
-      ].indexOf(val) >= 0;
+      const isMainStreamPlaying = isStreamPlaying(val);
       if (isMainStreamPlaying === this.data.isMainStreamPlaying) {
         return;
       }
@@ -174,6 +177,8 @@ Component({
     return {
       play: this.play.bind(this),
       stop: this.stop.bind(this),
+      snapshot: this.snapshot.bind(this),
+      snapshotAndSave: this.snapshotAndSave.bind(this),
     };
   },
   methods: {
@@ -203,7 +208,7 @@ Component({
         if (realData.isPlaying) {
           msg = realData.playResult === 'success' ? '' : '加载中...';
         } else {
-          msg = realData.playResult === 'error' ? '播放失败' : '';
+          msg = realData.playResult === 'error' ? '播放图片流失败' : '';
         }
       } else {
         msg = totalMsgMap[realData.playerState];
@@ -460,9 +465,16 @@ Component({
       console.log(`[${this.data.innerId}]`, 'onP2PMessage_Notify', subtype, detail);
       switch (subtype) {
         case XP2PNotify_SubType.Parsed:
-          // 收到 headers
-          if (detail?.headers) {
-            this.data.playerComp.setHeaders(detail.headers);
+          if (!detail || detail.status === 200) {
+            // 收到 headers
+            if (detail?.headers) {
+              this.data.playerComp.setHeaders(detail.headers);
+            }
+          } else {
+            this.resetStreamData();
+            this.stop();
+            const msg = httpStatusErrorMsgMap[detail.status] || `httpStatus: ${detail.status}`;
+            this.handlePlayError(StreamStateEnum.StreamHttpStatusError, { msg, detail });
           }
           break;
       }
@@ -506,7 +518,7 @@ Component({
       // 能retry的才提示这个，不能retry的前面已经触发弹窗了
       this.triggerEvent('playError', {
         errType: type,
-        errMsg: totalMsgMap[type] || '播放失败',
+        errMsg: totalMsgMap[type] || '播放图片流失败',
         errDetail: detail,
       });
     },
@@ -514,6 +526,53 @@ Component({
     onClickRetry() {
       console.log(`[${this.data.innerId}]`, 'onClickRetry', this.data);
       this.triggerEvent('clickRetry');
+    },
+    // 以下是播放器控件相关的
+    snapshotAndSave() {
+      console.log(`[${this.data.innerId}]`, 'snapshotAndSave');
+      snapshotAndSave({
+        snapshot: this.snapshot.bind(this),
+      });
+    },
+    snapshot() {
+      console.log(`[${this.data.innerId}]`, 'snapshot');
+      if (!this.data.playerCtx) {
+        return Promise.reject({ errMsg: 'player not ready' });
+      }
+      if (!this.data.playerCtx.snapshot) {
+        return Promise.reject({ errMsg: 'player not support snapshot' });
+      }
+      return new Promise((resolve, reject) => {
+        this.data.playerCtx.snapshot({
+          quality: 'raw',
+          success: (res) => {
+            console.log(`[${this.data.innerId}]`, 'snapshot success', res?.data?.byteLength);
+            // mpeg-player 截图返回的是 ArrayBuffer，自己写file，保持对外接口一致
+            const streamType = getParamValue(this.data.flvParams, 'action') || 'live-mjpg';
+            const filePath = snapshotManager.prepareFile(`ipc-${this.properties.productId}-${this.properties.deviceName}-${streamType}.jpg`);
+            const fileSystem = wx.getFileSystemManager();
+            fileSystem.writeFile({
+              filePath,
+              data: res.data,
+              encoding: 'binary',
+              success: (res) => {
+                console.log(`[${this.data.innerId}]`, 'snapshot writeFile success', res);
+                resolve({
+                  tempImagePath: filePath,
+                });
+              },
+              fail: (err) => {
+                console.error(`[${this.data.innerId}]`, 'snapshot writeFile fail', err);
+                reject(err);
+              },
+            });
+          },
+          fail: (err) => {
+            console.error(`[${this.data.innerId}]`, 'snapshot fail', err);
+            reject(err);
+          },
+        });
+      });
     },
     // 以下是调试面板相关的
     toggleDebugInfo() {

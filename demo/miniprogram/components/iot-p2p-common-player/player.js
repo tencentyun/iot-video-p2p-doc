@@ -1,14 +1,14 @@
 /* eslint-disable camelcase, @typescript-eslint/naming-convention */
-import { canUseP2PIPCMode, canUseP2PServerMode, getParamValue } from '../../utils';
+import { canUseP2PIPCMode, canUseP2PServerMode, getParamValue, snapshotAndSave } from '../../utils';
 import { getXp2pManager } from '../../lib/xp2pManager';
 import { getRecordManager, MAX_FILE_SIZE_IN_M } from '../../lib/recordManager';
-import { PlayerStateEnum, P2PStateEnum, StreamStateEnum, totalMsgMap } from './common';
+import { PlayerStateEnum, P2PStateEnum, StreamStateEnum, totalMsgMap, httpStatusErrorMsgMap } from './common';
 import { PlayStepEnum, PlayStat } from './stat';
 
 const xp2pManager = getXp2pManager();
 const { XP2PServiceEventEnum, XP2PEventEnum, XP2PNotify_SubType } = xp2pManager;
 
-const recordManager = getRecordManager();
+const recordManager = getRecordManager('records');
 
 const cacheIgnore = 500;
 
@@ -17,6 +17,10 @@ let playerSeq = 0;
 Component({
   behaviors: ['wx://component-export'],
   properties: {
+    playerClass: {
+      type: String,
+      value: '',
+    },
     // 以下是 live-player 的属性
     mode: {
       type: String, // live / RTC
@@ -55,13 +59,17 @@ Component({
       type: Number,
       value: 0,
     },
-    showLog: {
-      type: Boolean,
-      value: true,
-    },
     superMuted: {
       type: Boolean,
       value: false,
+    },
+    showControlRightBtns: {
+      type: Boolean,
+      value: true,
+    },
+    showLog: {
+      type: Boolean,
+      value: true,
     },
     // 以下 ipc 模式用
     productId: {
@@ -166,6 +174,33 @@ Component({
     // 控件
     muted: false,
     orientation: 'vertical',
+    soundMode: 'speaker',
+  },
+  observers: {
+    superMuted(val) {
+      this.console.info(`[${this.data.innerId}]`, 'superMuted changed', val);
+      if (val) {
+        // 打开pusher采集并关闭后，再打开recorder采集并关闭，player的soundMode就变成ear模式了，反馈给微信定位
+        // 标记下次设为false时需要修复 soundMode
+        this.userData.needFixSoundMode = true;
+      } else {
+        if (this.userData.needFixSoundMode) {
+          // 已修复，清除标记
+          this.userData.needFixSoundMode = false;
+          this.console.info(`[${this.data.innerId}]`, 'fix soundMode');
+          wx.nextTick(() => {
+            this.setData({
+              soundMode: 'ear',
+            });
+            wx.nextTick(() => {
+              this.setData({
+                soundMode: 'speaker',
+              });
+            });
+          });
+        }
+      }
+    },
   },
   pageLifetimes: {
     show() {
@@ -195,6 +230,7 @@ Component({
         totalBytes: 0,
         livePlayerInfo: null,
         fileObj: null,
+        needFixSoundMode: false,
       };
 
       this.console = console;
@@ -204,7 +240,7 @@ Component({
       if (!this.properties.showLog) {
         this.console = {
           log: () => undefined,
-          info: () => undefined,
+          info: console.info,
           warn: console.warn,
           error: console.error,
         };
@@ -325,6 +361,8 @@ Component({
       startRecording: this.startRecording.bind(this),
       stopRecording: this.stopRecording.bind(this),
       cancelRecording: this.cancelRecording.bind(this),
+      snapshot: this.snapshot.bind(this),
+      snapshotAndSave: this.snapshotAndSave.bind(this),
     };
   },
   methods: {
@@ -485,7 +523,7 @@ Component({
       this.stopStream(newStreamState);
     },
     onPlayerError({ detail }) {
-      this.console.log(`[${this.data.innerId}]`, '==== onPlayerError', detail);
+      this.console.error(`[${this.data.innerId}]`, '==== onPlayerError', detail);
       const code = detail?.error?.code;
       let playerState = PlayerStateEnum.PlayerError;
       if (code === 'WECHAT_SERVER_ERROR') {
@@ -603,7 +641,11 @@ Component({
           break;
         default:
           // 这些不特别处理，打个log
-          this.console.log(`[${this.data.innerId}]`, 'onLivePlayerStateChange', detail.code, detail);
+          if ((detail.code >= 2104 && detail.code < 2200) || detail.code < 0) {
+            this.console.warn(`[${this.data.innerId}]`, 'onLivePlayerStateChange', detail.code, detail);
+          } else {
+            this.console.log(`[${this.data.innerId}]`, 'onLivePlayerStateChange', detail.code, detail);
+          }
           break;
       }
     },
@@ -1340,11 +1382,11 @@ Component({
           break;
 
         default:
-          this.console.log(`[${this.data.innerId}]`, 'onP2PServiceMessage, unknown event', event, subtype);
+          this.console.warn(`[${this.data.innerId}]`, 'onP2PServiceMessage, unknown event', event, subtype);
       }
     },
     onP2PServiceNotify(type, detail) {
-      this.console.log(`[${this.data.innerId}]`, 'onP2PServiceNotify', type, detail);
+      this.console.info(`[${this.data.innerId}]`, 'onP2PServiceNotify', type, detail);
     },
     onP2PMessage(targetId, event, subtype, detail) {
       if (targetId !== this.properties.targetId) {
@@ -1372,12 +1414,13 @@ Component({
           break;
 
         default:
-          this.console.log(`[${this.data.innerId}]`, 'onP2PMessage, unknown event', event, subtype);
+          this.console.warn(`[${this.data.innerId}]`, 'onP2PMessage, unknown event', event, subtype);
       }
     },
     onP2PMessage_Notify(type, detail) {
-      this.console.log(`[${this.data.innerId}]`, 'onP2PMessage_Notify', type, detail);
-      if (!this.data.playing) {
+      this.console.info(`[${this.data.innerId}]`, 'onP2PMessage_Notify', type, detail);
+      if (!this.data.playing && type !== XP2PNotify_SubType.Close) {
+        // 退出播放时 stopStream 会触发 close 事件，是正常的，其他事件才 warn
         this.console.warn(`[${this.data.innerId}] receive onP2PMessage_Notify when not playing`, type, detail);
       }
       switch (type) {
@@ -1394,10 +1437,17 @@ Component({
           });
           break;
         case XP2PNotify_SubType.Parsed:
-          // 数据传输开始
-          this.changeState({
-            streamState: StreamStateEnum.StreamHeaderParsed,
-          });
+          if (!detail || detail.status === 200) {
+            // 数据传输开始
+            this.changeState({
+              streamState: StreamStateEnum.StreamHeaderParsed,
+            });
+          } else {
+            this.resetStreamData(StreamStateEnum.StreamHttpStatusError);
+            this.tryStopPlayer();
+            const msg = httpStatusErrorMsgMap[detail.status] || `httpStatus: ${detail.status}`;
+            this.handlePlayError(StreamStateEnum.StreamHttpStatusError, { msg, detail });
+          }
           break;
         case XP2PNotify_SubType.Success:
         case XP2PNotify_SubType.Eof:
@@ -1452,9 +1502,39 @@ Component({
         muted: !this.data.muted,
       });
     },
+    changeSoundMode() {
+      this.setData({
+        soundMode: this.data.soundMode === 'ear' ? 'speaker' : 'ear',
+      });
+    },
     changeOrientation() {
       this.setData({
         orientation: this.data.orientation === 'horizontal' ? 'vertical' : 'horizontal',
+      });
+    },
+    snapshotAndSave() {
+      this.console.log(`[${this.data.innerId}]`, 'snapshotAndSave');
+      snapshotAndSave({
+        snapshot: this.snapshot.bind(this),
+      });
+    },
+    snapshot() {
+      this.console.log(`[${this.data.innerId}]`, 'snapshot');
+      if (!this.data.playerCtx) {
+        return Promise.reject({ errMsg: 'player not ready' });
+      }
+      return new Promise((resolve, reject) => {
+        this.data.playerCtx.snapshot({
+          quality: 'raw',
+          success: (res) => {
+            this.console.log(`[${this.data.innerId}]`, 'snapshot success', res);
+            resolve(res);
+          },
+          fail: (err) => {
+            this.console.error(`[${this.data.innerId}]`, 'snapshot fail', err);
+            reject(err);
+          },
+        });
       });
     },
     // 以下是调试面板相关的

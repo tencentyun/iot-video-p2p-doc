@@ -14,12 +14,12 @@
   ],
   "plugins": {
     "wechat-p2p-player": {
-      "version": "1.2.2",
+      "version": "1.2.5",
       "provider": "wx9e8fbc98ceac2628",
       "export": "exportForPlugin.js"
     },
     "xp2p": {
-      "version": "dev-2c6f5f52aa6697e4c28692bf4e02d61a",
+      "version": "3.1.2",
       "provider": "wx1319af22356934bf"
     }
   },
@@ -31,6 +31,7 @@
     "iot-p2p-common-player": "components/iot-p2p-common-player/player",
     "iot-p2p-common-pusher": "components/iot-p2p-common-pusher/pusher",
     "iot-p2p-mjpg-player": "components/iot-p2p-mjpg-player/player",
+    "iot-p2p-voice": "components/iot-p2p-voice/voice",
     "iot-p2p-player-ipc": "components/iot-p2p-player-ipc/player",
     "iot-p2p-player-server": "components/iot-p2p-player-server/player",
     "iot-p2p-control": "components/iot-p2p-control/control",

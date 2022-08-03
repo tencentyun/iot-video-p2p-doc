@@ -45,7 +45,14 @@ class RecordManager {
 
     try {
       const files = fileSystem.readdirSync(this.baseDir);
-      console.log('RecordManager: getSavedRecordList success', files);
+      if (files.length > 1) {
+        files.sort((a, b) => {
+          if (a < b) return 1;
+          if (a > b) return -1;
+          return 0;
+        });
+      }
+      console.log('RecordManager: getSavedRecordList success, files.length', files.length);
       return files;
     } catch (err) {
       console.error('RecordManager: getSavedRecordList error', err);
@@ -79,15 +86,14 @@ class RecordManager {
     if (!fileName) {
       return Promise.reject({ errMsg: 'param error' });
     }
-    const filePath = `${this.baseDir}/${fileName}`;
-    console.log('RecordManager: getFileInfo', fileName, filePath);
 
     return new Promise((resolve, reject) => {
       const filePath = `${this.baseDir}/${fileName}`;
+      // console.log('RecordManager: getFileInfo', fileName, filePath);
       fileSystem.getFileInfo({
         filePath,
         success: (res) => {
-          console.log('RecordManager: getFileInfo success', fileName, res);
+          // console.log('RecordManager: getFileInfo success', fileName, res);
           resolve({
             fileName,
             filePath,
@@ -95,7 +101,7 @@ class RecordManager {
           });
         },
         fail: (err) => {
-          console.log('RecordManager: getFileInfo fail', fileName, err);
+          // console.log('RecordManager: getFileInfo fail', fileName, err);
           reject(err);
         },
       });
@@ -113,13 +119,13 @@ class RecordManager {
       const filePath = `${this.baseDir}/${fileName}`;
       fileSystem.readFile({
         filePath,
-        success(res) {
+        success: (res) => {
           resolve({
             fileName,
             ...res,
           });
         },
-        fail(err) {
+        fail: (err) => {
           console.log('RecordManager: readFile fail', fileName, err);
           reject(err);
         },
@@ -153,7 +159,7 @@ class RecordManager {
 
     let isExist = false;
     try {
-      fileSystemManager.accessSync(filePath);
+      fileSystem.accessSync(filePath);
       isExist = true;
     } catch (err) {}
 
@@ -184,7 +190,7 @@ class RecordManager {
 
     let isExist = true;
     try {
-      fileSystemManager.accessSync(filePath);
+      fileSystem.accessSync(filePath);
     } catch (err) {
       isExist = false;
     }
@@ -406,7 +412,7 @@ class RecordManager {
     }
   }
 
-  async sendDocument(fileName) {
+  async sendFileByOpenDocument(fileName) {
     const filePath = `${this.baseDir}/${fileName}`;
 
     await wx.setClipboardData({
@@ -424,10 +430,30 @@ class RecordManager {
         showMenu: true,
         fileType: 'doc',
       });
-      console.log('RecordManager: sendDocument, openDocument success', res);
+      console.log('RecordManager: openDocument success', res);
       return res;
     } catch (err) {
-      console.log('RecordManager: sendDocument, openDocument fail', err);
+      console.log('RecordManager: openDocument fail', err);
+      throw err;
+    }
+  }
+
+  async sendFile(fileName) {
+    const filePath = `${this.baseDir}/${fileName}`;
+
+    if (!wx.shareFileMessage) {
+      // 兼容低版本
+      return await this.sendFileByOpenDocument(fileName);
+    }
+
+    try {
+      const res = await wx.shareFileMessage({
+        filePath,
+      });
+      console.log('RecordManager: shareFileMessage success', res);
+      return res;
+    } catch (err) {
+      console.log('RecordManager: shareFileMessage fail', err);
       throw err;
     }
   }
@@ -435,7 +461,7 @@ class RecordManager {
 
 const mgrMap = {};
 export const getRecordManager = (name) => {
-  const key = name || 'records';
+  const key = name || 'others';
   if (!mgrMap[key]) {
     mgrMap[key] = new RecordManager(key);
   }

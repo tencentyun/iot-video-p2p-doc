@@ -1,10 +1,7 @@
-<view class="iot-mjpg-player">
+<view class="iot-mjpg-player {{playerClass}}">
   <view class="mjpg-player-container">
     <p2p-mjpg-player
       wx:if="{{needPlayer && hasPlayer}}"
-      showLog="{{false}}"
-      needParseFrame="{{false}}"
-      frameLogGroup="{{25}}"
       bind:playerReady="onPlayerReady"
       bind:playerStartPull="onPlayerStartPull"
       bind:playerClose="onPlayerClose"
@@ -21,6 +18,11 @@
       bind:playerError="onPlayerError"
     />
     <view class="player-message" bindtap="onClickRetry">{{playerMsg}}</view>
+    <view wx:if="{{showControlRightBtns}}" class="player-controls-container right">
+      <view class="player-controls">
+        <view class="player-control-item" bindtap="snapshotAndSave">snapshot</view>
+      </view>
+    </view>
     <view class="debug-info-switch-container">
       <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
     </view>

@@ -106,6 +106,13 @@ Component({
             this.triggerEvent('playerStartPull', {});
           }, 0);
         },
+        // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+        snapshot: ({ success, fail, complete } = {}) => {
+          setTimeout(() => {
+            fail && fail({ errMsg: 'mock-player not support snapshot' });
+            complete && complete();
+          }, 0);
+        },
       };
 
       this.userData.ctx = livePlayerContext;

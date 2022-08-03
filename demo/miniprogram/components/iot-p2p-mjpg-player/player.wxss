@@ -26,6 +26,31 @@
   color: white;
 }
 
+.mjpg-player-container .player-controls-container.left {
+  position: absolute;
+  left: 20rpx;
+  bottom: 20rpx;
+}
+.mjpg-player-container .player-controls-container.right {
+  position: absolute;
+  right: 20rpx;
+  bottom: 20rpx;
+}
+.mjpg-player-container .player-controls-container .player-controls {
+  display: flex;
+}
+.mjpg-player-container .player-controls-container .player-controls .player-control-item {
+  position: inline-block;
+  vertical-align: bottom;
+  color: white;
+}
+.mjpg-player-container .player-controls-container.left .player-controls .player-control-item {
+  margin-right: 20rpx;
+}
+.mjpg-player-container .player-controls-container.right .player-controls .player-control-item {
+  margin-left: 20rpx;
+}
+
 .mjpg-player-container .debug-info-switch-container {
   position: absolute;
   left: 20rpx;

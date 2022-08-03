@@ -1,5 +1,5 @@
 import { getXp2pManager } from '../../lib/xp2pManager';
-import { PusherStateEnum, totalMsgMap } from './common';
+import { PusherStateEnum, totalMsgMap, livePusherErrMsgMap } from './common';
 
 const xp2pManager = getXp2pManager();
 
@@ -33,6 +33,11 @@ Component({
       type: String,
       value: 'low',
     },
+    // 以下是自己的属性
+    needLivePusherInfo: {
+      type: Boolean,
+      value: false,
+    },
   },
   data: {
     innerId: '',
@@ -45,10 +50,10 @@ Component({
     pusherCtx: null,
     pusherMsg: '',
     acceptLivePusherEvents: {
-      // 太多事件log了，只接收这3个
+      // 太多事件log了，只接收这几个
       error: true,
       statechange: true,
-      netstatus: true,
+      netstatus: false, // attached 时根据 needLivePusherInfo 赋值
       // audiovolumenotify: true,
     },
 
@@ -85,6 +90,10 @@ Component({
       this.setData({
         hasPusher: true,
         pusherId,
+        acceptLivePusherEvents: {
+          ...this.data.acceptLivePusherEvents,
+          netstatus: this.properties.needLivePusherInfo || false,
+        }
       });
 
       this.createPusher();
@@ -212,7 +221,7 @@ Component({
       });
       // 其他错误，比如没有开通live-pusher组件权限
       // 参考：https://developers.weixin.qq.com/miniprogram/dev/component/live-pusher.html
-      this.handlePushError(pusherState, { msg: `livePusherError: ${detail.errMsg}` });
+      this.handlePushError(pusherState, { msg: livePusherErrMsgMap[detail.errCode] || `livePusherError: ${detail.errMsg}` });
     },
     onLivePusherStateChange({ detail }) {
       // console.log('onLivePusherStateChange', detail);

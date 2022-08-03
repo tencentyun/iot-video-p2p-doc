@@ -18,3 +18,7 @@ export const totalMsgMap = {
   [PusherStateEnum.LocalServerError]: '本地RtmpServer错误',
   PusherPushing: '推流中...',
 };
+
+export const livePusherErrMsgMap = {
+  10002: '对讲需要您授权小程序使用麦克风', // 用户禁止使用录音
+};

@@ -1,9 +1,9 @@
-<view class="iot-p2p-player-ipc">
+<view class="iot-p2p-player-ipc {{ipcClass}}">
   <view class="player-wrap">
     <iot-p2p-common-player
       wx:if="{{innerOptions}}"
       id="{{playerId}}"
-      class="{{innerOptions.needMjpg ? 'hide' : ''}}"
+      playerClass="{{playerClass}} {{innerOptions.needMjpg ? 'hide' : ''}}"
       p2pMode="ipc"
       mode="{{innerOptions.playerRTC ? 'RTC' : 'live'}}"
       targetId="{{targetId}}"
@@ -12,6 +12,7 @@
       superMuted="{{superMuted}}"
       parseLivePlayerInfo="{{!innerOptions.needMjpg}}"
       showLog="{{!innerOptions.needMjpg}}"
+      showControlRightBtns="{{innerOptions.playerShowControlRightBtns}}"
       productId="{{productId}}"
       deviceName="{{deviceName}}"
       xp2pInfo="{{xp2pInfo}}"
@@ -25,6 +26,7 @@
     <iot-p2p-mjpg-player
       wx:if="{{innerOptions && innerOptions.needMjpg}}"
       id="{{mjpgPlayerId}}"
+      playerClass="{{playerClass}}"
       targetId="{{targetId}}"
       productId="{{productId}}"
       deviceName="{{deviceName}}"
@@ -32,37 +34,16 @@
       mainStreamState="{{streamState}}"
       mainStreamErrMsg="{{playErrMsg}}"
       mjpgFile="{{mjpgFile}}"
+      showControlRightBtns="{{innerOptions.playerShowControlRightBtns}}"
       onlyp2p="{{onlyp2pMap && onlyp2pMap.mjpg}}"
       bind:playerStateChange="onMjpgPlayerStateChange"
       bind:playError="onMjpgPlayError"
       bind:clickRetry="onMjpgClickRetry"
     />
   </view>
-  <view wx:if="{{sceneType === 'live'}}">
-    <view wx:if="{{needDuplex}}" class="component-section">
-      <view class="component-section-title">双向音视频</view>
-      <iot-p2p-common-pusher
-        id="{{pusherId}}"
-        enableCamera="{{true}}"
-        enableMic="{{true}}"
-        bind:pusherStateChange="onPusherStateChange"
-        bind:pusherStartPush="onPusherStartPush"
-        bind:pusherClose="onPusherClose"
-        bind:pushError="onPusherPushError"
-      />
-      <view>voiceType: {{voiceType}}</view>
-      <view>voiceState: {{voiceState}}</view>
-      <view class="group-button-area">
-        <button bindtap="startVoice" data-voice-type="DuplexVideo" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !pusherReady || (voiceState && voiceState !== 'error')}}">
-          开始
-        </button>
-        <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !voiceState || voiceState === 'error'}}">
-          挂断
-        </button>
-      </view>
-    </view>
-    <view wx:else>
-      <view class="component-section group-button-area">
+  <view class="sections-wrap">
+    <view wx:if="{{sceneType === 'live'}}">
+      <view wx:if="{{innerSections && innerSections.quality}}" class="component-section group-button-area">
         <button bindtap="changeQuality" data-flv="ipc.flv?action=live&channel=0&quality=super" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
           超清
         </button>
@@ -73,7 +54,7 @@
           标清
         </button>
       </view>
-      <view class="component-section ptz-panel-wrap">
+      <view wx:if="{{innerSections && innerSections.ptz}}" class="component-section ptz-panel-wrap">
         <view class="ptz-panel">
           <view class="ptz-controls">
             <view class="ptz-controls-top">
@@ -89,8 +70,8 @@
                   </view>
                 </view>
                 <view class="ptz-cricle">
-                  <view class="voice-btn" bindtap="toggleVoice" data-voice-type="{{needPusher ? 'Pusher' : 'Recorder'}}" data-recorder-cfg="1-8000-16000">
-                    <view class="voice-icon {{voiceState === 'sending' ? 'press' : ''}}"><text>{{voiceType+'\n'+voiceState}}</text></view>
+                  <view class="voice-btn" bindtap="toggleVoice">
+                    <view class="voice-icon {{voiceState ? 'press' : ''}} {{voiceState && voiceState !== 'sending' ? 'disabled' : ''}}"></view>
                   </view>
                 </view>
               </view>
@@ -98,228 +79,168 @@
           </view>
         </view>
       </view>
+      <view wx:if="{{innerSections && innerSections.voice}}" class="component-section">
+        <iot-p2p-voice
+          id="{{voiceCompId}}"
+          targetId="{{targetId}}"
+          productId="{{productId}}"
+          deviceName="{{deviceName}}"
+          intercomType="{{innerOptions.intercomType}}"
+          p2pReady="{{p2pReady}}"
+          bind:voiceStateChange="onVoiceStateChange"
+          bind:beforeStartVoice="onBeforeStartVoice"
+          bind:afterStopVoice="onAfterStopVoice"
+          bind:voiceError="onVoiceError"
+        />
+      </view>
+      <!-- <view class="component-section">
+        <view class="component-section-title">播放控制</view>
+        <view class="group-button-area">
+          <button bindtap="pauseLive" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || playerPaused}}">
+            暂停
+          </button>
+          <button bindtap="resumeLive" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPaused}}">
+            继续
+          </button>
+        </view>
+      </view> -->
+      <view wx:if="{{innerSections && innerSections.commands}}" class="component-section">
+        <view class="component-section-title">内置信令</view>
+        <view class="group-button-area">
+          <button bindtap="sendInnerCommand" data-cmd-name="getLiveStatus" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+            获取直播拉流状态
+          </button>
+          <button bindtap="sendInnerCommand" data-cmd-name="getVoiceStatus" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+            获取对讲状态
+          </button>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{sceneType === 'playback'}}">
       <view class="component-section">
-        <view class="component-section-title">{{needPusher ? 'Pusher' : 'Recorder'}}语音对讲</view>
-        <view wx:if="{{needPusher}}">
-          <iot-p2p-common-pusher
-            wx:if="{{!isModifyPusher}}"
-            id="{{pusherId}}"
-            mode="{{pusherProps.isRTC ? 'RTC' : 'SD'}}"
-            enableCamera="{{false}}"
-            enableMic="{{true}}"
-            enableAgc="{{pusherProps.enableAgc}}"
-            enableAns="{{pusherProps.enableAns}}"
-            audioQuality="{{pusherProps.highQuality ? 'high' : 'low'}}"
-            bind:pusherStateChange="onPusherStateChange"
-            bind:pusherStartPush="onPusherStartPush"
-            bind:pusherClose="onPusherClose"
-            bind:pushError="onPusherPushError"
-            style="display: none"
-          />
-          <view>pusherReady: {{pusherReady}}</view>
-          <view>pusherProps:
-            <text class="text-btn float-right" bindtap="toggleModifyPusher">{{!isModifyPusher ? '修改 pusher 属性' : '修改完成'}}</text>
-          </view>
-          <view wx:for="{{pusherPropChecks}}" wx:key="field" class="pusher-prop-item">
-            <label>
-              <switch type="checkbox"
-                checked="{{pusherProps[item.field]}}"
-                data-field="{{item.field}}"
-                data-index="{{index}}"
-                disabled="{{!isModifyPusher || voiceState && voiceState !== 'error'}}"
-                bindchange="switchPusherPropCheck"
-              />
-              {{item.text}}
-            </label>
-          </view>
-          <view class="group-button-area">
-            <button bindtap="startVoice" data-voice-type="Pusher" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !pusherReady || (voiceState && voiceState !== 'error')}}">
-              对讲
-            </button>
-            <button bindtap="startVoice" data-voice-type="Pusher" data-need-record="1" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !pusherReady || (voiceState && voiceState !== 'error')}}">
-              对讲+录制
-            </button>
-            <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !voiceState || voiceState === 'error'}}">
-              挂断
-            </button>
-          </view>
+        <view class="component-section-title">当前录像</view>
+        <view class="text-box">
+          <text>{{playerPlaybackTimeLocaleStr}}</text>
+          <text wx:if="{{playerPlaybackTime}}" style="margin-left: 20rpx;">({{playbackDuration / 1000}}s)</text>
         </view>
-        <view wx:else>
-          <view>对讲期间:</view>
-          <view>
-            <radio-group bindchange="voiceOpChanged" style="display: flex;">
-              <label class="weui-cell weui-check__label">
-                <radio value="none" checked="{{voiceOp === 'none'}}" disabled="{{voiceState && voiceState !== 'error'}}"/>正常播放
-              </label>
-              <label class="weui-cell weui-check__label">
-                <radio value="mute" checked="{{voiceOp === 'mute'}}" disabled="{{voiceState && voiceState !== 'error'}}"/>静音
-              </label>
-              <!-- <label class="weui-cell weui-check__label">
-                <radio value="pause" checked="{{voiceOp === 'pause'}}" disabled="{{voiceState && voiceState !== 'error'}}"/>暂停
-              </label> -->
-            </radio-group>
-          </view>
-          <view class="group-button-area">
-            <button bindtap="startVoice" data-recorder-cfg="1-8000-16000" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState && voiceState !== 'error')}}">
-              Recorder-单
-            </button>
-            <button bindtap="startVoice" data-recorder-cfg="2-44100-192000" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState && voiceState !== 'error')}}">
-              Recorder-双
-            </button>
-            <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !voiceState || voiceState === 'error'}}">
-              挂断
-            </button>
-          </view>
+        <slider min="0" max="{{playbackDuration}}" value="{{sliderProgress}}" bindchange="sliderProgressChange" show-value  disabled="{{!p2pReady || !playerPlaybackTime || !streamSuccess}}"/>
+        <view class="group-button-area">
+          <button bindtap="getPlaybackProgress" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !streamSuccess}}">
+            获取进度
+          </button>
+          <!-- <button bindtap="seekPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !streamSuccess}}">
+            Seek
+          </button> -->
+          <button bindtap="pausePlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !streamSuccess || playerPaused}}">
+            暂停
+          </button>
+          <button bindtap="resumePlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !playerPaused}}">
+            继续
+          </button>
+        </view>
+        <view class="text-box">
+          <text>{{playbackProgressStr}}</text>
         </view>
       </view>
-    </view>
-    <!-- <view class="component-section">
-      <view class="component-section-title">播放控制</view>
-      <view class="group-button-area">
-        <button bindtap="pauseLive" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || playerPaused}}">
-          暂停
-        </button>
-        <button bindtap="resumeLive" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPaused}}">
-          继续
-        </button>
+      <view class="component-section">
+        <view class="component-section-title">查询录像/文件</view>
+        <view>
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_input">
+              <picker class="weui-input" mode="date" value="{{inputDate}}" bindchange="pickDate">
+                <view class="weui-input">
+                  当前选择: {{inputDate}}
+                </view>
+              </picker>
+            </view>
+          </view>
+        </view>
+        <view class="group-button-area">
+          <button bindtap="getRecordDates" data-cmd-name="getRecordDates" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+            获取该月录像日期
+          </button>
+          <button bindtap="getRecordVideos" data-cmd-name="getRecordVideos" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+            获取该日录像列表
+          </button>
+          <button bindtap="getVideoList" data-cmd-name="getVideoList" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+            获取该日视频文件列表
+          </button>
+        </view>
       </view>
-    </view> -->
-    <view class="component-section">
-      <view class="component-section-title">内置信令</view>
-      <view class="group-button-area">
-        <button bindtap="sendInnerCommand" data-cmd-name="getLiveStatus" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
-          获取直播拉流状态
-        </button>
-        <button bindtap="sendInnerCommand" data-cmd-name="getVoiceStatus" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
-          获取对讲状态
-        </button>
-      </view>
-    </view>
-  </view>
-  <view wx:if="{{sceneType === 'playback'}}">
-    <view class="component-section">
-      <view class="component-section-title">当前录像</view>
-      <view class="text-box">
-        <text>{{playerPlaybackTimeLocaleStr}}</text>
-        <text wx:if="{{playerPlaybackTime}}" style="margin-left: 20rpx;">({{playbackDuration / 1000}}s)</text>
-      </view>
-      <slider min="0" max="{{playbackDuration}}" value="{{sliderProgress}}" bindchange="sliderProgressChange" show-value  disabled="{{!p2pReady || !playerPlaybackTime || !streamSuccess}}"/>
-      <view class="group-button-area">
-        <button bindtap="getPlaybackProgress" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !streamSuccess}}">
-          获取进度
-        </button>
-        <!-- <button bindtap="seekPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !streamSuccess}}">
-          Seek
-        </button> -->
-        <button bindtap="pausePlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !streamSuccess || playerPaused}}">
-          暂停
-        </button>
-        <button bindtap="resumePlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime || !playerPaused}}">
-          继续
-        </button>
-      </view>
-      <view class="text-box">
-        <text>{{playbackProgressStr}}</text>
-      </view>
-    </view>
-    <view class="component-section">
-      <view class="component-section-title">查询录像/文件</view>
-      <view>
+      <view class="component-section">
+        <view class="component-section-title">播放录像</view>
         <view class="weui-cells weui-cells_after-title">
           <view class="weui-cell weui-cell_input">
-            <picker class="weui-input" mode="date" value="{{inputDate}}" bindchange="pickDate">
-              <view class="weui-input">
-                当前选择: {{inputDate}}
-              </view>
-            </picker>
+            <input class="weui-input" type="text" value="{{inputPlaybackTime}}" placeholder="获取有效录像列表后自动填入" placeholder-class="placeholder" bindinput="inputIPCPlaybackTime" />
           </view>
         </view>
-      </view>
-      <view class="group-button-area">
-        <button bindtap="getRecordDates" data-cmd-name="getRecordDates" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
-          获取该月录像日期
-        </button>
-        <button bindtap="getRecordVideos" data-cmd-name="getRecordVideos" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
-          获取该日录像列表
-        </button>
-        <button bindtap="getVideoList" data-cmd-name="getVideoList" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
-          获取该日视频文件列表
-        </button>
-      </view>
-    </view>
-    <view class="component-section">
-      <view class="component-section-title">播放录像</view>
-      <view class="weui-cells weui-cells_after-title">
-        <view class="weui-cell weui-cell_input">
-          <input class="weui-input" type="text" value="{{inputPlaybackTime}}" placeholder="获取有效录像列表后自动填入" placeholder-class="placeholder" bindinput="inputIPCPlaybackTime" />
+        <view class="group-button-area">
+          <button bindtap="startPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !inputPlaybackTime}}">
+            播放
+          </button>
+          <button bindtap="stopPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime}}">
+            停止
+          </button>
+          <!-- 本地下载依赖SDK支持 -->
+          <button wx:if="{{innerSections && innerSections.download}}" bindtap="downloadRecord" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !inputPlaybackTime}}">
+            下载
+          </button>
         </view>
       </view>
-      <view class="group-button-area">
-        <button bindtap="startPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !inputPlaybackTime}}">
-          播放
-        </button>
-        <button bindtap="stopPlayback" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !playerPlaybackTime}}">
-          停止
-        </button>
-        <!-- 本地下载依赖SDK支持 -->
-        <button bindtap="downloadRecord" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !inputPlaybackTime}}">
-          下载
-        </button>
-      </view>
-    </view>
-    <view class="component-section">
-      <view class="component-section-title">下载文件</view>
-      <view class="weui-cells weui-cells_after-title">
-        <view class="weui-cell weui-cell_input">
-          <input class="weui-input" type="text" value="{{inputDownloadFilename}}" placeholder="请输入要下载的文件名" placeholder-class="placeholder" bindinput="inputIPCDownloadFilename" />
+      <view wx:if="{{innerSections && innerSections.download}}" class="component-section">
+        <view class="component-section-title">下载文件</view>
+        <view class="weui-cells weui-cells_after-title">
+          <view class="weui-cell weui-cell_input">
+            <input class="weui-input" type="text" value="{{inputDownloadFilename}}" placeholder="请输入要下载的文件名" placeholder-class="placeholder" bindinput="inputIPCDownloadFilename" />
+          </view>
+        </view>
+        <view class="group-button-area">
+          <button bindtap="downloadInputFile" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !inputDownloadFilename}}">
+            添加到下载
+          </button>
+          <button bindtap="stopDownload" class="group-button" type="primary" size="mini" disabled="{{downloadList.length === 0}}">
+            停止下载
+          </button>
+        </view>
+        <view>
+          <view>待下载文件数：{{downloadList.length}}</view>
+          <view>当前下载文件：{{downloadFilename}} <text wx:if="{{downloadFilename}}">({{downloadTotal}})</text></view>
+          <view>当前下载进度：<text wx:if="{{downloadFilename}}">{{downloadBytes}}</text></view>
         </view>
       </view>
-      <view class="group-button-area">
-        <button bindtap="downloadInputFile" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !inputDownloadFilename}}">
-          添加到下载
-        </button>
-        <button bindtap="stopDownload" class="group-button" type="primary" size="mini" disabled="{{downloadList.length === 0}}">
-          停止下载
-        </button>
+      <view wx:if="{{innerSections && innerSections.commands}}" class="component-section">
+        <view class="component-section-title">内置信令</view>
+        <view class="group-button-area">
+          <button bindtap="sendInnerCommand" data-cmd-name="getPlaybackStatus" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+            获取回放拉流状态
+          </button>
+        </view>
       </view>
+    </view>
+    <view wx:if="{{innerSections && innerSections.commands}}" class="component-section">
+      <view class="component-section-title">自定义信令</view>
+      <view>command:</view>
+      <view class="weui-cells weui-cells_after-title">
+        <view class="weui-cell weui-cell_input">
+          <input class="weui-input" type="text" value="{{inputCommand}}" placeholder="请输入command" placeholder-class="placeholder" bindinput="inputIPCCommand" />
+        </view>
+      </view>
+      <view>responseType:</view>
       <view>
-        <view>待下载文件数：{{downloadList.length}}</view>
-        <view>当前下载文件：{{downloadFilename}} <text wx:if="{{downloadFilename}}">({{downloadTotal}})</text></view>
-        <view>当前下载进度：<text wx:if="{{downloadFilename}}">{{downloadBytes}}</text></view>
+        <radio-group bindchange="commandResponseTypeChanged" style="display: flex;">
+          <label class="weui-cell weui-check__label">
+            <radio value="text" checked="{{inputCommandResponseType === 'text'}}"/>text
+          </label>
+          <label class="weui-cell weui-check__label">
+            <radio value="arraybuffer" checked="{{inputCommandResponseType === 'arraybuffer'}}" />arraybuffer
+          </label>
+        </radio-group>
       </view>
-    </view>
-    <view class="component-section">
-      <view class="component-section-title">内置信令</view>
       <view class="group-button-area">
-        <button bindtap="sendInnerCommand" data-cmd-name="getPlaybackStatus" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
-          获取回放拉流状态
+        <button bindtap="sendCommand" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
+          sendCommand
         </button>
       </view>
-    </view>
-  </view>
-  <view class="component-section">
-    <view class="component-section-title">自定义信令</view>
-    <view>command:</view>
-    <view class="weui-cells weui-cells_after-title">
-      <view class="weui-cell weui-cell_input">
-        <input class="weui-input" type="text" value="{{inputCommand}}" placeholder="请输入command" placeholder-class="placeholder" bindinput="inputIPCCommand" />
-      </view>
-    </view>
-    <view>responseType:</view>
-    <view>
-      <radio-group bindchange="commandResponseTypeChanged" style="display: flex;">
-        <label class="weui-cell weui-check__label">
-          <radio value="text" checked="{{inputCommandResponseType === 'text'}}"/>text
-        </label>
-        <label class="weui-cell weui-check__label">
-          <radio value="arraybuffer" checked="{{inputCommandResponseType === 'arraybuffer'}}" />arraybuffer
-        </label>
-      </radio-group>
-    </view>
-    <view class="group-button-area">
-      <button bindtap="sendCommand" class="group-button" type="primary" size="mini" disabled="{{!p2pReady}}">
-        sendCommand
-      </button>
     </view>
   </view>
 </view>

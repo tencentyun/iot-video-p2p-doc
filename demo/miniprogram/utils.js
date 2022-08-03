@@ -130,3 +130,74 @@ export function uint8ArrayToString(unit8Arr) {
 export function arrayBufferToString(buffer, offset = undefined, len = undefined) {
   return uint8ArrayToString(new Uint8Array(buffer, offset, len));
 }
+
+export async function snapshotAndSave({ snapshot }) {
+  // 先检查权限
+  try {
+    await checkAuthorize('scope.writePhotosAlbum');
+  } catch (err) {
+    console.log('snapshot checkAuthorize fail', err);
+    const modalRes = await wx.showModal({
+      title: '',
+      content: '拍照需要您授权小程序访问相册',
+      confirmText: '去授权',
+    });
+    if (modalRes.confirm) {
+      wx.openSetting();
+    }
+    return;
+  }
+
+  let timer;
+  const endSnapshot = (params) => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    wx.hideLoading();
+    wx.showModal({ showCancel: false, ...params });
+  };
+
+  timer = setTimeout(() => {
+    console.error('snapshot timeout');
+    endSnapshot({
+      title: '拍照超时',
+    });
+  }, 5000);
+
+  wx.showLoading({
+    title: '拍照中',
+  });
+
+  console.log('do snapshot');
+  let snapshotRes = null;
+  try {
+    snapshotRes = await snapshot();
+    console.log('snapshot success', snapshotRes);
+  } catch (err) {
+    console.error('snapshot fail', err);
+    endSnapshot({
+      title: '拍照失败',
+      content: err.errMsg,
+    });
+    return;
+  }
+
+  console.log('do saveImageToPhotosAlbum');
+  try {
+    const saveRes = await wx.saveImageToPhotosAlbum({
+      filePath: snapshotRes.tempImagePath,
+    });
+    console.log('saveImageToPhotosAlbum success', saveRes);
+    endSnapshot({
+      isSuccess: true,
+      title: '已保存到相册',
+    });
+  } catch (err) {
+    console.log('saveImageToPhotosAlbum fail', err);
+    endSnapshot({
+      title: '保存到相册失败',
+      content: ~err.errMsg.indexOf('auth deny') ? '请授权小程序访问相册' : err.errMsg,
+    });
+  }
+}

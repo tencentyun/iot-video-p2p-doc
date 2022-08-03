@@ -1,4 +1,4 @@
-<view class="iot-player">
+<view class="iot-player {{playerClass}}">
   <view class="player-container">
     <p2p-player
       wx:if="{{canUseP2P && needPlayer && hasPlayer}}"
@@ -8,6 +8,7 @@
       minCache="{{minCache}}"
       maxCache="{{maxCache}}"
       muted="{{superMuted || muted}}"
+      soundMode="{{soundMode}}"
       orientation="{{orientation}}"
       acceptLivePlayerEvents="{{acceptLivePlayerEvents}}"
       bind:playerReady="onPlayerReady"
@@ -26,11 +27,12 @@
       bind:playerError="onPlayerError"
     />
     <view class="player-message" bindtap="onClickRetry">{{playerMsg}}</view>
-    <view class="player-controls-container right">
+    <view wx:if="{{showControlRightBtns}}" class="player-controls-container right">
       <view class="player-controls">
         <view class="player-control-item">{{playerPaused ? 'paused' : ''}}</view>
         <view class="player-control-item" bindtap="changeMuted">{{muted ? 'muted' : 'notMuted'}}</view>
         <view class="player-control-item" bindtap="changeOrientation">{{orientation}}</view>
+        <view class="player-control-item" bindtap="snapshotAndSave">snapshot</view>
       </view>
     </view>
     <view class="debug-info-switch-container">

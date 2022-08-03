@@ -35,6 +35,7 @@ export const StreamStateEnum = {
   StreamStartError: 'StreamStartError',
   StreamRequest: 'StreamRequest',
   StreamHeaderParsed: 'StreamHeaderParsed',
+  StreamHttpStatusError: 'StreamHttpStatusError',
   StreamDataReceived: 'StreamDataReceived',
   StreamDataPause: 'StreamDataPause',
   StreamDataEnd: 'StreamDataEnd',
@@ -70,8 +71,33 @@ export const totalMsgMap = {
   [StreamStateEnum.StreamStartError]: '启动拉流失败',
   [StreamStateEnum.StreamRequest]: '加载中...',
   [StreamStateEnum.StreamHeaderParsed]: '加载中...',
+  [StreamStateEnum.StreamHttpStatusError]: '拉流失败',
   [StreamStateEnum.StreamDataReceived]: '',
   [StreamStateEnum.StreamDataPause]: '',
   [StreamStateEnum.StreamDataEnd]: '播放中断或结束',
   [StreamStateEnum.StreamError]: '播放失败',
 };
+
+export const httpStatusErrorMsgMap = {
+  404: '拉流地址错误，请检查拉流参数',
+  503: '连接数过多，请稍后再试',
+};
+
+export const isStreamPlaying = (streamState) => [
+  StreamStateEnum.StreamPreparing,
+  StreamStateEnum.StreamStarted,
+  StreamStateEnum.StreamRequest,
+  StreamStateEnum.StreamHeaderParsed,
+  StreamStateEnum.StreamDataReceived,
+  StreamStateEnum.StreamDataPause,
+].indexOf(streamState) >= 0;
+
+export const isStreamEnd = (streamState) => streamState === StreamStateEnum.StreamDataEnd;
+
+export const isStreamError = (streamState) => [
+  StreamStateEnum.StreamLocalServerError,
+  StreamStateEnum.StreamCheckError,
+  StreamStateEnum.StreamStartError,
+  StreamStateEnum.StreamHttpStatusError,
+  StreamStateEnum.StreamError,
+].indexOf(streamState) >= 0;

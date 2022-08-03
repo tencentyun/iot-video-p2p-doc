@@ -21,7 +21,7 @@ console.log('p2pExports', p2pExports.XP2PVersion, p2pExports);
 // p2pExports.enableNetLog(true);
 // p2pExports.enableXNTPLog(true);
 // p2pExports.enableADP2PLog(true); // 1v多log
-// p2pExports.enableAPP_P2PLog(true); // IoT应用层log
+p2pExports.enableAPP_P2PLog(true); // IoT应用层log
 
 const p2pTimeout = 10000;
 
