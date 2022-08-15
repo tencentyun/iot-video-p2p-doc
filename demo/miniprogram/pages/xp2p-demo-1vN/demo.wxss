@@ -7,4 +7,5 @@ page {
   top: 20rpx;
   right: 20rpx;
   color: #fff;
+  z-index: 10;
 }

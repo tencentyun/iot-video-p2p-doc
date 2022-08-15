@@ -1,27 +1,7 @@
 import { getXp2pManager } from '../../lib/xp2pManager';
+import { PusherStateEnum, totalMsgMap, livePusherErrMsgMap } from './common';
 
 const xp2pManager = getXp2pManager();
-
-// ts才能用enum，先这么处理吧
-const PusherStateEnum = {
-  PusherIdle: 'PusherIdle',
-  PusherPreparing: 'PusherPreparing',
-  PusherReady: 'PusherReady',
-  PusherError: 'PusherError',
-  LivePusherError: 'LivePusherError',
-  LivePusherStateError: 'LivePusherStateError',
-  LocalServerError: 'LocalServerError',
-};
-
-const totalMsgMap = {
-  [PusherStateEnum.PusherPreparing]: '正在创建Pusher...',
-  [PusherStateEnum.PusherReady]: '创建Pusher成功',
-  [PusherStateEnum.PusherError]: '创建Pusher失败',
-  [PusherStateEnum.LivePusherError]: 'LivePusher错误',
-  [PusherStateEnum.LivePusherStateError]: '推流失败',
-  [PusherStateEnum.LocalServerError]: '本地RtmpServer错误',
-  PusherPushing: '推流中...',
-};
 
 let pusherSeq = 0;
 
@@ -29,6 +9,10 @@ Component({
   behaviors: ['wx://component-export'],
   properties: {
     // 以下是 live-pusher 的属性
+    mode: {
+      type: String, // RTC / SD / HD / FHD
+      value: 'RTC',
+    },
     enableCamera: {
       type: Boolean,
       value: true,
@@ -36,6 +20,23 @@ Component({
     enableMic: {
       type: Boolean,
       value: true,
+    },
+    enableAgc: {
+      type: Boolean,
+      value: true,
+    },
+    enableAns: {
+      type: Boolean,
+      value: true,
+    },
+    audioQuality: {
+      type: String,
+      value: 'low',
+    },
+    // 以下是自己的属性
+    needLivePusherInfo: {
+      type: Boolean,
+      value: false,
     },
   },
   data: {
@@ -48,6 +49,13 @@ Component({
     pusherComp: null,
     pusherCtx: null,
     pusherMsg: '',
+    acceptLivePusherEvents: {
+      // 太多事件log了，只接收这几个
+      error: true,
+      statechange: true,
+      netstatus: false, // attached 时根据 needLivePusherInfo 赋值
+      // audiovolumenotify: true,
+    },
 
     // 有writer才能推流
     hasWriter: false,
@@ -82,6 +90,10 @@ Component({
       this.setData({
         hasPusher: true,
         pusherId,
+        acceptLivePusherEvents: {
+          ...this.data.acceptLivePusherEvents,
+          netstatus: this.properties.needLivePusherInfo || false,
+        }
       });
 
       this.createPusher();
@@ -178,7 +190,7 @@ Component({
     },
     onPusherError({ detail }) {
       console.error(`[${this.data.innerId}]`, '==== onPusherError', detail);
-      const code = detail && detail.error && detail.error.code;
+      const code = detail?.error?.code;
       let pusherState = PusherStateEnum.PusherError;
       if (code === 'WECHAT_SERVER_ERROR') {
         pusherState = PusherStateEnum.LocalServerError;
@@ -209,7 +221,7 @@ Component({
       });
       // 其他错误，比如没有开通live-pusher组件权限
       // 参考：https://developers.weixin.qq.com/miniprogram/dev/component/live-pusher.html
-      this.handlePushError(pusherState, { msg: `livePusherError: ${detail.errMsg}` });
+      this.handlePushError(pusherState, { msg: livePusherErrMsgMap[detail.errCode] || `livePusherError: ${detail.errMsg}` });
     },
     onLivePusherStateChange({ detail }) {
       // console.log('onLivePusherStateChange', detail);
@@ -255,8 +267,8 @@ Component({
           console.log(`[${this.data.innerId}]`, 'onLivePusherStateChange', detail.code, detail);
       }
     },
-    onLivePusherNetStatusChange({ detail }) {
-      // console.log('onLivePusherNetStatusChange', detail);
+    onLivePusherNetStatus({ detail }) {
+      // console.log('onLivePusherNetStatus', detail);
       if (!this.userData.writer || !detail.info) {
         return;
       }
@@ -301,7 +313,10 @@ Component({
         isFatalError = true;
       }
       if (isFatalError) {
-        // 不可恢复错误，退出重来
+        // 不可恢复错误，销毁pusher
+        if (this.data.hasPusher) {
+          this.changeState({ hasPusher: false });
+        }
         this.triggerEvent('pushError', {
           errType,
           errMsg: totalMsgMap[errType],

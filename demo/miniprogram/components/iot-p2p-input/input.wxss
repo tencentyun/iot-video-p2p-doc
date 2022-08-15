@@ -5,9 +5,24 @@
   position: relative;
 }
 
+.scene-label {
+  margin-right: 20rpx;
+}
+
 .input-item {
   margin-bottom: 10rpx;
 }
+
+.intercom-type-item {
+  margin-bottom: 10rpx;
+}
+.intercom-type-item-radio {
+  float: left;
+}
+.intercom-type-item-text {
+  padding-left: 60rpx;
+}
+
 .primary-button {
   margin-bottom: 30rpx;
 }

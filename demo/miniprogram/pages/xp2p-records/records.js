@@ -1,21 +1,31 @@
-import { isMP4 } from '../../utils';
+import { isFLV, isMP4, isMJPG } from '../../utils';
 import { getRecordManager } from '../../lib/recordManager';
+
+const processFileItem = (item) => {
+  if (item) {
+    item.isFLV = isFLV(item.fileName);
+    item.isMP4 = isMP4(item.fileName);
+    item.isMJPG = isMJPG(item.fileName);
+  }
+  return item;
+};
 
 Page({
   data: {
-    recordManager: null,
     baseDir: '',
     isRefreshing: false,
     recordList: null,
     totalBytes: NaN,
-    showSendDoc: wx.getSystemInfoSync().platform !== 'devtools', // 开发者工具可以直接保存到磁盘，不用显示发送文档
+    isDevTools: wx.getSystemInfoSync().platform === 'devtools', // 开发者工具可以直接保存到磁盘，不用显示发送文档
   },
   onLoad(query) {
     console.log('records: onLoad', query);
-    const recordManager = getRecordManager(query.name);
+    if (!query?.name) {
+      return;
+    }
+    this.recordManager = getRecordManager(query.name);
     this.setData({
-      recordManager,
-      baseDir: recordManager.baseDir,
+      baseDir: this.recordManager.baseDir,
     });
     this.getRecordList();
   },
@@ -25,20 +35,22 @@ Page({
     }
     this.setData({ isRefreshing: true });
 
-    const files = this.data.recordManager.getSavedRecordList();
-    const recordList = files.map(fileName => ({ fileName, size: NaN, isMP4: isMP4(fileName) }));
+    const files = this.recordManager.getSavedRecordList();
+    const recordList = files.map(fileName => processFileItem({
+      fileName,
+      size: NaN,
+    }));
     this.setData({
       recordList,
       totalBytes: files.length > 0 ? NaN : 0,
     });
 
     if (files.length > 0) {
-      const pArr = files.map(fileName => this.data.recordManager.getFileInfo(fileName));
+      const pArr = files.map(fileName => this.recordManager.getFileInfo(fileName));
       try {
         const infos = await Promise.all(pArr);
         const total = infos.reduce((prev, { size }) => (prev + size), 0);
         this.setData({
-          // recordList: recordList.map((baseInfo, i) => ({ ...baseInfo, ...infos[i] })),
           recordList: infos.map((info, i) => ({ ...recordList[i], ...info })),
           totalBytes: total,
         });
@@ -47,12 +59,46 @@ Page({
 
     this.setData({ isRefreshing: false });
   },
+
+  async addFile() {
+    let file;
+    try {
+      const res = await wx.chooseMessageFile({
+        count: 1,
+        type: 'file',
+        extension: ['flv', 'mjpg', 'mp4', 'aac'],
+      });
+      file = res.tempFiles[0];
+      console.log('choose file res', file);
+      if (!file?.size) {
+        wx.showToast({
+          title: 'file empty',
+          icon: 'error',
+        });
+        return;
+      }
+    } catch (err) {
+      console.error('choose file fail', err);
+      return;
+    }
+    try {
+      const addRes = await this.recordManager.addFile(file.name, file.path);
+      console.log('add file res', addRes);
+      wx.showToast({
+        title: '添加成功',
+        icon: 'none',
+      });
+      this.getRecordList();
+    } catch (err) {
+      console.error('add file fail', err);
+    }
+  },
   removeAllRecords() {
     if (this.data.isRefreshing) {
       return;
     }
 
-    this.data.recordManager.removeSavedRecordList();
+    this.recordManager.removeSavedRecordList();
     this.setData({
       recordList: [],
       totalBytes: 0,
@@ -68,12 +114,27 @@ Page({
       });
       return;
     }
-    wx.navigateTo({
-      url: [
-        `/pages/test-p2p-player/player?dirname=${encodeURIComponent(this.data.recordManager.name)}`,
-        `&filename=${encodeURIComponent(fileRes.fileName)}`,
-      ].join(''),
-    });
+    if (fileRes.isFLV) {
+      wx.navigateTo({
+        url: [
+          `/pages/test-p2p-player/player?dirname=${encodeURIComponent(this.recordManager.name)}`,
+          `&filename=${encodeURIComponent(fileRes.fileName)}`,
+        ].join(''),
+      });
+    } else if (fileRes.isMJPG) {
+      wx.navigateTo({
+        url: [
+          `/pages/test-local-mjpg-player/player?dirname=${encodeURIComponent(this.recordManager.name)}`,
+          `&filename=${encodeURIComponent(fileRes.fileName)}`,
+        ].join(''),
+      });
+    } else {
+      console.error('can not play record', fileRes);
+      wx.showToast({
+        title: '不支持的文件类型',
+        icon: 'none',
+      });
+    }
   },
   renameMP4(e) {
     const { index } = e.currentTarget.dataset;
@@ -87,13 +148,13 @@ Page({
     }
     try {
       const newFileName = `${fileRes.fileName}.mp4`;
-      this.data.recordManager.renameFile(fileRes.fileName, newFileName);
+      this.recordManager.renameFile(fileRes.fileName, newFileName);
       wx.showToast({
         title: '重命名成功',
         icon: 'none',
       });
       fileRes.fileName = newFileName;
-      fileRes.isMP4 = isMP4(fileRes.fileName);
+      processFileItem(fileRes);
       this.setData({
         recordList: [...this.data.recordList],
       });
@@ -105,11 +166,11 @@ Page({
       });
     }
   },
-  async saveVideoToAlbum(e) {
+  async saveToAlbum(e) {
     const { index } = e.currentTarget.dataset;
     const fileRes = this.data.recordList[index];
     try {
-      await this.data.recordManager.saveVideoToAlbum(fileRes.fileName);
+      await this.recordManager.saveToAlbum(fileRes.fileName);
       wx.showModal({
         title: '已保存到相册',
         showCancel: false,
@@ -126,15 +187,28 @@ Page({
       });
     }
   },
-  async sendDocument(e) {
+  saveFileInDevTools(e) {
+    const { index } = e.currentTarget.dataset;
+    const fileRes = this.data.recordList[index];
+    // 开发者工具里什么都可以保存，注意文件后缀
+    wx.saveImageToPhotosAlbum({
+      filePath: `${this.recordManager.baseDir}/${fileRes.fileName}`,
+      success: (res) => {
+        console.log(res);
+      },
+      fail: (res) => {
+        console.error(res);
+      }
+    });
+  },
+  async sendFile(e) {
     const { index } = e.currentTarget.dataset;
     const fileRes = this.data.recordList[index];
     try {
-      await this.data.recordManager.sendDocument(fileRes.fileName);
-      // 不用弹框，用户能看到新开页面
+      await this.recordManager.sendFile(fileRes.fileName);
     } catch (err) {
       wx.showModal({
-        title: '打开文件失败',
+        title: '发送失败',
         content: err.errMsg || '',
         showCancel: false,
       });
@@ -144,7 +218,7 @@ Page({
     const { index } = e.currentTarget.dataset;
     const fileRes = this.data.recordList[index];
     try {
-      await this.data.recordManager.removeFile(fileRes.fileName);
+      await this.recordManager.removeFile(fileRes.fileName);
       wx.showToast({
         title: '删除成功',
         icon: 'none',

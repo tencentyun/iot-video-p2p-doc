@@ -20,7 +20,7 @@
         bind:pusherError="onPusherError"
         bind:error="onLivePusherError"
         bind:statechange="onLivePusherStateChange"
-        bind:netstatus="onLivePusherNetStatusChange"
+        bind:netstatus="onLivePusherNetStatus"
       />
       <view class="video-info">
         <view class="text-box lines-3">

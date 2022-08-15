@@ -49,17 +49,17 @@ Page({
       }
     });
   },
-  onPlayError({ detail, currentTarget }) {
-    console.log('demo: onPlayError', currentTarget.id, detail);
+  onPlayError({ detail }) {
+    console.log('demo: onPlayError', detail);
     const { errMsg, errDetail, isFatalError } = detail;
     wx.showModal({
-      content: `${currentTarget.id}: ${errMsg || '播放失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常
+      content: `${errMsg || '播放失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常
       showCancel: false,
       complete: () => {
         if (isFatalError) {
-          // demo简单点，直接退出，注意 onUnload 时可能需要reset插件
-          // 如果不想退出，在这里reset插件（如果需要的话），然后重新创建player组件
-          !this.hasExited && wx.navigateBack();
+          // 致命错误，需要reset的全部reset
+          xp2pManager.checkReset();
+          this.data.player.reset();
         }
       },
     });

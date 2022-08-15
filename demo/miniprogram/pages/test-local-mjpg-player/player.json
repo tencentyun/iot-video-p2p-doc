@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "Local-MPEG-Player 测试页",
+  "usingComponents": {
+    "local-mjpg-player": "plugin://wechat-p2p-player/local-mjpg-player"
+  }
+}

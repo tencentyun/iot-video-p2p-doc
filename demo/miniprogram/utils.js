@@ -26,7 +26,7 @@ export function compareVersion(ver1, ver2) {
   return 0;
 }
 
-const sysInfo = wx.getSystemInfoSync();
+export const sysInfo = wx.getSystemInfoSync();
 export const canUseP2PIPCMode = compareVersion(sysInfo.SDKVersion, '2.19.3') >= 0;
 export const canUseP2PServerMode = compareVersion(sysInfo.SDKVersion, '2.20.2') >= 0;
 
@@ -64,14 +64,14 @@ export const getPlayerProperties = (cfg, opts) => {
   }
 
   let flvUrl = '';
-  if (cfgData.mode === 'ipc') {
+  if (cfgData.p2pMode === 'ipc') {
     flvUrl = `http://XP2P_INFO.xnet/ipc.p2p.com/ipc.flv?${cfgData.liveParams}`;
   } else {
     flvUrl = cfgData.flvUrl;
   }
 
   return {
-    mode: cfgData.mode,
+    p2pMode: cfgData.p2pMode,
     targetId: cfgData.targetId,
     flvUrl: flvUrl || '',
     productId: cfgData.productId || '',
@@ -103,4 +103,101 @@ export const checkAuthorize = (scope) =>
     });
   });
 
+export const isFLV = filename => /\.flv$/i.test(filename);
 export const isMP4 = filename => /\.mp4$/i.test(filename);
+export const isMJPG = filename => /\.mjpg$/i.test(filename);
+
+export function stringToUint8Array(str) {
+  const encodedString = unescape(encodeURIComponent(str || ''));
+  const unit8Arr = [];
+  const len = encodedString.length;
+  for (let i = 0; i < len; i++) {
+    unit8Arr.push(encodedString.charAt(i).charCodeAt(0));
+  }
+  return new Uint8Array(unit8Arr);
+}
+
+export function stringToArrayBuffer(str) {
+  return stringToUint8Array(str).buffer;
+}
+
+export function uint8ArrayToString(unit8Arr) {
+  const encodedString = String.fromCharCode.apply(null, unit8Arr);
+  const decodedString = decodeURIComponent(encodeURIComponent(encodedString));
+  return decodedString;
+}
+
+export function arrayBufferToString(buffer, offset = undefined, len = undefined) {
+  return uint8ArrayToString(new Uint8Array(buffer, offset, len));
+}
+
+export async function snapshotAndSave({ snapshot }) {
+  // 先检查权限
+  try {
+    await checkAuthorize('scope.writePhotosAlbum');
+  } catch (err) {
+    console.log('snapshot checkAuthorize fail', err);
+    const modalRes = await wx.showModal({
+      title: '',
+      content: '拍照需要您授权小程序访问相册',
+      confirmText: '去授权',
+    });
+    if (modalRes.confirm) {
+      wx.openSetting();
+    }
+    return;
+  }
+
+  let timer;
+  const endSnapshot = (params) => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+    wx.hideLoading();
+    wx.showModal({ showCancel: false, ...params });
+  };
+
+  timer = setTimeout(() => {
+    console.error('snapshot timeout');
+    endSnapshot({
+      title: '拍照超时',
+    });
+  }, 5000);
+
+  wx.showLoading({
+    title: '拍照中',
+  });
+
+  console.log('do snapshot');
+  let snapshotRes = null;
+  try {
+    snapshotRes = await snapshot();
+    console.log('snapshot success', snapshotRes);
+  } catch (err) {
+    console.error('snapshot fail', err);
+    endSnapshot({
+      title: '拍照失败',
+      content: err.errMsg,
+    });
+    return;
+  }
+
+  console.log('do saveImageToPhotosAlbum');
+  try {
+    const saveRes = await wx.saveImageToPhotosAlbum({
+      filePath: snapshotRes.tempImagePath,
+    });
+    console.log('saveImageToPhotosAlbum success', saveRes);
+    endSnapshot({
+      isSuccess: true,
+      title: '已保存到相册',
+    });
+  } catch (err) {
+    console.log('saveImageToPhotosAlbum fail', err);
+    endSnapshot({
+      title: '保存到相册失败',
+      content: ~err.errMsg.indexOf('auth deny') ? '请授权小程序访问相册' : err.errMsg,
+    });
+  }
+}

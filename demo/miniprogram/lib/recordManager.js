@@ -45,7 +45,14 @@ class RecordManager {
 
     try {
       const files = fileSystem.readdirSync(this.baseDir);
-      console.log('RecordManager: getSavedRecordList success', files);
+      if (files.length > 1) {
+        files.sort((a, b) => {
+          if (a < b) return 1;
+          if (a > b) return -1;
+          return 0;
+        });
+      }
+      console.log('RecordManager: getSavedRecordList success, files.length', files.length);
       return files;
     } catch (err) {
       console.error('RecordManager: getSavedRecordList error', err);
@@ -79,15 +86,14 @@ class RecordManager {
     if (!fileName) {
       return Promise.reject({ errMsg: 'param error' });
     }
-    const filePath = `${this.baseDir}/${fileName}`;
-    console.log('RecordManager: getFileInfo', fileName, filePath);
 
     return new Promise((resolve, reject) => {
       const filePath = `${this.baseDir}/${fileName}`;
+      // console.log('RecordManager: getFileInfo', fileName, filePath);
       fileSystem.getFileInfo({
         filePath,
         success: (res) => {
-          console.log('RecordManager: getFileInfo success', fileName, res);
+          // console.log('RecordManager: getFileInfo success', fileName, res);
           resolve({
             fileName,
             filePath,
@@ -95,7 +101,7 @@ class RecordManager {
           });
         },
         fail: (err) => {
-          console.log('RecordManager: getFileInfo fail', fileName, err);
+          // console.log('RecordManager: getFileInfo fail', fileName, err);
           reject(err);
         },
       });
@@ -113,13 +119,13 @@ class RecordManager {
       const filePath = `${this.baseDir}/${fileName}`;
       fileSystem.readFile({
         filePath,
-        success(res) {
+        success: (res) => {
           resolve({
             fileName,
             ...res,
           });
         },
-        fail(err) {
+        fail: (err) => {
           console.log('RecordManager: readFile fail', fileName, err);
           reject(err);
         },
@@ -138,6 +144,40 @@ class RecordManager {
     }
   }
 
+  // 添加文件
+  addFile(fileName, srcFilePath) {
+    if (!fileName) {
+      return Promise.reject({ errMsg: 'invalid fileName' });
+    }
+    if (!srcFilePath) {
+      return Promise.reject({ errMsg: 'invalid srcFilePath' });
+    }
+    const filePath = `${this.baseDir}/${fileName}`;
+    console.log('RecordManager: addFile', fileName, filePath);
+
+    this.prepareDir();
+
+    let isExist = false;
+    try {
+      fileSystem.accessSync(filePath);
+      isExist = true;
+    } catch (err) {}
+
+    if (isExist) {
+      console.log('RecordManager: addFile fail, file exist');
+      return Promise.reject({ errMsg: 'file already exist' });
+    }
+
+    return new Promise((resolve, reject) => {
+      fileSystem.saveFile({
+        tempFilePath: srcFilePath,
+        filePath,
+        success: resolve,
+        fail: reject,
+      });
+    });
+  }
+
   // 创建文件
   prepareFile(fileName) {
     if (!fileName) {
@@ -150,7 +190,7 @@ class RecordManager {
 
     let isExist = true;
     try {
-      fileSystemManager.accessSync(filePath);
+      fileSystem.accessSync(filePath);
     } catch (err) {
       isExist = false;
     }
@@ -216,6 +256,20 @@ class RecordManager {
   }
   */
 
+  // 按文件名写文件
+  writeFile(fileName, data) {
+    if (!fileSystem || !fileName || !data?.byteLength) {
+      return -1;
+    }
+    try {
+      const filePath = `${this.baseDir}/${fileName}`;
+      fileSystem.writeFileSync(filePath, data, 'binary');
+      return data.byteLength;
+    } catch (err) {
+      return -1;
+    }
+  }
+
   // 打开文件（通用，不改文件名，也不清理之前的文件）
   openFile(fileName) {
     if (!fileName) {
@@ -245,18 +299,18 @@ class RecordManager {
   }
 
   // 打开录像文件
-  openRecordFile(recordFilename) {
+  openRecordFile(recordFilename, fileType = 'flv') {
     if (!recordFilename) {
       return null;
     }
     console.log('RecordManager: openRecordFile', recordFilename);
 
-    // 每次录之前清掉之前的录像，避免占用过多空间
-    this.removeSavedRecordList();
+    // 每次录之前清掉之前的录像，避免占用过多空间，demo就不清了，方便定位问题
+    // this.removeSavedRecordList();
 
     // 录像文件名自动带上录制时间
-    const fixedFilename = recordFilename.replace(/\.flv$/, '').replace(/\W/g, '-');
-    const fileName = `${fixedFilename}.${toDateTimeFilename(new Date())}.flv`;
+    const fixedFilename = recordFilename.replace(new RegExp(`\\.${fileType}$`), '').replace(/\W/g, '-');
+    const fileName = `${fixedFilename}.${toDateTimeFilename(new Date())}.${fileType || 'flv'}`;
 
     return this.openFile(fileName);
   }
@@ -326,28 +380,39 @@ class RecordManager {
     }
   }
 
-  async saveVideoToAlbum(fileName) {
+  async saveToAlbum(fileName) {
     const filePath = `${this.baseDir}/${fileName}`;
+
+    let api = '';
+    if (/\.mp4$/i.test(fileName) || /\.flv$/i.test(fileName) || /\.mjpg$/i.test(fileName)) {
+      api = 'saveVideoToPhotosAlbum';
+    } else if (/\.jpg$/i.test(fileName) || /\.jpeg$/i.test(fileName)) {
+      api = 'saveImageToPhotosAlbum';
+    } else {
+      console.log('RecordManager: saveToAlbum, invalid format');
+      throw new Error('invalid format');
+    }
 
     try {
       await checkAuthorize('scope.writePhotosAlbum');
     } catch (err) {
-      console.log('RecordManager: saveVideoToAlbum, checkAuthorize fail', err);
+      console.log('RecordManager: saveToAlbum, checkAuthorize fail', err);
       throw err;
     }
+
     try {
-      const res = await wx.saveVideoToPhotosAlbum({
+      const res = await wx[api]({
         filePath,
       });
-      console.log('RecordManager: saveVideoToAlbum, saveVideoToPhotosAlbum success', res);
+      console.log(`RecordManager: saveToAlbum, ${api} success`, res);
       return res;
     } catch (err) {
-      console.log('RecordManager: saveVideoToAlbum, saveVideoToPhotosAlbum fail', err);
+      console.log(`RecordManager: saveToAlbum, ${api} fail`, err);
       throw err;
     }
   }
 
-  async sendDocument(fileName) {
+  async sendFileByOpenDocument(fileName) {
     const filePath = `${this.baseDir}/${fileName}`;
 
     await wx.setClipboardData({
@@ -365,10 +430,30 @@ class RecordManager {
         showMenu: true,
         fileType: 'doc',
       });
-      console.log('RecordManager: sendDocument, openDocument success', res);
+      console.log('RecordManager: openDocument success', res);
       return res;
     } catch (err) {
-      console.log('RecordManager: sendDocument, openDocument fail', err);
+      console.log('RecordManager: openDocument fail', err);
+      throw err;
+    }
+  }
+
+  async sendFile(fileName) {
+    const filePath = `${this.baseDir}/${fileName}`;
+
+    if (!wx.shareFileMessage) {
+      // 兼容低版本
+      return await this.sendFileByOpenDocument(fileName);
+    }
+
+    try {
+      const res = await wx.shareFileMessage({
+        filePath,
+      });
+      console.log('RecordManager: shareFileMessage success', res);
+      return res;
+    } catch (err) {
+      console.log('RecordManager: shareFileMessage fail', err);
       throw err;
     }
   }
@@ -376,7 +461,7 @@ class RecordManager {
 
 const mgrMap = {};
 export const getRecordManager = (name) => {
-  const key = name || 'records';
+  const key = name || 'others';
   if (!mgrMap[key]) {
     mgrMap[key] = new RecordManager(key);
   }

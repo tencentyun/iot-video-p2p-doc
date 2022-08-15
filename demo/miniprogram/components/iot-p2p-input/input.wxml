@@ -1,90 +1,58 @@
 <view class="component">
-  <view class="component-section">
-    <view class="component-section-title">模式: {{mode}}</view>
+  <view class="component-section" wx:if="{{p2pMode === 'ipc'}}">
+    <view class="component-section-title">
+      P2P模式: 1v1
+      <view style="float: right">
+        <radio-group bindchange="changeSceneRadio">
+          <label wx:for="{{sceneList}}" wx:key="value" class="scene-label"><radio value="{{item.value}}" checked="{{item.checked}}"/>{{item.text}}</label>
+        </radio-group>
+      </view>
+    </view>
     <view class="control-info">
-      <!--
-      <view class="input-item">
-        <view>targetId:</view>
-        <view class="weui-cells weui-cells_after-title">
-          <view class="weui-cell weui-cell_input">
-            <input class="weui-input" type="text" value="{{inputTargetId}}" placeholder="请输入targetId" placeholder-class="placeholder" bindinput="inputP2PTargetId" />
+      <view class="info-inputs">
+        <view wx:for="{{simpleInputs}}" wx:key="field" class="input-item {{item.scene && item.scene !== scene ? 'hide' : ''}}">
+          <view>{{item.text}}:</view>
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_input">
+              <input class="weui-input" type="text" placeholder-class="placeholder"
+                disabled="{{targetId}}"
+                placeholder="{{item.placeholder ? item.placeholder : ''}}"
+                value="{{item.value}}"
+                data-field="{{item.field}}"
+                data-index="{{index}}"
+                bindinput="inputSimpleInput" />
+            </view>
           </view>
+        </view>
+        <view wx:for="{{simpleChecks}}" wx:key="field" class="input-item {{item.scene && item.scene !== scene ? 'hide' : ''}}">
+          <label><switch type="checkbox" checked="{{item.checked}}" data-field="{{item.field}}" data-index="{{index}}" bindchange="switchSimpleCheck"/>{{item.text}}</label>
+        </view>
+        <view class="input-item" wx:if="{{scene === 'live'}}">
+          <view>对讲方式:</view>
+          <radio-group bindchange="changeIntercomTypeRadio">
+            <label wx:for="{{intercomTypeList}}" wx:key="value">
+              <view class="intercom-type-item">
+                <radio value="{{item.value}}" checked="{{item.checked}}" class="intercom-type-item-radio"/>
+                <view class="intercom-type-item-text">
+                  <view>{{item.text}}</view>
+                  <view>{{item.desc}}</view>
+                </view>
+              </view>
+            </label>
+          </radio-group>
         </view>
       </view>
-      -->
-      <view wx:if="{{mode==='ipc'}}" class="info-inputs">
-        <view class="input-item">
-          <view>productId:</view>
-          <view class="weui-cells weui-cells_after-title">
-            <view class="weui-cell weui-cell_input">
-              <input class="weui-input" type="text" value="{{inputProductId}}" disabled="{{targetId}}" placeholder="请输入productId" placeholder-class="placeholder" bindinput="inputIPCProductId" />
-            </view>
-          </view>
-        </view>
-        <view class="input-item">
-          <view>deviceName:</view>
-          <view class="weui-cells weui-cells_after-title">
-            <view class="weui-cell weui-cell_input">
-              <input class="weui-input" type="text" value="{{inputDeviceName}}" disabled="{{targetId}}" placeholder="请输入deviceName" placeholder-class="placeholder" bindinput="inputIPCDeviceName" />
-            </view>
-          </view>
-        </view>
-        <view class="input-item">
-          <view>xp2pInfo:</view>
-          <view class="weui-cells weui-cells_after-title">
-            <view class="weui-cell weui-cell_input">
-              <input class="weui-input" type="text" value="{{inputXp2pInfo}}" disabled="{{targetId}}" placeholder="请输入xp2pInfo" placeholder-class="placeholder" bindinput="inputIPCXp2pInfo" />
-            </view>
-          </view>
-        </view>
-        <view class="input-item">
-          <view>liveParams:</view>
-          <view class="weui-cells weui-cells_after-title">
-            <view class="weui-cell weui-cell_input">
-              <input class="weui-input" type="text" value="{{inputLiveParams}}" disabled="{{targetId}}" placeholder="请输入liveParams" placeholder-class="placeholder" bindinput="inputIPCLiveParams" />
-            </view>
-          </view>
-        </view>
-        <view class="input-item">
-          <view>playbackParams:</view>
-          <view class="weui-cells weui-cells_after-title">
-            <view class="weui-cell weui-cell_input">
-              <input class="weui-input" type="text" value="{{inputPlaybackParams}}" disabled="{{targetId}}" placeholder="请输入playbackParams" placeholder-class="placeholder" bindinput="inputIPCPlaybackParams" />
-            </view>
-          </view>
-        </view>
-        <view class="input-item">
-          <view>1v1转1vn server拉流域名(填入开启1v1转1vn):</view>
-          <view class="weui-cells weui-cells_after-title">
-            <view class="weui-cell weui-cell_input">
-              <input class="weui-input" type="text" value="{{liveStreamDomain}}" disabled="{{targetId}}" placeholder="和'播放前先检查能否拉流'不兼容" placeholder-class="placeholder" bindinput="inputIPCLiveStreamDomain" />
-            </view>
-          </view>
-        </view>
-        <view class="input-item">
-          <label><switch type="checkbox" checked="{{needCheckStreamChecked}}" bindchange="switchNeedCheckStream"/>播放前先检查能否拉流</label>
-        </view>
-        <view class="input-item">
-          <label><switch type="checkbox" checked="{{needPusherChecked}}" bindchange="switchNeedPusher"/>对讲回音消除（实验中，AAC编码）</label>
-        </view>
-        <view class="input-item">
-          <label><switch type="checkbox" checked="{{needDuplexChecked}}" bindchange="switchNeedDuplex"/>双向音视频（实验中，开启后无对讲入口）</label>
-        </view>
-      </view>
-      <view wx:if="{{mode==='server'}}" class="info-inputs">
+    </view>
+  </view>
+  <view class="component-section" wx:if="{{p2pMode === 'server'}}">
+    <view class="component-section-title">P2P模式: 1v多</view>
+    <view class="control-info">
+      <view class="info-inputs">
         <view class="input-item">
           <view>streamUrl:</view>
           <view class="weui-cells weui-cells_after-title">
             <view class="weui-cell weui-cell_input">
               <input class="weui-input" type="text" value="{{inputUrl}}" disabled="{{targetId}}" placeholder="请输入streamUrl" placeholder-class="placeholder" bindinput="inputStreamUrl" />
-            </view>
-          </view>
-        </view>
-        <view wx:if="{{needCode}}" class="input-item">
-          <view>codeUrl:</view>
-          <view class="weui-cells weui-cells_after-title">
-            <view class="weui-cell weui-cell_input">
-              <input class="weui-input" type="text" value="{{inputCodeUrl}}" disabled="{{targetId}}" placeholder="请输入codeUrl" placeholder-class="placeholder" bindinput="inputServerCodeUrl" />
             </view>
           </view>
         </view>
@@ -94,15 +62,15 @@
   <view class="component-section">
     <view class="component-section-title">调试用</view>
     <view class="input-item">
-      <label><switch type="checkbox" checked="{{onlyp2pChecked}}" bindchange="switchOnlyP2P"/>onlyp2p（仅数据传输，不播放视频）</label>
+      <label><switch type="checkbox" checked="{{playStreamChecked.flv}}" data-stream="flv" bindchange="switchPlayStream"/>播放flv（取消勾选则只拉数据不播放）</label>
+    </view>
+    <view class="input-item">
+      <label><switch type="checkbox" checked="{{playStreamChecked.mjpg}}" data-stream="mjpg" bindchange="switchPlayStream"/>播放mjpg（取消勾选则只拉数据不播放）</label>
     </view>
   </view>
   <view class="component-section">
-    <button bindtap="startPlayer" data-type="live" type="primary" class="primary-button">
-      直播
-    </button>
-    <button wx:if="{{mode==='ipc'}}" bindtap="startPlayer" data-type="playback" type="primary" class="primary-button">
-      回放
+    <button bindtap="startPlayer" type="primary" class="primary-button">
+      播放-{{scene}}
     </button>
   </view>
 </view>

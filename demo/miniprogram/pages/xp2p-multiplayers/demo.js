@@ -96,10 +96,4 @@ Page({
       },
     });
   },
-  onPlayerSystemPermissionDenied({ detail }) {
-    wx.showModal({
-      content: `systemPermissionDenied\n${detail.errMsg}`,
-      showCancel: false,
-    });
-  },
 });

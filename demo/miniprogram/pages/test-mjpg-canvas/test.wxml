@@ -1,0 +1,20 @@
+<view class="page-body">
+  <view class="page-section">
+    <canvas
+      type="2d"
+      id="canvas"
+      class="mjpg-canvas"
+    />
+    <view>total frame: {{frameNum}}</view>
+    <view class="group-button-area">
+      <button bindtap="chooseImages" class="group-button" type="primary" size="mini" disabled="{{!ctxReady || isPlaying}}">ChooseFrames</button>
+      <button bindtap="chooseFile" class="group-button" type="primary" size="mini" disabled="{{!ctxReady || isPlaying}}">ChooseMjpg</button>
+      <button bindtap="clearImages" class="group-button" type="primary" size="mini" disabled="{{!ctxReady || !frameNum}}">Clear</button>
+    </view>
+    <view class="group-button-area">
+      <!-- <button bindtap="play" data-src-type="filepath" class="group-button" type="primary" size="mini" disabled="{{!frameNum || isPlaying}}">播放-file</button> -->
+      <button bindtap="play" class="group-button" type="primary" size="mini" disabled="{{!frameNum || isPlaying}}">播放</button>
+      <button bindtap="stop" class="group-button" type="primary" size="mini" disabled="{{!frameNum || !isPlaying}}">停止</button>
+    </view>
+  </view>
+</view>

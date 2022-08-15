@@ -1,8 +1,8 @@
-<view class="component iot-p2p-player-ipc">
-  <view class="component-section">
+<view class="iot-p2p-player-server">
+  <view class="player-wrap">
     <iot-p2p-common-player
       id="{{playerId}}"
-      mode="server"
+      p2pMode="server"
       targetId="{{targetId}}"
       flvUrl="{{flvUrl}}"
       codeUrl="{{codeUrl}}"
@@ -10,7 +10,6 @@
       bind:p2pStateChange="onP2PStateChange"
       bind:p2pDevNotify="onP2PDevNotify"
       bind:playError="passEvent"
-      bind:systemPermissionDenied="passEvent"
     />
   </view>
   <view class="component-section">
@@ -22,11 +21,17 @@
     <view>childrenSize: {{childrenSize}}</view>
     <view>childrenStr: {{childrenStr}}</view>
     <view>parent: {{parent}}</view>
-    <view>errlog:</view>
-    <scroll-view scroll-y="true" class="log-box" style="height: 200rpx;">{{errLog}}</scroll-view>
+  </view>
+  <view class="component-section">
     <view>peerlist:</view>
     <scroll-view scroll-y="true" class="log-box" style="height: 200rpx;">{{peerlist}}</scroll-view>
+  </view>
+  <view class="component-section">
+    <view>errlog:</view>
+    <scroll-view scroll-y="true" class="log-box" style="height: 200rpx;">{{errLog}}</scroll-view>
+  </view>
+  <view class="component-section">
     <view>subscribeLog:</view>
-    <scroll-view scroll-y="true" class="log-box" style="height: 200rpx;"><text>{{subscribeLog}}</text></scroll-view>
+    <scroll-view scroll-y="true" class="log-box" style="height: 500rpx;"><text>{{subscribeLog}}</text></scroll-view>
   </view>
 </view>

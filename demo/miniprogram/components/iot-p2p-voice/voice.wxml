@@ -1,0 +1,99 @@
+<view class="iot-p2p-voice">
+  <view wx:if="{{needDuplex}}">
+    <iot-p2p-common-pusher
+      id="{{pusherId}}"
+      enableCamera="{{true}}"
+      enableMic="{{true}}"
+      bind:pusherStateChange="onPusherStateChange"
+      bind:pusherStartPush="onPusherStartPush"
+      bind:pusherClose="onPusherClose"
+      bind:pushError="onPusherPushError"
+    />
+    <view>intercomType: {{intercomType}}</view>
+    <view>voiceState: {{voiceState}}</view>
+    <view class="group-button-area">
+      <button bindtap="startVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !pusherReady || (voiceState && voiceState !== 'error')}}">
+        开始
+      </button>
+      <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !voiceState || voiceState === 'error'}}">
+        挂断
+      </button>
+    </view>
+  </view>
+  <view wx:elif="{{needPusher}}">
+    <iot-p2p-common-pusher
+      wx:if="{{!isModifyPusher}}"
+      id="{{pusherId}}"
+      mode="{{pusherProps.isRTC ? 'RTC' : 'SD'}}"
+      enableCamera="{{false}}"
+      enableMic="{{true}}"
+      enableAgc="{{pusherProps.enableAgc}}"
+      enableAns="{{pusherProps.enableAns}}"
+      audioQuality="{{pusherProps.highQuality ? 'high' : 'low'}}"
+      bind:pusherStateChange="onPusherStateChange"
+      bind:pusherStartPush="onPusherStartPush"
+      bind:pusherClose="onPusherClose"
+      bind:pushError="onPusherPushError"
+      style="display: none"
+    />
+    <view>intercomType: {{intercomType}}</view>
+    <view>voiceState: {{voiceState}}</view>
+    <view>pusherReady: {{pusherReady}}</view>
+    <view>pusherProps:
+      <text class="text-btn float-right" bindtap="toggleModifyPusher">{{!isModifyPusher ? '修改 pusher 属性' : '修改完成'}}</text>
+    </view>
+    <view wx:for="{{pusherPropChecks}}" wx:key="field" class="prop-item">
+      <label>
+        <switch type="checkbox"
+          checked="{{pusherProps[item.field]}}"
+          data-field="{{item.field}}"
+          data-index="{{index}}"
+          disabled="{{!isModifyPusher || voiceState && voiceState !== 'error'}}"
+          bindchange="switchPusherPropCheck"
+        />
+        {{item.text}}
+      </label>
+    </view>
+    <view class="group-button-area">
+      <button bindtap="startVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !pusherReady || (voiceState && voiceState !== 'error')}}">
+        对讲
+      </button>
+      <button bindtap="startVoice" data-need-record="1" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !pusherReady || (voiceState && voiceState !== 'error')}}">
+        对讲+录制
+      </button>
+      <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !voiceState || voiceState === 'error'}}">
+        挂断
+      </button>
+      <text class="text-btn float-right margin-left" bindtap="goRecordList">录音管理</text>
+    </view>
+  </view>
+  <view wx:else>
+    <view>intercomType: {{intercomType}}</view>
+    <view>voiceState: {{voiceState}}</view>
+    <view>对讲期间:</view>
+    <view>
+      <radio-group bindchange="voiceOpChanged" style="display: flex;">
+        <label class="videoui-cell videoui-check__label">
+          <radio value="none" checked="{{voiceOp === 'none'}}" disabled="{{voiceState && voiceState !== 'error'}}"/>正常播放
+        </label>
+        <label class="videoui-cell videoui-check__label">
+          <radio value="mute" checked="{{voiceOp === 'mute'}}" disabled="{{voiceState && voiceState !== 'error'}}"/>静音
+        </label>
+        <!-- <label class="videoui-cell videoui-check__label">
+          <radio value="pause" checked="{{voiceOp === 'pause'}}" disabled="{{voiceState && voiceState !== 'error'}}"/>暂停
+        </label> -->
+      </radio-group>
+    </view>
+    <view class="group-button-area">
+      <button bindtap="startVoice" data-recorder-cfg="1-8000-16000" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState && voiceState !== 'error')}}">
+        Recorder-单
+      </button>
+      <button bindtap="startVoice" data-recorder-cfg="2-44100-192000" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState && voiceState !== 'error')}}">
+        Recorder-双
+      </button>
+      <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !voiceState || voiceState === 'error'}}">
+        挂断
+      </button>
+    </view>
+  </view>
+</view>

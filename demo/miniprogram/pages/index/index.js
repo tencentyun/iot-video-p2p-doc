@@ -50,9 +50,9 @@ Page({
     for (const key in devices) {
       const item = devices[key];
       const navItem = {
-        mode: 'ipc',
+        p2pMode: 'ipc',
         cfg: key,
-        title: `${item.productId}/${item.deviceName}`,
+        title: `${item.productName || item.productId}/${item.deviceName}`,
         ...item,
       };
       if (item.showInHomePageBtn) {
@@ -66,7 +66,7 @@ Page({
     for (const key in streams) {
       const item = streams[key];
       const navItem = {
-        mode: 'server',
+        p2pMode: 'server',
         cfg: key,
         title: `1vN: ${item.serverName}/${getShortFlvName(item.flvFile)}`,
         ...item,
@@ -90,7 +90,7 @@ Page({
     const cfg = totalData.recentIPC || wx.getStorageSync('recentIPC');
     this.setData({
       recentIPCItem: cfg ? {
-        mode: 'ipc',
+        p2pMode: 'ipc',
         cfg: 'recentIPC',
         title: `${cfg.productId}/${cfg.deviceName}`,
         ...cfg,

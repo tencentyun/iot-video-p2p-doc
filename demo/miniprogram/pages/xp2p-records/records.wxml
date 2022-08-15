@@ -5,10 +5,11 @@
       <view>· flv文件在Android系统可以保存到相册，但是iOS系统不支持</view>
     </view>
   </view>
-  <view class="page-section">
+  <view wx:if="{{baseDir}}" class="page-section">
     <view>baseDir: {{baseDir}}</view>
     <view class="group-button-area">
       <button bindtap="getRecordList" class="group-button" type="primary" size="mini" disabled="{{isRefreshing}}">刷新列表</button>
+      <!-- <button bindtap="addFile" class="group-button" type="primary" size="mini" disabled="{{src}}">添加文件</button> -->
       <button bindtap="removeAllRecords" class="group-button" type="primary" size="mini" disabled="{{isRefreshing}}">清空</button>
     </view>
   </view>
@@ -17,11 +18,12 @@
     <view wx:for="{{recordList}}" wx:key="fileName" class="record-item">
       {{item.fileName}} <text class="info">{{item.size}} Bytes</text>
       <view>
-        <text class="left-btn" bindtap="playRecord" data-index="{{index}}">播放</text>
+        <text class="left-btn" wx:if="{{item.isFLV || item.isMJPG}}" bindtap="playRecord" data-index="{{index}}">播放</text>
         <!-- <text class="right-btn" bindtap="removeFile" data-index="{{index}}">删除</text> -->
-        <text wx:if="{{showSendDoc}}" class="right-btn" bindtap="sendDocument" data-index="{{index}}">发送</text>
-        <text class="right-btn" bindtap="saveVideoToAlbum" data-index="{{index}}">保存到相册</text>
-        <!-- <text wx:if="{{!item.isMP4}}" class="right-btn" bindtap="renameMP4" data-index="{{index}}">重命名为mp4</text> -->
+        <text class="right-btn" wx:if="{{!isDevTools}}" bindtap="sendFile" data-index="{{index}}">发送</text>
+        <text class="right-btn" wx:if="{{isDevTools}}" bindtap="saveFileInDevTools" data-index="{{index}}">保存</text>
+        <text class="right-btn" wx:if="{{item.isMP4 || item.isFLV || item.isMJPG}}" bindtap="saveToAlbum" data-index="{{index}}">保存到相册</text>
+        <!-- <text class="right-btn" wx:if="{{!item.isMP4}}" bindtap="renameMP4" data-index="{{index}}">重命名为mp4</text> -->
       </view>
     </view>
   </view>

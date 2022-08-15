@@ -1,15 +1,16 @@
-<view class="component">
+<view class="iot-pusher">
   <view class="pusher-container">
     <p2p-pusher
       wx:if="{{hasPusher}}"
       id="{{pusherId}}"
-      mode="RTC"
+      mode="{{mode}}"
       enableCamera="{{enableCamera}}"
       enableMic="{{enableMic}}"
-      enableAns="{{true}}"
-      audioQuality="low"
+      enableAgc="{{enableAgc}}"
+      enableAns="{{enableAns}}"
+      audioQuality="{{audioQuality}}"
       audioVolumeType="voicecall"
-      orientation="{{orientation}}"
+      acceptLivePusherEvents="{{acceptLivePusherEvents}}"
       bind:pusherReady="onPusherReady"
       bind:pusherStartPush="onPusherStartPush"
       bind:pusherFlvHeader="onPusherFlvHeader"
@@ -20,7 +21,7 @@
       bind:pusherError="onPusherError"
       bind:error="onLivePusherError"
       bind:statechange="onLivePusherStateChange"
-      bind:netstatus="onLivePusherNetStatusChange"
+      bind:netstatus="onLivePusherNetStatus"
     />
     <view class="pusher-message">{{pusherMsg}}</view>
     <view class="pusher-controls-container right">

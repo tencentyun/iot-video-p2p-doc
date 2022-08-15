@@ -1,46 +1,30 @@
-import config from '../../config/config';
-import { getParamValue, toDateString, toTimeString, toDateTimeString } from '../../utils';
-import { getXp2pManager, Xp2pManagerErrorEnum } from '../../lib/xp2pManager';
+/* eslint-disable camelcase, @typescript-eslint/naming-convention */
+import { isDevTools, getParamValue, toDateString, toTimeString, toDateTimeString } from '../../utils';
+import { getXp2pManager } from '../../lib/xp2pManager';
 import { getRecordManager } from '../../lib/recordManager';
+import { VoiceOpEnum, VoiceStateEnum } from '../iot-p2p-voice/common';
+import { commandMap } from './common';
 
 const xp2pManager = getXp2pManager();
 
 const downloadManager = getRecordManager('downloads');
 const fileSystemManager = wx.getFileSystemManager();
 
-const voiceManager = getRecordManager('voices');
-
-const { commandMap } = config;
-
-// ts才能用enum，先这么处理吧
-const VoiceTypeEnum = {
-  Recorder: 'Recorder',
-  Pusher: 'Pusher',
-  DuplexAudio: 'DuplexAudio',
-  DuplexVideo: 'DuplexVideo',
-};
-
-const voiceConfigMap = {
-  [VoiceTypeEnum.Recorder]: { needPusher: false },
-  [VoiceTypeEnum.Pusher]: { needPusher: true },
-  [VoiceTypeEnum.DuplexAudio]: {
-    needPusher: true,
-    isDuplex: true,
-    options: { urlParams: 'calltype=audio' },
+const sceneConfig = {
+  live: {
+    sections: {
+      quality: true,
+      ptz: true,
+      voice: true,
+      commands: true,
+    }
   },
-  [VoiceTypeEnum.DuplexVideo]: {
-    needPusher: true,
-    isDuplex: true,
-    options: { urlParams: 'calltype=video' },
+  playback: {
+    sections: {
+      download: true,
+      commands: true,
+    }
   },
-};
-
-const VoiceStateEnum = {
-  checking: 'checking', // 检查权限和设备状态
-  starting: 'starting', // 发起voice请求
-  startingPusher: 'startingPusher', // 启动pusher
-  sending: 'sending', // 发送语音数据(包括等待pusher开始)
-  error: 'error',
 };
 
 let ipcPlayerSeq = 0;
@@ -48,45 +32,67 @@ let ipcPlayerSeq = 0;
 Component({
   behaviors: ['wx://component-export'],
   properties: {
+    ipcClass: {
+      type: String,
+      value: '',
+    },
+    playerClass: {
+      type: String,
+      value: '',
+    },
     targetId: {
       type: String,
+      value: '',
+    },
+    sceneType: {
+      type: String,
+      value: 'live',
     },
     flvUrl: {
       type: String,
+      value: '',
+    },
+    mjpgFile: {
+      type: String,
+      value: '',
     },
     productId: {
       type: String,
+      value: '',
     },
     deviceName: {
       type: String,
+      value: '',
     },
     xp2pInfo: {
       type: String,
-    },
-    needCheckStream: {
-      type: Boolean,
-      value: false,
-    },
-    needPusher: {
-      type: Boolean,
-      value: false,
-    },
-    needDuplex: {
-      type: Boolean,
-      value: false,
+      value: '',
     },
     liveStreamDomain: {
       type: String,
       value: '',
     },
+    options: {
+      type: Object,
+    },
+    sections: {
+      type: Object,
+    },
     // 以下仅供调试，正式组件不需要
-    onlyp2p: {
-      type: Boolean,
+    onlyp2pMap: {
+      type: Object,
+      value: {
+        flv: isDevTools,
+        mjpg: isDevTools,
+      },
     },
   },
   data: {
     innerId: '',
     isDetached: false,
+
+    innerOptions: null,
+    innerSections: null,
 
     // 这些是控制player和p2p的
     playerId: 'iot-p2p-common-player',
@@ -95,20 +101,23 @@ Component({
     streamSuccess: false,
     checkFunctions: null,
 
-    // live / playback
-    type: '',
+    // 就是 flvUrl 里的 action: live / live-audio / playback / playback-audio
+    streamType: '',
+    streamState: 'StreamIdle',
+
+    // p2p-player的错误提示，要展示给p2p-mjpg-player
+    playErrMsg: '',
 
     playerPaused: false,
 
-    // 语音对讲
-    voiceState: '', // VoiceStateEnum
-    voiceType: '', // recorder / pusher
-    voiceFileObj: null, // pusher采集时把数据录下来，调试用
+    // 这些是控制mjpgPlayer的
+    mjpgPlayerId: 'iot-p2p-mjpg-player',
+    mjpgPlayer: null,
 
-    // 这些是控制pusher的
-    pusherId: 'iot-p2p-common-pusher',
-    pusher: null,
-    pusherReady: false,
+    // 这些是语音对讲
+    voiceCompId: 'iot-p2p-voice',
+    voiceComp: null,
+    voiceState: '', // VoiceStateEnum
 
     // 自定义信令
     inputCommand: 'action=inner_define&channel=0&cmd=get_device_st&type=playback',
@@ -145,6 +154,8 @@ Component({
     playbackProgressStr: '',
 
     // 下载
+    fileList: null,
+    inputDownloadFilename: '',
     downloadList: [],
     downloadFilename: '',
     downloadTotal: 0,
@@ -161,16 +172,39 @@ Component({
       // 在组件实例进入页面节点树时执行
       console.log(`[${this.data.innerId}]`, '==== attached', this.id, this.properties);
 
-      const type = getParamValue(this.properties.flvUrl, 'action') || 'live';
-      console.log(`[${this.data.innerId}]`, 'type', type);
+      const innerOptions = {
+        needCheckStream: false,
+        needMjpg: !!this.properties.mjpgFile,
+        playerRTC: !this.properties.mjpgFile, // 图片流的默认live，非图片流的默认RTC（RTC时延更低，但是ios只支持16k以上）
+        playerShowControlRightBtns: true,
+        intercomType: 'Recorder',
+        ...this.properties.options,
+      };
+      console.log(`[${this.data.innerId}]`, 'innerOptions', innerOptions);
+
+      const innerSections = {
+        ...sceneConfig[this.properties.sceneType].sections,
+        ...this.properties.sections,
+      };
+      if (innerOptions.needMjpg) {
+        // 图片流模式不支持切换 quality
+        innerSections.quality = false;
+      }
+      console.log(`[${this.data.innerId}]`, 'innerSections', innerSections);
+
+      const streamType = getParamValue(this.properties.flvUrl, 'action') || 'live';
+      console.log(`[${this.data.innerId}]`, 'streamType', streamType);
       this.setData({
-        type,
+        innerOptions,
+        innerSections,
+        streamType,
         checkFunctions: {
           checkIsFlvValid: this.checkIsFlvValid.bind(this),
-          checkCanStartStream: this.properties.needCheckStream ? this.checkCanStartStream.bind(this) : null,
+          checkCanStartStream: innerOptions.needCheckStream ? this.checkCanStartStream.bind(this) : null,
         },
       });
 
+      console.log(`[${this.data.innerId}]`, 'create player');
       const player = this.selectComponent(`#${this.data.playerId}`);
       if (player) {
         this.setData({ player });
@@ -178,12 +212,23 @@ Component({
         console.error(`[${this.data.innerId}]`, 'create player error', this.data.playerId);
       }
 
-      if (this.properties.needPusher || this.properties.needDuplex) {
-        const pusher = this.selectComponent(`#${this.data.pusherId}`);
-        if (pusher) {
-          this.setData({ pusher });
+      if (this.data.innerOptions.needMjpg) {
+        console.log(`[${this.data.innerId}]`, 'create mjpgPlayer');
+        const mjpgPlayer = this.selectComponent(`#${this.data.mjpgPlayerId}`);
+        if (mjpgPlayer) {
+          this.setData({ mjpgPlayer });
         } else {
-          console.error(`[${this.data.innerId}]`, 'create pusher error', this.data.pusherId);
+          console.error(`[${this.data.innerId}]`, 'create mjpgPlayer error', this.data.mjpgPlayerId);
+        }
+      }
+
+      if (this.data.innerSections.voice) {
+        console.log(`[${this.data.innerId}]`, 'create voiceComp');
+        const voiceComp = this.selectComponent(`#${this.data.voiceCompId}`);
+        if (voiceComp) {
+          this.setData({ voiceComp });
+        } else {
+          console.error(`[${this.data.innerId}]`, 'create voiceComp error', this.data.voiceCompId);
         }
       }
     },
@@ -193,8 +238,8 @@ Component({
     detached() {
       // 在组件实例被从页面节点树移除时执行
       console.log(`[${this.data.innerId}]`, '==== detached');
-      this.stopAll();
       this.setData({ isDetached: true });
+      this.stopAll();
       console.log(`[${this.data.innerId}]`, '==== detached end');
     },
     error() {
@@ -204,14 +249,15 @@ Component({
   export() {
     return {
       stopAll: this.stopAll.bind(this),
+      reset: this.reset.bind(this),
+      startVoice: this.startVoice.bind(this),
+      stopVoice: this.stopVoice.bind(this),
+      snapshot: this.snapshot.bind(this),
+      snapshotAndSave: this.snapshotAndSave.bind(this),
     };
   },
   methods: {
-    stopAll() {
-      if (this.data.voiceState) {
-        this.stopVoice();
-      }
-
+    stopControls() {
       if (this.data.ptzCmd || this.data.releasePTZTimer) {
         this.controlDevicePTZ('ptz_release_pre');
       }
@@ -220,15 +266,68 @@ Component({
         this.stopDownload();
       }
 
-      if (this.data.pusher) {
-        this.data.pusher.stop();
+      if (this.data.voiceComp) {
+        this.data.voiceComp.stop();
       }
+
+      if (this.data.mjpgPlayer) {
+        this.data.mjpgPlayer.stop();
+      }
+
+      this.clearPlaybackData();
+    },
+    stopAll() {
+      console.log(`[${this.data.innerId}]`, 'stopAll');
+      this.stopControls();
 
       if (this.data.player) {
         this.data.player.stopAll();
       }
+    },
+    reset() {
+      console.log(`[${this.data.innerId}]`, 'reset');
+      this.stopControls();
 
-      this.clearPlaybackData();
+      if (this.data.player) {
+        this.data.player.reset();
+      }
+    },
+    startVoice() {
+      console.log(`[${this.data.innerId}]`, 'startVoice in voiceState', this.data.voiceState);
+      if (!this.data.voiceComp) {
+        console.log(`[${this.data.innerId}]`, 'no voiceComp');
+        return;
+      }
+
+      this.data.voiceComp.start();
+    },
+    stopVoice() {
+      console.log(`[${this.data.innerId}]`, 'stopVoice in voiceState', this.data.voiceState);
+      if (!this.data.voiceComp) {
+        console.log(`[${this.data.innerId}]`, 'no voiceComp');
+        return;
+      }
+
+      this.data.voiceComp.stop();
+    },
+    snapshot() {
+      console.log(`[${this.data.innerId}]`, 'snapshot');
+      const player = this.data.innerOptions?.needMjpg ? this.data.mjpgPlayer : this.data.player;
+      if (!player) {
+        return Promise.reject({ errMsg: 'player not ready' });
+      }
+
+      return player.snapshot();
+    },
+    snapshotAndSave() {
+      console.log(`[${this.data.innerId}]`, 'snapshotAndSave');
+      const player = this.data.innerOptions?.needMjpg ? this.data.mjpgPlayer : this.data.player;
+      if (!player) {
+        this.showToast('player not ready');
+        return;
+      }
+
+      player.snapshotAndSave();
     },
     showToast(content) {
       !this.data.isDetached && wx.showToast({
@@ -256,7 +355,7 @@ Component({
     onStreamStateChange(e) {
       console.log(`[${this.data.innerId}]`, 'onStreamStateChange', e.detail.streamState);
       const streamSuccess = e.detail.streamState === 'StreamHeaderParsed' || e.detail.streamState === 'StreamDataReceived';
-      if (this.data.type === 'playback') {
+      if (this.properties.sceneType === 'playback') {
         if (!this.data.streamSuccess && streamSuccess) {
           // success后需要seek
           this.data.playbackProgressToResume && this.sendPlaybackSeekAfterSuccess();
@@ -278,42 +377,72 @@ Component({
           });
         }
       }
-      this.setData({ streamSuccess });
+      this.setData({ streamSuccess, streamState: e.detail.streamState });
+      this.passEvent(e);
+    },
+    onPlayError(e) {
+      console.error(`[${this.data.innerId}]`, 'onPlayError', e.detail);
+      this.setData({ playErrMsg: e.detail.errMsg });
       this.passEvent(e);
     },
     // 以下是 pusher 的事件
-    onPusherStateChange(e) {
-      console.log(`[${this.data.innerId}]`, 'onPusherStateChange', e.detail.pusherState);
-      const pusherReady = e.detail.pusherState === 'PusherReady';
-      this.setData({ pusherReady });
+    onVoiceStateChange(e) {
+      console.log(`[${this.data.innerId}]`, 'onVoiceStateChange', e.detail.voiceState);
+      this.setData({ voiceState: e.detail.voiceState});
+      this.passEvent(e);
     },
-    onPusherStartPush(e) {
-      console.log(`[${this.data.innerId}]`, 'onPusherStartPush', e.detail);
-      // 开始发送语音数据了
-      this.setData({ voiceState: VoiceStateEnum.sending });
-    },
-    onPusherClose(e) {
-      console.log(`[${this.data.innerId}]`, 'onPusherClose', e.detail);
-      if (!this.data.voiceState || !voiceConfigMap[this.data.voiceType].needPusher) {
-        return;
+    onBeforeStartVoice(e) {
+      console.log(`[${this.data.innerId}]`, 'onBeforeStartVoice', e.detail.voiceOp);
+      if (e.detail.voiceOp === VoiceOpEnum.Pause) {
+        // 暂停播放，解决回音问题
+        console.log(`[${this.data.innerId}]`, 'pausePlayer before start voice');
+        this.pausePlayer();
+      } else if (e.detail.voiceOp === VoiceOpEnum.Mute) {
+        // 静音，解决回音问题
+        console.log(`[${this.data.innerId}]`, 'set superMuted before start voice');
+        this.setData({ superMuted: true });
       }
-      this.stopVoice();
-      this.showModal({
-        content: '推流结束',
-        showCancel: false,
-      });
     },
-    onPusherPushError(e) {
-      console.log(`[${this.data.innerId}]`, 'onPusherPushError', e.detail);
-      if (!this.data.voiceState || !voiceConfigMap[this.data.voiceType].needPusher) {
-        return;
+    onAfterStopVoice(e) {
+      console.log(`[${this.data.innerId}]`, 'onAfterStopVoice', e.detail.voiceOp);
+      if (e.detail.voiceOp === VoiceOpEnum.Pause) {
+        // 要暂停播放的，对讲结束恢复播放
+        console.log(`[${this.data.innerId}]`, 'resumePlayer after stop voice');
+        this.resumePlayer();
+      } else if (e.detail.voiceOp === VoiceOpEnum.Mute) {
+        // 要静音的，对讲结束恢复声音
+        console.log(`[${this.data.innerId}]`, 'unset superMuted after stop voice');
+        this.setData({ superMuted: false });
       }
-      this.stopVoice();
+    },
+    onVoiceError(e) {
+      console.error(`[${this.data.innerId}]`, 'onVoiceError', e.detail);
       const { errMsg, errDetail } = e.detail;
       this.showModal({
-        content: `${errMsg || '推流失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常,
+        content: `${errMsg || '对讲失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常,
         showCancel: false,
       });
+    },
+    // 以下是 mjpgPlayer 的事件
+    onMjpgPlayerStateChange(e) {
+      console.log(`[${this.data.innerId}]`, 'onMjpgPlayerStateChange', e.detail.playerState);
+    },
+    onMjpgPlayError(e) {
+      console.error(`[${this.data.innerId}]`, 'onMjpgPlayError', e.detail);
+      const { errMsg, errDetail } = e.detail;
+      this.showModal({
+        content: `${errMsg || '图片流失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常,
+        showCancel: false,
+      });
+    },
+    onMjpgClickRetry(e) {
+      console.log(`[${this.data.innerId}]`, 'onMjpgClickRetry', e.detail);
+      if (!this.data.player) {
+        console.log(`[${this.data.innerId}]`, 'no player');
+        return;
+      }
+      console.log(`[${this.data.innerId}]`, 'call retry');
+      this.data.player.retry();
     },
     // 以下是用户交互
     changeQuality(e) {
@@ -331,21 +460,25 @@ Component({
         playerPaused: false,
       });
 
-      const { flv } = e.currentTarget.dataset;
-      const [filename, params] = flv.split('?');
-      console.log(`[${this.data.innerId}]`, 'call changeFlv', filename, params);
-      this.data.player.changeFlv({ filename, params });
+      const { quality } = e.currentTarget.dataset;
+      const [_filename, params] = this.properties.flvUrl.split('?');
+      const otherParams = params.replace(/&?quality=[^&]*/g, '');
+      const newParams = `${otherParams}&quality=${quality}`;
+      console.log(`[${this.data.innerId}]`, 'call changeFlv', newParams);
+      this.data.player.changeFlv({ params: newParams });
     },
     checkIsFlvValid({ filename, params = '' }) {
       console.log(`[${this.data.innerId}]`, 'checkIsFlvValid', filename, params);
-      const newType = getParamValue(params, 'action') || '';
-      if (newType !== this.data.type) {
-        // 不改变type
+      const newStreamType = getParamValue(params, 'action') || '';
+      if (newStreamType !== this.data.streamType) {
+        // 不改变streamType
+        console.warn(`[${this.data.innerId}]`, 'checkIsFlvValid false, streamType mismatch', this.data.streamType, newStreamType);
         return false;
       }
-      if (this.data.type === 'playback') {
+      if (this.properties.sceneType === 'playback') {
         const start = parseInt(getParamValue(params, 'start_time'), 10);
         const end = parseInt(getParamValue(params, 'end_time'), 10);
+        console.warn(`[${this.data.innerId}]`, 'checkIsFlvValid false, playback time invalid', params);
         return start > 0 && end - start >= 5;
       }
       return true;
@@ -355,7 +488,7 @@ Component({
 
       // 1v1转1v多和检查不共存
       if (this.data.liveStreamDomain) {
-        this.properties.needCheckStream = false;
+        this.data.innerOptions.needCheckStream = false;
       }
 
       let errMsg = '';
@@ -367,7 +500,7 @@ Component({
         return Promise.reject(errMsg);
       }
 
-      if (!this.properties.needCheckStream) {
+      if (!this.data.innerOptions.needCheckStream) {
         // 不用检查设备状态
         return Promise.resolve(true);
       }
@@ -377,7 +510,7 @@ Component({
           .sendInnerCommand(this.properties.targetId, {
             cmd: 'get_device_st',
             params: {
-              type: this.data.type,
+              type: this.data.streamType,
               quality: getParamValue(params, 'quality') || '',
             },
           })
@@ -488,280 +621,6 @@ Component({
 
       this.resumePlayer();
     },
-    checkAuthCanStartVoice() {
-      console.log(`[${this.data.innerId}]`, 'checkAuthCanStartVoice');
-      return new Promise((resolve, reject) => {
-        xp2pManager
-          .checkRecordAuthorize()
-          .then(() => {
-            console.log(`[${this.data.innerId}]`, 'checkRecordAuthorize success');
-            resolve();
-          })
-          .catch((err) => {
-            console.log(`[${this.data.innerId}]`, 'checkRecordAuthorize err', err);
-            this.showToast('请授权小程序访问麦克风');
-            reject(err);
-          });
-      });
-    },
-    checkDeviceCanStartVoice() {
-      console.log(`[${this.data.innerId}]`, 'checkDeviceCanStartVoice');
-      return new Promise((resolve, reject) => {
-        xp2pManager
-          .sendInnerCommand(this.properties.targetId, {
-            cmd: 'get_device_st',
-            params: {
-              type: 'voice',
-            },
-          })
-          .then((res) => {
-            let canStart = false;
-            let errMsg = '';
-            const data = res[0]; // 返回的 res 是数组
-            const status = parseInt(data && data.status, 10); // 有的设备返回的 status 是字符串，兼容一下
-            console.log(`[${this.data.innerId}]`, 'checkDeviceCanStartVoice status', status);
-            switch (status) {
-              case 0:
-                canStart = true;
-                break;
-              case 1:
-                errMsg = '设备正忙，请稍后重试';
-                break;
-              case 405:
-                errMsg = '当前连接人数超过限制，请稍后重试';
-                break;
-              default:
-                console.error(`[${this.data.innerId}]`, 'check can start voice, unknown status', status);
-            }
-            if (canStart) {
-              resolve();
-            } else {
-              this.showToast(errMsg || '获取设备状态失败');
-              reject(errMsg || '获取设备状态失败');
-            }
-          })
-          .catch((errmsg) => {
-            console.log(`[${this.data.innerId}]`, 'checkDeviceCanStartVoice error', errmsg);
-            this.showToast('获取设备状态失败');
-            reject('获取设备状态失败');
-          });
-      });
-    },
-    async startVoice(e) {
-      console.log(`[${this.data.innerId}]`, 'startVoice');
-      if (!this.data.p2pReady) {
-        console.log(`[${this.data.innerId}]`, 'p2p not ready');
-        return;
-      }
-      if (this.data.voiceState) {
-        console.log(`[${this.data.innerId}]`, `can not start voice in voiceState ${this.data.voiceState}`);
-        return;
-      }
-
-      const voiceType = e.currentTarget.dataset.voiceType || VoiceTypeEnum.Recorder;
-      const voiceConfig = voiceConfigMap[voiceType] || {};
-      if (voiceConfig.needPusher && !this.data.pusherReady) {
-        this.showToast('pusher not ready');
-        return;
-      }
-
-      // 记录对讲类型
-      this.setData({ voiceType });
-
-      if (voiceConfig.isDuplex) {
-        // 是双向音视频，在demo里省略呼叫应答功能，直接发起
-        this.doStartVoiceByPusher(e);
-        return;
-      }
-
-      // 是普通语音对讲，先检查能否对讲
-      this.setData({ voiceState: VoiceStateEnum.checking });
-
-      try {
-        await this.checkAuthCanStartVoice();
-      } catch (err) {
-        if (!this.data.voiceState) {
-          // 已经stop了
-          return;
-        }
-        console.log(`[${this.data.innerId}]`, '==== checkAuthCanStartVoice error', err);
-        this.stopVoice();
-        return;
-      }
-
-      try {
-        await this.checkDeviceCanStartVoice();
-      } catch (err) {
-        if (!this.data.voiceState) {
-          // 已经stop了
-          return;
-        }
-        console.log(`[${this.data.innerId}]`, '==== checkDeviceCanStartVoice error', err);
-        this.stopVoice();
-        return;
-      }
-
-      if (!this.data.voiceState) {
-        // 已经stop了
-        return;
-      }
-      // 检查通过，开始对讲
-      console.log(`[${this.data.innerId}]`, '==== checkCanStartVoice success');
-      if (voiceConfig.needPusher) {
-        this.doStartVoiceByPusher(e);
-      } else {
-        this.doStartVoiceByRecorder(e);
-      }
-    },
-    doStartVoiceByRecorder(e) {
-      // 每种采样率有对应的编码码率范围有效值，设置不合法的采样率或编码码率会导致录音失败
-      // 具体参考 https://developers.weixin.qq.com/miniprogram/dev/api/media/recorder/RecorderManager.start.html
-      const [numberOfChannels, sampleRate, encodeBitRate] = e.currentTarget.dataset.recorderCfg
-        .split('-')
-        .map((v) => Number(v));
-      const recorderOptions = {
-        numberOfChannels, // 录音通道数
-        sampleRate, // 采样率
-        encodeBitRate, // 编码码率
-      };
-
-      console.log(`[${this.data.innerId}]`, 'do doStartVoiceByRecorder', this.properties.targetId, recorderOptions);
-      this.setData({ voiceState: VoiceStateEnum.starting });
-      xp2pManager
-        .startVoice(this.properties.targetId, recorderOptions, {
-          onPause: (res) => {
-            console.log(`[${this.data.innerId}]`, 'voice onPause', res);
-            // 简单点，recorder暂停就停止语音对讲
-            this.stopVoice();
-          },
-          onStop: (res) => {
-            console.log(`[${this.data.innerId}]`, 'voice onStop', res);
-            if (!res.willRestart) {
-              // 如果是到时间触发的，插件会自动续期，不自动restart的才需要stopVoice
-              this.stopVoice();
-            }
-          },
-        })
-        .then((res) => {
-          if (!this.data.voiceState) {
-            // 已经stop了
-            return;
-          }
-          console.log(`[${this.data.innerId}]`, 'startVoice success', res);
-          this.setData({ voiceState: VoiceStateEnum.sending });
-        })
-        .catch((errcode) => {
-          if (!this.data.voiceState) {
-            // 已经stop了
-            return;
-          }
-          console.log(`[${this.data.innerId}]`, 'startVoice fail', errcode);
-          this.showToast(errcode === Xp2pManagerErrorEnum.NoAuth ? '请授权小程序访问麦克风' : '发起语音对讲失败');
-          this.stopVoice();
-        });
-    },
-    doStartVoiceByPusher(e) {
-      const { options } = voiceConfigMap[this.data.voiceType];
-
-      // 弄个副本，以免被修改
-      const voiceOptions = { ...options };
-
-      const needRecord = parseInt(e.currentTarget.dataset.needRecord, 10);
-
-      console.log(`[${this.data.innerId}]`, 'do doStartVoiceByPusher', this.properties.targetId, voiceOptions);
-      this.setData({ voiceState: VoiceStateEnum.starting });
-      xp2pManager
-        .startVoiceData(this.properties.targetId, voiceOptions, {
-          onStop: () => {
-            if (!this.data.voiceState) {
-              // 已经stop了
-              return;
-            }
-            console.log(`[${this.data.innerId}]`, 'voice onStop');
-            this.stopVoice();
-          },
-          onComplete: () => {
-            if (!this.data.voiceState) {
-              // 已经stop了
-              return;
-            }
-            console.log(`[${this.data.innerId}]`, 'voice onComplete');
-            this.stopVoice();
-          },
-        })
-        .then((writer) => {
-          if (!this.data.voiceState) {
-            // 已经stop了
-            return;
-          }
-          console.log(`[${this.data.innerId}]`, 'startVoiceData success', writer);
-
-          let writerForPusher = writer;
-          if (needRecord) {
-            // 录制，方便验证，正式版本不需要
-            const voiceFileObj = voiceManager.openRecordFile(`voice-${this.properties.productId}-${this.properties.deviceName}`);
-            this.setData({
-              voiceFileObj,
-            });
-            writerForPusher = {
-              addChunk: (chunk) => {
-                // 收到pusher的数据
-                // 写文件
-                voiceManager.writeRecordFile(voiceFileObj, chunk);
-                // 写到xp2p语音请求里
-                writer.addChunk(chunk);
-              },
-            };
-          }
-
-          // 启动推流，这时还不能发送数据
-          this.setData({ voiceState: VoiceStateEnum.startingPusher });
-          this.data.pusher.start({
-            writer: writerForPusher,
-            fail: (err) => {
-              console.log(`[${this.data.innerId}]`, 'voice pusher start fail', err);
-              this.stopVoice();
-            },
-          });
-        })
-        .catch((errcode) => {
-          if (!this.data.voiceState) {
-            // 已经stop了
-            return;
-          }
-          console.log(`[${this.data.innerId}]`, 'startVoiceData fail', errcode);
-          this.showToast('对讲失败');
-          this.stopVoice();
-        });
-    },
-    stopVoice() {
-      console.log(`[${this.data.innerId}]`, 'stopVoice');
-      if (!this.data.p2pReady) {
-        console.log(`[${this.data.innerId}]`, 'p2p not ready');
-        return;
-      }
-      if (!this.data.voiceState) {
-        console.log(`[${this.data.innerId}]`, 'not voicing');
-        return;
-      }
-
-      console.log(`[${this.data.innerId}]`, 'do stopVoice', this.properties.targetId, this.data.voiceType, this.data.voiceState);
-
-      const { voiceType, voiceState, voiceFileObj } = this.data;
-      this.setData({ voiceType: '', voiceState: '', voiceFileObj: null });
-      if (voiceFileObj) {
-        voiceManager.closeRecordFile(voiceFileObj);
-      }
-      if (voiceConfigMap[voiceType].needPusher) {
-        // 如果是pusher，先停掉
-        if (voiceState === VoiceStateEnum.sending) {
-          this.data.pusher.stop();
-        }
-      } else {
-        // 如果是recorder，p2p模块里的stopVoice里会停
-      }
-      xp2pManager.stopVoice(this.properties.targetId);
-    },
     pickDate(e) {
       this.setData({
         inputDate: e.detail.value,
@@ -799,6 +658,23 @@ Component({
           // 更新 inputPlaybackTime
           const item = video_list[video_list.length - 1];
           this.setData({ inputPlaybackTime: `start_time=${item.start_time}&end_time=${item.end_time}` });
+        }
+      });
+    },
+    getVideoList(e) {
+      const date = new Date(this.data.inputDate.replace(/-/g, '/'));
+      if (!this.data.inputDate) {
+        this.showToast('please select date');
+        return;
+      }
+      this.sendInnerCommand(e, date, ({ file_list = [] } = {}) => {
+        if (file_list.length > 0) {
+          // 更新 inputDownloadFilename
+          const item = file_list[file_list.length - 1];
+          this.setData({
+            fileList: file_list,
+            inputDownloadFilename: item.file_name,
+          });
         }
       });
     },
@@ -845,10 +721,9 @@ Component({
         playbackDuration: (endTime - startTime) * 1000,
       });
 
-      const filename = 'ipc.flv';
-      const params = `action=playback&channel=0&${this.data.inputPlaybackTime}`;
-      console.log(`[${this.data.innerId}]`, 'call changeFlv', filename, params);
-      this.data.player.changeFlv({ filename, params });
+      const params = `action=${this.data.streamType}&channel=0&${this.data.inputPlaybackTime}`;
+      console.log(`[${this.data.innerId}]`, 'call changeFlv', params);
+      this.data.player.changeFlv({ params });
     },
     stopPlayback() {
       console.log(`[${this.data.innerId}]`, 'stopPlayback');
@@ -863,10 +738,37 @@ Component({
 
       this.clearPlaybackData();
 
-      const filename = 'ipc.flv';
-      const params = 'action=playback&channel=0';
-      console.log(`[${this.data.innerId}]`, 'call changeFlv', filename, params);
-      this.data.player.changeFlv({ filename, params });
+      const params = `action=${this.data.streamType}&channel=0`;
+      console.log(`[${this.data.innerId}]`, 'call changeFlv', params);
+      this.data.player.changeFlv({ params });
+    },
+    inputIPCDownloadFilename(e) {
+      this.setData({
+        inputDownloadFilename: e.detail.value,
+      });
+    },
+    downloadInputFile() {
+      console.log(`[${this.data.innerId}]`, 'downloadInputFile');
+      if (!this.data.p2pReady) {
+        console.log(`[${this.data.innerId}]`, 'p2p not ready');
+        return;
+      }
+      if (!this.data.inputDownloadFilename) {
+        this.showToast('please input filename');
+        return;
+      }
+
+      let fileItem = this.data.fileList?.find(item => item.file_name === this.data.inputDownloadFilename);
+      if (!fileItem) {
+        // 构造一个
+        fileItem = {
+          file_type: '0',
+          file_name: this.data.inputDownloadFilename,
+          file_size: 1,
+        };
+      }
+
+      this.addToDownloadList([fileItem]);
     },
     async downloadRecord() {
       console.log(`[本地下载] [${this.data.innerId}]`, 'downloadRecord');
@@ -883,9 +785,11 @@ Component({
           file_type: '0',
         },
       });
-      const fileList = res?.file_list;
+      let fileList = res?.file_list;
       console.log('[本地下载] fileList: ', fileList);
+      // file_type: '0'-视频，'1'-图片
       if (Array.isArray(fileList) && fileList.some(item => item.file_type === '0')) {
+        fileList = fileList.filter(item => item.file_type === '0');
         console.log('[本地下载] 已加入下载队列！');
         wx.showToast({
           title: '已加入下载队列！',
@@ -901,9 +805,12 @@ Component({
         return;
       }
 
+      this.addToDownloadList(fileList);
+    },
+    addToDownloadList(fileList) {
       // 加入downloadList，这里只下载视频，file_type: '0'-视频，'1'-图片
       this.setData({
-        downloadList: this.data.downloadList.concat(fileList.filter(item => item.file_type === '0')),
+        downloadList: this.data.downloadList.concat(fileList),
       });
 
       if (this.data.downloadFilename) {
@@ -930,18 +837,21 @@ Component({
         downloadBytes,
       });
 
-      let fixedFilename = file.file_name.replace('/', '_');
+      let fixedFilename = file.file_name.replace(/\//g, '_');
       const pos = fixedFilename.lastIndexOf('.');
       if (pos >= 0) {
         // 把文件大小加到文件名里方便对比
         fixedFilename = `${fixedFilename.substring(0, pos)}.${file.file_size}${fixedFilename.substring(pos)}`;
+      } else {
+        fixedFilename = `${file.file_name}.${file.file_size}.mp4`; // 默认mp4
       }
       const filePath = downloadManager.prepareFile(fixedFilename);
+      console.log(`[${this.data.innerId}]`, 'startSingleDownload', downloadFilename, fixedFilename, filePath);
 
       await xp2pManager.startLocalDownload(
         this.properties.targetId,
         {
-          urlParams: `_crypto=off&channel=0&file_name=${file.file_name}&offset=0`,
+          urlParams: `channel=0&file_name=${file.file_name}&offset=0`,
         },
         {
           onChunkReceived: (chunk) => {
@@ -1472,14 +1382,16 @@ Component({
           });
         });
     },
-    toggleVoice(e) {
-      if (!this.data.p2pReady) {
+    toggleVoice() {
+      console.log(`[${this.data.innerId}]`, 'toggleVoice in voiceState', this.data.voiceState);
+      if (!this.data.voiceComp) {
+        console.log(`[${this.data.innerId}]`, 'no voiceComp');
         return;
       }
 
-      const isSendingVoice = this.data.voiceState === VoiceStateEnum.sending;
-      if (!isSendingVoice) {
-        this.startVoice(e);
+      if (this.data.voiceState !== VoiceStateEnum.sending) {
+        // waiting 期间也 startVoice，具体交给 voice 组件处理
+        this.startVoice();
       } else {
         this.stopVoice();
       }

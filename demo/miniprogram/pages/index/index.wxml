@@ -43,10 +43,13 @@
   <navigator wx:if="{{firstServerStream && firstIPCStream}}" url="/pages/xp2p-multiplayers/demo?cfg1={{firstServerStream.cfg}}&cfg2={{firstIPCStream.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 多播放器 {{firstServerStream.cfg}}+{{firstIPCStream.cfg}}</navigator>
   -->
   <navigator url="/pages/xp2p-records/records?name=downloads" hover-class="navigator-hover">跳转到 下载管理页</navigator>
-  <navigator url="/pages/xp2p-records/records?name=records" hover-class="navigator-hover">跳转到 录像管理页</navigator>
+  <navigator url="/pages/xp2p-records/records?name=records" hover-class="navigator-hover">跳转到 录像管理页-flv</navigator>
+  <navigator url="/pages/xp2p-records/records?name=mjpgs" hover-class="navigator-hover">跳转到 录像管理页-mjpg</navigator>
   <navigator url="/pages/xp2p-records/records?name=voices" hover-class="navigator-hover">跳转到 语音管理页</navigator>
+  <navigator url="/pages/xp2p-records/records?name=videos" hover-class="navigator-hover">跳转到 Video 管理页</navigator>
   <navigator url="/pages/test-p2p-pusher/pusher" hover-class="navigator-hover">跳转到 P2P-Pusher 测试页</navigator>
   <navigator url="/pages/test-live-player/test" hover-class="navigator-hover">跳转到 LivePlayer 测试页</navigator>
   <navigator url="/pages/test-video/test" hover-class="navigator-hover">跳转到 Video 测试页</navigator>
+  <!-- <navigator url="/pages/test-mjpg/test" hover-class="navigator-hover">跳转到 MJPG 测试页</navigator> -->
 </view>
 

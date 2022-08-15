@@ -12,8 +12,12 @@
 .group-button-area {
   padding-top: 10rpx;
 }
-.group-button {
+.group-button-area .group-button {
   margin-right: 10rpx;
+}
+
+.prop-item {
+  margin-bottom: 10rpx;
 }
 
 .text-box {
@@ -58,4 +62,8 @@
   border: solid 2rpx #dddddd;
   background-color: lightyellow;
   padding: 10rpx;
+}
+
+.hide {
+  display: none;
 }

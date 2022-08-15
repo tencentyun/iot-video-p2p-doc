@@ -1,0 +1,53 @@
+<view class="page-body">
+  <view class="page-section">
+    <view class="player-container">
+      <local-mjpg-player
+        wx:if="{{playerId}}"
+        id="{{playerId}}"
+        renderMode="canvas"
+        src="{{playerSrc}}"
+        audioSrc="{{playerAudioSrc}}"
+        loop="{{playerLoop}}"
+        showLog="{{showPlayerLog}}"
+        bind:playerready="onPlayerReady"
+        bind:playererror="onPlayerError"
+        bind:ended="onEnded"
+        bind:streamerror="onStreamError"
+        bind:imageload="onImageLoad"
+        bind:imageerror="onImageError"
+        bind:audioerror="onAudioError"
+      />
+    </view>
+  </view>
+  <view class="page-section">
+    <view class="group-button-area">
+      <button bindtap="bindCreatePlayer" class="group-button" type="primary" size="mini" disabled="{{playerId}}">创建</button>
+      <button bindtap="bindDestroyPlayer" class="group-button" type="primary" size="mini" disabled="{{!playerId}}">销毁</button>
+    </view>
+    <view class="group-button-area">
+      <button bindtap="bindChoose" data-field="playerSrc" data-ext="mjpg,mjpeg" class="group-button" type="primary" size="mini" disabled="{{!playerReady || playerSrc}}">选择MJPG</button>
+      <button bindtap="bindChoose" data-field="playerAudioSrc" data-ext="aac" class="group-button" type="primary" size="mini" disabled="{{!playerReady || playerAudioSrc}}">选择AAC</button>
+      <button bindtap="bindClear" class="group-button" type="primary" size="mini" disabled="{{!playerReady || (!playerSrc && !playerAudioSrc)}}">清除选择</button>
+    </view>
+    <view class="group-button-area">
+      <button bindtap="bindPlay" class="group-button" type="primary" size="mini" disabled="{{!playerReady || !playerSrc || playStatus}}">播放</button>
+      <button bindtap="bindPlay" data-loop="1" class="group-button" type="primary" size="mini" disabled="{{!playerReady || !playerSrc || playStatus}}">循环播放</button>
+      <button bindtap="bindStop" class="group-button" type="primary" size="mini" disabled="{{!playerReady || !playerSrc || !playStatus}}">停止</button>
+      <button bindtap="bindPause" class="group-button" type="primary" size="mini" disabled="{{!playerReady || !playerSrc || !playStatus}}">暂停</button>
+      <button bindtap="bindResume" class="group-button" type="primary" size="mini" disabled="{{!playerReady || !playerSrc || !playStatus}}">续播</button>
+    </view>
+  </view>
+  <view class="page-section">
+    <view>requirements: wx 8.0.10 + sdk 2.19.3</view>
+    <view>system: {{systemInfo.system}} / wx {{systemInfo.version}} / sdk {{systemInfo.SDKVersion}}</view>
+    <view>playerPlugin: {{playerPluginVersion}}</view>
+    <view>playerSrc: {{playerSrc}}</view>
+    <view>playerAudioSrc: {{playerAudioSrc}}</view>
+    <view>playStatus: {{playStatus}}</view>
+  </view>
+  <view class="page-section page-section-gap">
+    <view class="page-section-title">Log<view style="float: right; padding-right: 10rpx; color: blue;" bindtap="clearLog">clear</view></view>
+    <scroll-view scroll-y="true" style="height: 500rpx; padding: 10rpx; border: solid 1px #dddddd;"><text>{{log}}</text></scroll-view>
+  </view>
+</view>
+

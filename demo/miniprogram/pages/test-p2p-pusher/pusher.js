@@ -239,8 +239,8 @@ Page({
         // console.log('==== onLivePusherStateChange', detail.code, detail);
     }
   },
-  onLivePusherNetStatusChange({ detail }) {
-    // console.log('onLivePusherNetStatusChange', detail);
+  onLivePusherNetStatus({ detail }) {
+    // console.log('onLivePusherNetStatus', detail);
     if (!detail.info) {
       return;
     }

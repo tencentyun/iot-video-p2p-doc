@@ -1,0 +1,7 @@
+<view class="mock-p2p-player">
+  <view>mockType: {{type}}</view>
+  <view wx:if="{{hasCtx}}">
+    <view>totalBytes: {{totalBytes}}</view>
+  </view>
+  <view wx:else>preparing...</view>
+</view>

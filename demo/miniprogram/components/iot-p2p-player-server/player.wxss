@@ -1,1 +1,16 @@
 @import '../../common.wxss';
+
+.iot-p2p-player-server {
+  box-sizing: border-box;
+  padding-top: 420rpx;
+  height: calc(100vh - 50rpx);
+  overflow: scroll;
+}
+
+.player-wrap {
+  position: absolute;
+  top: 0;
+  width: 750rpx;
+  height: 420rpx;
+  z-index: 1;
+}

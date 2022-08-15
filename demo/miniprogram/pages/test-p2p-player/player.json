@@ -1,4 +1,5 @@
 {
+  "navigationBarTitleText": "P2P-Player 测试页",
   "usingComponents": {
     "p2p-player": "plugin://wechat-p2p-player/p2p-player"
   }
