@@ -1,3 +1,8 @@
+.component {
+  box-sizing: border-box;
+  position: relative;
+}
+
 .component-section {
   margin-bottom: 20rpx;
 }
@@ -36,6 +41,7 @@
 }
 .text-btn {
   color: #0052d9;
+  margin: 0 10rpx;
 }
 .text-btn.disabled {
   color: rgba(0, 0, 0, 0.3);
@@ -66,4 +72,16 @@
 
 .hide {
   display: none;
+}
+
+.debug-info-container {
+  position: absolute;
+  width: 100%;
+  max-height: 720rpx;
+  overflow: auto;
+  background-color: #fff;
+  box-sizing: border-box;
+  box-shadow: inset 0 -2rpx 0 0 rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  padding: 20rpx;
 }

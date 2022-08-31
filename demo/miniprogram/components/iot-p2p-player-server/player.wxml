@@ -1,4 +1,4 @@
-<view class="iot-p2p-player-server">
+<view class="component iot-p2p-player-server">
   <view class="player-wrap">
     <iot-p2p-common-player
       id="{{playerId}}"

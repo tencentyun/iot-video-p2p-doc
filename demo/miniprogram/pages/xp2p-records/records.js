@@ -1,11 +1,17 @@
-import { isFLV, isMP4, isMJPG } from '../../utils';
 import { getRecordManager } from '../../lib/recordManager';
 
+const app = getApp();
+
+const isFLV = filename => /\.flv$/i.test(filename);
+const isMP4 = filename => /\.mp4$/i.test(filename);
+const isMJPG = filename => /\.mjpg$/i.test(filename);
+const isLOG = filename => /\.log$/i.test(filename);
 const processFileItem = (item) => {
   if (item) {
     item.isFLV = isFLV(item.fileName);
     item.isMP4 = isMP4(item.fileName);
     item.isMJPG = isMJPG(item.fileName);
+    item.isLOG = isLOG(item.fileName);
   }
   return item;
 };
@@ -13,6 +19,7 @@ const processFileItem = (item) => {
 Page({
   data: {
     baseDir: '',
+    isVideoDir: false,
     isRefreshing: false,
     recordList: null,
     totalBytes: NaN,
@@ -26,6 +33,7 @@ Page({
     this.recordManager = getRecordManager(query.name);
     this.setData({
       baseDir: this.recordManager.baseDir,
+      isVideoDir: ['records', 'voices', 'mjpgs', 'downloads'].includes(query.name),
     });
     this.getRecordList();
   },
@@ -93,9 +101,22 @@ Page({
       console.error('add file fail', err);
     }
   },
-  removeAllRecords() {
+  async removeAllRecords() {
     if (this.data.isRefreshing) {
       return;
+    }
+
+    let needExit;
+    if (this.recordManager.name === 'logs') {
+      // logs 特殊逻辑
+      const modalRes = await wx.showModal({
+        title: '确定删除log吗？',
+        content: '删除log后会重新进入小程序',
+      });
+      if (!modalRes || !modalRes.confirm) {
+        return;
+      }
+      needExit = true;
     }
 
     this.recordManager.removeSavedRecordList();
@@ -103,6 +124,13 @@ Page({
       recordList: [],
       totalBytes: 0,
     });
+
+    if (needExit) {
+      app.logger.reset('reLaunch');
+      wx.reLaunch({
+        url: '/pages/index/index',
+      });
+    }
   },
   playRecord(e) {
     const { index } = e.currentTarget.dataset;

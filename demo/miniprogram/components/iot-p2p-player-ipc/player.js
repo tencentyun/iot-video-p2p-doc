@@ -2,8 +2,14 @@
 import { isDevTools, getParamValue, toDateString, toTimeString, toDateTimeString } from '../../utils';
 import { getXp2pManager } from '../../lib/xp2pManager';
 import { getRecordManager } from '../../lib/recordManager';
+import { isStreamEnd, isStreamError } from '../iot-p2p-common-player/common';
 import { VoiceOpEnum, VoiceStateEnum } from '../iot-p2p-voice/common';
 import { commandMap } from './common';
+
+// 覆盖 console
+const app = getApp();
+const oriConsole = app.console;
+const console = app.logger || oriConsole;
 
 const xp2pManager = getXp2pManager();
 
@@ -170,7 +176,8 @@ Component({
     },
     attached() {
       // 在组件实例进入页面节点树时执行
-      console.log(`[${this.data.innerId}]`, '==== attached', this.id, this.properties);
+      console.log(`[${this.data.innerId}]`, '==== attached', this.id);
+      oriConsole.log(this.properties);
 
       const innerOptions = {
         needCheckStream: false,
@@ -252,6 +259,7 @@ Component({
       reset: this.reset.bind(this),
       startVoice: this.startVoice.bind(this),
       stopVoice: this.stopVoice.bind(this),
+      toggleVoice: this.toggleVoice.bind(this),
       snapshot: this.snapshot.bind(this),
       snapshotAndSave: this.snapshotAndSave.bind(this),
     };
@@ -361,10 +369,8 @@ Component({
           this.data.playbackProgressToResume && this.sendPlaybackSeekAfterSuccess();
         } else if (this.data.streamSuccess && (
           !this.data.p2pReady
-          || e.detail.streamState === 'StreamCheckError'
-          || e.detail.streamState === 'StreamStartError'
-          || e.detail.streamState === 'StreamDataEnd'
-          || e.detail.streamState === 'StreamError'
+          || isStreamEnd(e.detail.streamState)
+          || isStreamError(e.detail.streamState)
         )) {
           // 播放结束或出错
           this.data.sliderTimer && clearTimeout(this.data.sliderTimer);
@@ -388,11 +394,11 @@ Component({
     // 以下是 pusher 的事件
     onVoiceStateChange(e) {
       console.log(`[${this.data.innerId}]`, 'onVoiceStateChange', e.detail.voiceState);
-      this.setData({ voiceState: e.detail.voiceState});
+      this.setData({ voiceState: e.detail.voiceState });
       this.passEvent(e);
     },
     onBeforeStartVoice(e) {
-      console.log(`[${this.data.innerId}]`, 'onBeforeStartVoice', e.detail.voiceOp);
+      console.log(`[${this.data.innerId}]`, `onBeforeStartVoice in voiceState ${this.data.voiceState}, voiceOp ${e.detail.voiceOp}`);
       if (e.detail.voiceOp === VoiceOpEnum.Pause) {
         // 暂停播放，解决回音问题
         console.log(`[${this.data.innerId}]`, 'pausePlayer before start voice');
@@ -404,7 +410,7 @@ Component({
       }
     },
     onAfterStopVoice(e) {
-      console.log(`[${this.data.innerId}]`, 'onAfterStopVoice', e.detail.voiceOp);
+      console.log(`[${this.data.innerId}]`, `onAfterStopVoice in voiceState ${this.data.voiceState}, voiceOp ${e.detail.voiceOp}`);
       if (e.detail.voiceOp === VoiceOpEnum.Pause) {
         // 要暂停播放的，对讲结束恢复播放
         console.log(`[${this.data.innerId}]`, 'resumePlayer after stop voice');
@@ -431,7 +437,7 @@ Component({
       console.error(`[${this.data.innerId}]`, 'onMjpgPlayError', e.detail);
       const { errMsg, errDetail } = e.detail;
       this.showModal({
-        content: `${errMsg || '图片流失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常,
+        content: `${errMsg || '播放图片流失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常,
         showCancel: false,
       });
     },
@@ -1386,6 +1392,12 @@ Component({
       console.log(`[${this.data.innerId}]`, 'toggleVoice in voiceState', this.data.voiceState);
       if (!this.data.voiceComp) {
         console.log(`[${this.data.innerId}]`, 'no voiceComp');
+        return;
+      }
+
+      if (this.data.voiceState && this.data.voiceState !== VoiceStateEnum.sending) {
+        // 启动中，这时不处理
+        console.log(`[${this.data.innerId}]`, 'can not toggleVoice in voiceState', this.data.voiceState);
         return;
       }
 

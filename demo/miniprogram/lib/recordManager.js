@@ -1,10 +1,12 @@
 import { toDateTimeFilename, checkAuthorize } from '../utils';
 
+export const XP2P_BASE_DIR = `${wx.env.USER_DATA_PATH}/xp2p`;
+
 export const MAX_FILE_SIZE_IN_M = 50;
 export const MAX_FILE_SIZE = MAX_FILE_SIZE_IN_M * 1024 * 1024;
 
-let fileSystem;
-const xp2pBaseDir = `${wx.env.USER_DATA_PATH}/xp2p`;
+const fileSystem = wx.getFileSystemManager();
+const xp2pBaseDir = XP2P_BASE_DIR;
 
 /*
 export interface FileObject {
@@ -22,9 +24,6 @@ export interface SavedFileObject {
 
 class RecordManager {
   constructor(name) {
-    if (!fileSystem) {
-      fileSystem = wx.getFileSystemManager();
-    }
     this.name = name || 'others';
     this.baseDir = `${xp2pBaseDir}/${this.name}`;
   }

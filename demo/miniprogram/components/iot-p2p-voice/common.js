@@ -40,10 +40,12 @@ export const voiceConfigMap = {
 };
 
 export const VoiceStateEnum = {
+  creating: 'creating', // 创建pusher
   authChecking: 'authChecking', // 检查权限
   deviceChecking: 'deviceChecking', // 检查设备状态
   preparing: 'preparing', // 发起voice请求
   starting: 'starting', // 启动pusher
+  started: 'started', // 启动pusher成功，等待pusher推送数据
   sending: 'sending', // 发送语音数据(包括等待pusher推流)
   error: 'error',
 };

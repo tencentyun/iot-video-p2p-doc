@@ -1,4 +1,4 @@
-<view class="iot-pusher">
+<view class="component iot-pusher">
   <view class="pusher-container">
     <p2p-pusher
       wx:if="{{hasPusher}}"
@@ -11,6 +11,7 @@
       audioQuality="{{audioQuality}}"
       audioVolumeType="voicecall"
       acceptLivePusherEvents="{{acceptLivePusherEvents}}"
+      flvFunctions="{{flvFunctions}}"
       bind:pusherReady="onPusherReady"
       bind:pusherStartPush="onPusherStartPush"
       bind:pusherFlvHeader="onPusherFlvHeader"

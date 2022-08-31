@@ -12,24 +12,25 @@
  * liveStreamDomain: string 1v1连接过多时自动转到1v多模式的server域名
  * options:
  *   needMjpg: boolean 需要图片流，默认false
- *   needCheckStream: boolean 播放前先检查能否拉流，默认false
- *   intercomType: string 对讲类型，Recorder/Pusher/DuplexVideo，默认Recorder
+ *   needCheckStream: boolean 播放前先检查能否拉流，默认 false
+ *   intercomType: 'Recorder' | 'Pusher' 对讲类型，默认 Recorder
  */
 
 // 这些是预置的ipc设备
 const devices = {
   test_mjpg: {
     showInHomePageBtn: true,
-    productName: 'Mjpg',
-    productId: 'AQTV2839QJ',
-    deviceName: 'sp02_33925210_16',
-    xp2pInfo: 'XP2PDhFRfd+PLWpEndXBeTPv9g==%2.4.29',
+    productName: 'ac7916',
+    productId: 'SO1Z9Y787A',
+    deviceName: 'youzi_79972790_1',
+    xp2pInfo: 'XP2P4dDSc1VbFpls3QZAE+cEMg==%2.4.29m',
     liveParams: 'action=live-audio&channel=0',
     liveMjpgParams: 'action=live-mjpg&channel=0',
     playbackParams: 'action=playback-audio&channel=0',
     playbackMjpgParams: 'action=playback-mjpg&channel=0',
     options: {
       needMjpg: true,
+      intercomType: 'Pusher',
     },
   },
   test_mjpg2: {

@@ -3,6 +3,11 @@ import { getXp2pManager, Xp2pManagerErrorEnum } from '../../lib/xp2pManager';
 import { getRecordManager } from '../../lib/recordManager';
 import { VoiceOpEnum, VoiceStateEnum, voiceConfigMap } from './common';
 
+// 覆盖 console
+const app = getApp();
+const oriConsole = app.console;
+const console = app.logger || oriConsole;
+
 const xp2pManager = getXp2pManager();
 
 const voiceManager = getRecordManager('voices');
@@ -80,6 +85,59 @@ Component({
   },
   observers: {
     voiceState(val) {
+      if (val) {
+        const now = Date.now();
+        if (!this.userData.timestamps) {
+          this.userData.timestamps = {
+            firstState: val,
+          };
+          this.userData.steps = [];
+        }
+        if (!this.userData.timestamps[val]) {
+          const { firstState, lastState } = this.userData.timestamps;
+          if (lastState) {
+            this.userData.steps.push({
+              step: `${lastState}->${val}`,
+              delay: now - this.userData.timestamps[lastState],
+            });
+          }
+          this.userData.timestamps.lastState = val;
+          this.userData.timestamps[val] = now;
+          if (val === VoiceStateEnum.sending || val === VoiceStateEnum.error) {
+            this.userData.timestamps.totalDelay = now - this.userData.timestamps[firstState];
+            console.log(`[${this.data.innerId}] voiceStat`, {
+              lastState: this.userData.timestamps.lastState,
+              totalDelay: this.userData.timestamps.totalDelay,
+              steps: this.userData.steps
+            });
+          }
+        }
+      } else {
+        if (this.userData.timestamps) {
+          if (!this.userData.timestamps.totalDelay) {
+            // 还没出结果
+            const now = Date.now();
+            const nowState = 'stop';
+            const { firstState, lastState } = this.userData.timestamps;
+            if (lastState) {
+              this.userData.steps.push({
+                step: `${lastState}->${nowState}`,
+                delay: now - this.userData.timestamps[lastState],
+              });
+            }
+            this.userData.timestamps.lastState = nowState;
+            this.userData.timestamps[nowState] = now;
+            this.userData.timestamps.totalDelay = now - this.userData.timestamps[firstState];
+            console.log(`[${this.data.innerId}] voiceStat`, {
+              lastState: this.userData.timestamps.lastState,
+              totalDelay: this.userData.timestamps.totalDelay,
+              steps: this.userData.steps
+            });
+          }
+          this.userData.timestamps = null;
+          this.userData.steps = null;
+        }
+      }
       this.triggerEvent('voiceStateChange', {
         voiceState: val,
       });
@@ -92,12 +150,16 @@ Component({
 
       // 渲染无关，不放在data里，以免影响性能
       this.userData = {
+        timestamps: null,
+        steps: null,
         pusher: null,
+        voiceTriggerDataset: null, // startVoice时的dataset
         voiceFileObj: null, // pusher采集时把数据录下来，调试用
       };
     },
     attached() {
-      console.log(`[${this.data.innerId}]`, '==== attached', this.id, this.properties);
+      console.log(`[${this.data.innerId}]`, '==== attached', this.id);
+      oriConsole.log(this.properties);
 
       const voiceConfig = voiceConfigMap[this.properties.intercomType];
       console.log(`[${this.data.innerId}]`, 'voiceConfig', this.properties.intercomType, voiceConfig);
@@ -149,12 +211,21 @@ Component({
     onPusherStateChange(e) {
       console.log(`[${this.data.innerId}]`, 'onPusherStateChange', e.detail.pusherState);
       const pusherReady = e.detail.pusherState === 'PusherReady';
+      if (pusherReady === this.data.pusherReady) {
+        return;
+      }
       this.setData({ pusherReady });
+      if (this.data.voiceState === VoiceStateEnum.creating && pusherReady) {
+        // 重试时触发的创建，创建成功直接继续
+        this.doStartVoice();
+      }
     },
     onPusherStartPush(e) {
       // 真正开始推流了
       console.log(`[${this.data.innerId}]`, 'onPusherStartPush', e.detail);
-      if (this.data.voiceState !== VoiceStateEnum.sending) {
+      if (this.data.voiceState === VoiceStateEnum.started) {
+        this.setData({ voiceState: VoiceStateEnum.sending });
+      } else {
         console.warn(`[${this.data.innerId}]`, 'onPusherStartPush in voiceState', this.data.voiceState);
       }
     },
@@ -174,8 +245,9 @@ Component({
       if (this.data.voiceState && this.data.needPusher) {
         this.stopVoice();
       }
-      const { errType, errMsg, errDetail } = e.detail;
-      if (errType === 'PusherError' || errType === 'LivePusherError') {
+      // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+      const { errType, errMsg, errDetail, isFatalError } = e.detail;
+      if (isFatalError) {
         this.setData({ pusherReady: false, pusherError: e.detail });
       }
       this.showModal({
@@ -186,14 +258,15 @@ Component({
     checkAuthCanStartVoice() {
       console.log(`[${this.data.innerId}]`, 'checkAuthCanStartVoice');
       return new Promise((resolve, reject) => {
+        const start = Date.now();
         xp2pManager
           .checkRecordAuthorize()
           .then(() => {
-            console.log(`[${this.data.innerId}]`, 'checkRecordAuthorize success');
+            console.log(`[${this.data.innerId}]`, `checkRecordAuthorize success, delay ${Date.now() - start}`);
             resolve();
           })
           .catch((err) => {
-            console.log(`[${this.data.innerId}]`, 'checkRecordAuthorize err', err);
+            console.log(`[${this.data.innerId}]`, `checkRecordAuthorize err, delay ${Date.now() - start}`, err);
             this.showToast('请授权小程序访问麦克风');
             reject(err);
           });
@@ -243,18 +316,41 @@ Component({
       });
     },
     async startVoice(e) {
+      if (this.data.isDetached) {
+        return;
+      }
+
       console.log(`[${this.data.innerId}]`, 'startVoice');
       if (this.data.voiceState) {
         console.log(`[${this.data.innerId}]`, `can not start voice in voiceState ${this.data.voiceState}`);
         return;
       }
 
+      // 记下来
+      this.userData.voiceTriggerDataset = e?.currentTarget?.dataset;
+
       if (this.data.needPusher && !this.data.pusherReady) {
+        console.log(`[${this.data.innerId}]`, 'needPusher but pusher not ready', this.data.pusherError);
         if (this.data.pusherError) {
-          const { errMsg, errDetail } = this.data.pusherError;
-          this.showModal({
-            content: `${errMsg || '推流失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常,
-            showCancel: false,
+          // 出错重试
+          // const { errMsg, errDetail } = this.data.pusherError;
+          // this.showModal({
+          //   content: `${errMsg || '推流失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常,
+          //   showCancel: false,
+          // });
+          this.userData.pusher = null;
+          this.setData({
+            voiceState: VoiceStateEnum.creating,
+            isModifyPusher: true,
+            pusherReady: false,
+            pusherError: null,
+          });
+          wx.nextTick(() => {
+            this.setData({
+              isModifyPusher: false,
+            }, () => {
+              this.getPusherComp();
+            });
           });
         } else {
           this.showToast('pusher not ready');
@@ -262,10 +358,20 @@ Component({
         return;
       }
 
+      this.doStartVoice();
+    },
+    async doStartVoice() {
+      if (this.data.isDetached) {
+        return;
+      }
+
+      const dataset = this.userData.voiceTriggerDataset;
+      console.log(`[${this.data.innerId}]`, 'doStartVoice', dataset);
+
       if (this.data.needDuplex) {
         // 是双向音视频，在demo里省略呼叫应答功能，直接发起
         this.triggerEvent('beforeStartVoice', { voiceOp: this.data.voiceOp });
-        this.doStartVoiceByPusher(e);
+        this.doStartVoiceByPusher(dataset);
         return;
       }
 
@@ -273,12 +379,16 @@ Component({
       try {
         this.setData({ voiceState: VoiceStateEnum.authChecking });
         await this.checkAuthCanStartVoice();
+        if (!this.data.voiceState) {
+          // 已经stop了
+          return;
+        }
       } catch (err) {
         if (!this.data.voiceState) {
           // 已经stop了
           return;
         }
-        console.log(`[${this.data.innerId}]`, '==== checkAuthCanStartVoice error', err);
+        console.error(`[${this.data.innerId}]`, '==== checkAuthCanStartVoice error', err);
         this.stopVoice();
         return;
       }
@@ -286,17 +396,21 @@ Component({
       try {
         this.setData({ voiceState: VoiceStateEnum.deviceChecking });
         await this.checkDeviceCanStartVoice();
+        if (!this.data.voiceState) {
+          // 已经stop了
+          return;
+        }
       } catch (err) {
         if (!this.data.voiceState) {
           // 已经stop了
           return;
         }
-        console.log(`[${this.data.innerId}]`, '==== checkDeviceCanStartVoice error', err);
+        console.error(`[${this.data.innerId}]`, '==== checkDeviceCanStartVoice error', err);
         this.stopVoice();
         return;
       }
 
-      if (!this.data.voiceState) {
+      if (this.data.isDetached || !this.data.voiceState) {
         // 已经stop了
         return;
       }
@@ -307,20 +421,20 @@ Component({
       this.triggerEvent('beforeStartVoice', { voiceOp: this.data.voiceOp });
 
       if (this.data.needPusher) {
-        this.doStartVoiceByPusher(e);
+        this.doStartVoiceByPusher(dataset);
       } else {
-        this.doStartVoiceByRecorder(e);
+        this.doStartVoiceByRecorder(dataset);
       }
     },
-    doStartVoiceByRecorder(e) {
+    doStartVoiceByRecorder(dataset) {
       // 每种采样率有对应的编码码率范围有效值，设置不合法的采样率或编码码率会导致录音失败
       // 具体参考 https://developers.weixin.qq.com/miniprogram/dev/api/media/recorder/RecorderManager.start.html
       const { options } = voiceConfigMap[this.properties.intercomType];
 
       // 弄个副本，以免被修改
       let voiceOptions;
-      if (e?.currentTarget?.dataset?.recorderCfg) {
-        const [numberOfChannels, sampleRate, encodeBitRate] = e?.currentTarget?.dataset?.recorderCfg
+      if (dataset?.recorderCfg) {
+        const [numberOfChannels, sampleRate, encodeBitRate] = dataset?.recorderCfg
           .split('-')
           .map((v) => Number(v));
         const recorderOptions = {
@@ -333,7 +447,7 @@ Component({
         voiceOptions = { ...options };
       }
 
-      console.log(`[${this.data.innerId}]`, 'do doStartVoiceByRecorder', this.properties.targetId, voiceOptions);
+      console.log(`[${this.data.innerId}]`, 'doStartVoiceByRecorder', this.properties.targetId, voiceOptions);
       this.setData({ voiceState: VoiceStateEnum.preparing });
       xp2pManager
         .startVoice(this.properties.targetId, voiceOptions, {
@@ -355,7 +469,7 @@ Component({
             // 已经stop了
             return;
           }
-          console.log(`[${this.data.innerId}]`, 'startVoice success', res);
+          console.log(`[${this.data.innerId}]`, 'xp2pManager.startVoice success', res);
           this.setData({ voiceState: VoiceStateEnum.sending });
         })
         .catch((errcode) => {
@@ -363,20 +477,20 @@ Component({
             // 已经stop了
             return;
           }
-          console.log(`[${this.data.innerId}]`, 'startVoice fail', errcode);
+          console.log(`[${this.data.innerId}]`, 'xp2pManager.startVoice fail', errcode);
           this.showToast(errcode === Xp2pManagerErrorEnum.NoAuth ? '请授权小程序访问麦克风' : '发起语音对讲失败');
           this.stopVoice();
         });
     },
-    doStartVoiceByPusher(e) {
+    doStartVoiceByPusher(dataset) {
       const { options } = voiceConfigMap[this.properties.intercomType];
 
       // 弄个副本，以免被修改
       const voiceOptions = { ...options };
 
-      const needRecord = parseInt(e?.currentTarget?.dataset?.needRecord, 10);
+      const needRecord = parseInt(dataset?.needRecord, 10);
 
-      console.log(`[${this.data.innerId}]`, 'do doStartVoiceByPusher', this.properties.targetId, voiceOptions);
+      console.log(`[${this.data.innerId}]`, 'doStartVoiceByPusher', this.properties.targetId, voiceOptions, `needRecord: ${needRecord}`);
       this.setData({ voiceState: VoiceStateEnum.preparing });
       xp2pManager
         .startVoiceData(this.properties.targetId, voiceOptions, {
@@ -402,7 +516,7 @@ Component({
             // 已经stop了
             return;
           }
-          console.log(`[${this.data.innerId}]`, 'startVoiceData success', writer);
+          console.log(`[${this.data.innerId}]`, 'xp2pManager.startVoiceData success', writer);
 
           let writerForPusher = writer;
           if (needRecord) {
@@ -432,7 +546,7 @@ Component({
             writer: writerForPusher,
             success: (res) => {
               console.log(`[${this.data.innerId}]`, 'voice pusher start success', res);
-              this.setData({ voiceState: VoiceStateEnum.sending });
+              this.setData({ voiceState: VoiceStateEnum.started });
             },
             fail: (err) => {
               console.log(`[${this.data.innerId}]`, 'voice pusher start fail', err);
@@ -445,12 +559,16 @@ Component({
             // 已经stop了
             return;
           }
-          console.log(`[${this.data.innerId}]`, 'startVoiceData fail', errcode);
+          console.log(`[${this.data.innerId}]`, 'xp2pManager.startVoiceData fail', errcode);
           this.showToast('对讲失败');
           this.stopVoice();
         });
     },
     stopVoice() {
+      if (this.data.isDetached) {
+        return;
+      }
+
       console.log(`[${this.data.innerId}]`, 'stopVoice');
       if (!this.data.voiceState) {
         console.log(`[${this.data.innerId}]`, 'not voicing');
@@ -461,6 +579,7 @@ Component({
 
       const { voiceFileObj } = this.userData;
       this.userData.voiceFileObj = null;
+      this.userData.voiceTriggerDataset = null;
 
       const { voiceState } = this.data;
       this.setData({ voiceState: '' });
@@ -471,7 +590,10 @@ Component({
 
       if (this.data.needPusher) {
         // 如果是pusher，先停止采集语音
-        if (voiceState === VoiceStateEnum.starting || voiceState === VoiceStateEnum.sending) {
+        if (voiceState === VoiceStateEnum.starting
+          || voiceState === VoiceStateEnum.started
+          || voiceState === VoiceStateEnum.sending
+        ) {
           this.userData.pusher?.stop();
         }
       } else {

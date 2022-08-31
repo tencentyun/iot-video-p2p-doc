@@ -4,20 +4,20 @@
     <iot-p2p-player-ipc
       wx:if="{{p2pMode === 'ipc'}}"
       id="{{playerId}}"
-      targetId="{{targetId}}" 
-      flvUrl="{{flvUrl}}" 
-      productId="{{productId}}" 
-      deviceName="{{deviceName}}" 
-      xp2pInfo="{{xp2pInfo}}" 
+      targetId="{{targetId}}"
+      flvUrl="{{flvUrl}}"
+      productId="{{productId}}"
+      deviceName="{{deviceName}}"
+      xp2pInfo="{{xp2pInfo}}"
       onlyp2p="{{onlyp2p}}"
       bind:playError="onPlayError"
     />
     <iot-p2p-player-server
       wx:if="{{p2pMode === 'server'}}"
       id="{{playerId}}"
-      targetId="{{targetId}}" 
-      flvUrl="{{flvUrl}}" 
-      codeUrl="{{codeUrl}}" 
+      targetId="{{targetId}}"
+      flvUrl="{{flvUrl}}"
+      codeUrl="{{codeUrl}}"
       onlyp2p="{{onlyp2p}}"
       bind:playError="onPlayError"
     />

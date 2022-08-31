@@ -1,5 +1,5 @@
 <view class="page-body">
-  <view class="page-section">
+  <view wx:if="{{isVideoDir}}" class="page-section">
     <view class="notice-box">
       <view>· mp4文件可以保存到相册</view>
       <view>· flv文件在Android系统可以保存到相册，但是iOS系统不支持</view>

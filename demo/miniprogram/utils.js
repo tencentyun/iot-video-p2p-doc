@@ -49,7 +49,9 @@ function pad(v, l) {
 }
 export const toDateString = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 export const toTimeString = (date) => `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+export const toTimeMsString = (date) => `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}:${pad(date.getMilliseconds(), 3)}`;
 export const toDateTimeString = (date) => `${toDateString(date)} ${toTimeString(date)}`;
+export const toDateTimeMsString = (date) => `${toDateString(date)} ${toTimeMsString(date)}`;
 export const toDateTimeFilename = (date) => `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 
 export const isPeername = (xp2pInfo) => /^\w+$/.test(xp2pInfo) && !/^XP2P/.test(xp2pInfo);
@@ -102,10 +104,6 @@ export const checkAuthorize = (scope) =>
       },
     });
   });
-
-export const isFLV = filename => /\.flv$/i.test(filename);
-export const isMP4 = filename => /\.mp4$/i.test(filename);
-export const isMJPG = filename => /\.mjpg$/i.test(filename);
 
 export function stringToUint8Array(str) {
   const encodedString = unescape(encodeURIComponent(str || ''));

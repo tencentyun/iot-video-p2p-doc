@@ -1,6 +1,11 @@
 import { getXp2pManager } from '../../lib/xp2pManager';
 import { PusherStateEnum, totalMsgMap, livePusherErrMsgMap } from './common';
 
+// 覆盖 console
+const app = getApp();
+const oriConsole = app.console;
+const console = app.logger || oriConsole;
+
 const xp2pManager = getXp2pManager();
 
 let pusherSeq = 0;
@@ -56,6 +61,7 @@ Component({
       netstatus: false, // attached 时根据 needLivePusherInfo 赋值
       // audiovolumenotify: true,
     },
+    flvFunctions: null,
 
     // 有writer才能推流
     hasWriter: false,
@@ -85,15 +91,25 @@ Component({
     },
     attached() {
       // 在组件实例进入页面节点树时执行
-      console.log(`[${this.data.innerId}]`, '==== attached', this.id, this.properties);
+      console.log(`[${this.data.innerId}]`, '==== attached', this.id, {
+        mode: this.properties.mode,
+      });
+
       const pusherId = `${this.data.innerId}-pusher`; // 这是 p2p-pusher 组件的id，不是自己的id
+      const handleFlvChunk = this.handleFlvChunk.bind(this);
       this.setData({
         hasPusher: true,
         pusherId,
         acceptLivePusherEvents: {
           ...this.data.acceptLivePusherEvents,
           netstatus: this.properties.needLivePusherInfo || false,
-        }
+        },
+        flvFunctions: {
+          onFlvHeader: detail => this.onPusherFlvHeader({ detail }), // 不直接用 handleFlvChunk 是为了打个log
+          onFlvAudioTag: handleFlvChunk,
+          onFlvVideoTag: handleFlvChunk,
+          onFlvDataTag: handleFlvChunk,
+        },
       });
 
       this.createPusher();
@@ -168,7 +184,7 @@ Component({
       console.log(`[${this.data.innerId}]`, '==== onPusherStartPush', detail);
       if (!this.userData.writer) {
         // 现在不能push
-        console.warn(`[${this.data.innerId}]`, 'onPusherStartPush but can not push, stop pusher');
+        console.warn(`[${this.data.innerId}]`, 'onPusherStartPush but can not push without writer, stop pusher');
         this.tryStopPusher();
         return;
       }
@@ -177,10 +193,13 @@ Component({
       this.triggerEvent(type, detail);
     },
     onPusherFlvHeader({ detail }) {
-      console.log(`[${this.data.innerId}]`, '==== onPusherFlvHeader', detail);
-      this.addChunkInner && this.addChunkInner(detail.data, detail.params);
+      console.log(`[${this.data.innerId}]`, '==== onPusherFlvHeader', detail.data?.byteLength);
+      this.handleFlvChunk(detail);
     },
     onPusherFlvTag({ detail }) {
+      this.handleFlvChunk(detail);
+    },
+    handleFlvChunk(detail) {
       this.addChunkInner && this.addChunkInner(detail.data, detail.params);
     },
     onPusherClose({ type, detail }) {
@@ -210,7 +229,7 @@ Component({
     onLivePusherError({ detail }) {
       if (detail.errCode === 10003 || detail.errCode === 10004) {
         // 没设置背景图，ios正常但是android会提示 10004 背景图加载失败
-        // 非关键问题不管了
+        // 非关键问题不用处理
         console.warn(`[${this.data.innerId}]`, 'onLivePusherError', detail);
         return;
       }
@@ -221,29 +240,20 @@ Component({
       });
       // 其他错误，比如没有开通live-pusher组件权限
       // 参考：https://developers.weixin.qq.com/miniprogram/dev/component/live-pusher.html
-      this.handlePushError(pusherState, { msg: livePusherErrMsgMap[detail.errCode] || `livePusherError: ${detail.errMsg}` });
+      this.handlePushError(pusherState, { msg: livePusherErrMsgMap[detail.errCode] || `livePusherError: ${detail.errMsg}`, detail });
     },
     onLivePusherStateChange({ detail }) {
-      // console.log('onLivePusherStateChange', detail);
       if (!this.userData.writer) {
         // 现在不能push
         return;
       }
       switch (detail.code) {
-        case 1001: // 已经连接推流服务器
-          console.log(`[${this.data.innerId}]`, '==== onLivePusherStateChange', detail.code, detail);
-          break;
-        case 1002: // 已经与服务器握手完毕,开始推流
-          console.log(`[${this.data.innerId}]`, '==== onLivePusherStateChange', detail.code, detail);
-          break;
-        // case 1007: // 首帧画面采集完成
-        //   console.log(`[${this.data.innerId}]`, '==== onLivePusherStateChange', detail.code, detail);
-        //   break;
         case 1102: // live-pusher断连, 已启动自动重连
-          console.log(`[${this.data.innerId}]`, '==== onLivePusherStateChange', detail.code, detail);
+          console.warn(`[${this.data.innerId}]`, '==== onLivePusherStateChange', detail.code, detail.message);
           break;
-        case 3002: // 连接本地RTMP服务器失败
-          console.log(`[${this.data.innerId}]`, '==== onLivePusherStateChange', detail.code, detail);
+        /*
+        case 3002: // 连接本地RTMP服务器失败，player插件里已经处理了，会抛出 pusherError, { error: { code: 'WECHAT_SERVER_ERROR' } }
+          console.error(`[${this.data.innerId}]`, '==== onLivePusherStateChange', detail.code, detail.message);
           // 本地server连不上，标记一下
           xp2pManager.needResetLocalRtmpServer = true;
 
@@ -252,19 +262,33 @@ Component({
             hasPusher: false,
             pusherState: PusherStateEnum.LocalServerError,
           });
-          this.handlePushError(PusherStateEnum.LocalServerError, { msg: `livePusherStateChange: ${detail.code} ${detail.message}` });
+          this.handlePushError(PusherStateEnum.LocalServerError, {
+            msg: `livePusherStateChange: ${detail.code} ${detail.message}`,
+            detail,
+          });
           break;
+        */
         case -1307: // live-pusher断连，且经多次重连抢救无效，更多重试请自行重启推流
           // 到这里应该已经触发过 onPusherClose 了
-          console.log(`[${this.data.innerId}]`, '==== onLivePusherStateChange', detail.code, detail);
+          console.error(`[${this.data.innerId}]`, '==== onLivePusherStateChange', detail.code, detail.message);
           this.changeState({
             pusherState: PusherStateEnum.LivePusherStateError,
           });
-          this.handlePushError(PusherStateEnum.LivePusherStateError, { msg: `livePusherStateChange: ${detail.code} ${detail.message}` });
+          this.handlePushError(PusherStateEnum.LivePusherStateError, {
+            msg: `livePusherStateChange: ${detail.code} ${detail.message}`,
+            detail,
+          });
           break;
         default:
           // 这些不特别处理，打个log
-          console.log(`[${this.data.innerId}]`, 'onLivePusherStateChange', detail.code, detail);
+          if ((detail.code >= 1101 && detail.code < 1200)
+            || (detail.code >= 3001 && detail.code < 3100)
+            || detail.code < 0
+          ) {
+            console.warn(`[${this.data.innerId}]`, 'onLivePusherStateChange', detail.code, detail.message);
+          } else {
+            console.log(`[${this.data.innerId}]`, 'onLivePusherStateChange', detail.code, detail.message);
+          }
       }
     },
     onLivePusherNetStatus({ detail }) {
@@ -298,7 +322,9 @@ Component({
       let errType;
       let isFatalError = false;
       let msg = '';
-      if (this.data.pusherState === PusherStateEnum.PusherError) {
+      if (this.data.pusherState === PusherStateEnum.PusherError
+        || this.data.pusherState === PusherStateEnum.LivePusherError
+      ) {
         // 初始化pusher失败
         errType = this.data.pusherState;
         if (wx.getSystemInfoSync().platform === 'devtools') {

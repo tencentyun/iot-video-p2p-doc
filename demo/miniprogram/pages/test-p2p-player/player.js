@@ -148,6 +148,7 @@ Page({
       playerComp: null,
       playerCtx: null,
       playStatus: '',
+      canWrite: false,
     });
     this.bindDestroyPlayer();
 
@@ -165,6 +166,7 @@ Page({
     this.addLog(`==== onLivePlayerError, ${detail.errMsg}`);
     this.setData({
       playStatus: '',
+      canWrite: false,
     });
   },
   onLivePlayerStateChange({ detail }) {
@@ -194,6 +196,7 @@ Page({
         // 到这里应该已经触发过 onPlayerClose 了
         this.setData({
           playStatus: '',
+          canWrite: false,
         });
         if (xp2pManager.needResetLocalServer) {
           this.bindDestroyPlayer();
@@ -276,6 +279,7 @@ Page({
       playerComp: null,
       playerCtx: null,
       playStatus: '',
+      canWrite: false,
     });
   },
   bindPlay() {
@@ -314,6 +318,7 @@ Page({
     this.addLog('stop play');
     this.setData({
       playStatus: '',
+      canWrite: false,
     });
     // 这个会触发 onPlayerClose
     this.data.playerCtx.stop({

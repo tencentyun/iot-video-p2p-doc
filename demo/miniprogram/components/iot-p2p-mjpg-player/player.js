@@ -3,6 +3,11 @@ import { getXp2pManager } from '../../lib/xp2pManager';
 import { getRecordManager } from '../../lib/recordManager';
 import { StreamStateEnum, isStreamPlaying, httpStatusErrorMsgMap } from '../iot-p2p-common-player/common';
 
+// 覆盖 console
+const app = getApp();
+const oriConsole = app.console;
+const console = app.logger || oriConsole;
+
 const xp2pManager = getXp2pManager();
 const { XP2PEventEnum, XP2PNotify_SubType } = xp2pManager;
 
@@ -76,8 +81,9 @@ Component({
   },
   data: {
     innerId: '',
-    xp2pVersion: xp2pManager.XP2PVersion,
     p2pPlayerVersion: xp2pManager.P2PPlayerVersion,
+    xp2pVersion: xp2pManager.XP2PVersion,
+    xp2pUUID: xp2pManager.uuid,
 
     // 这是attached时就固定的
     needPlayer: false,
@@ -149,7 +155,8 @@ Component({
     },
     attached() {
       // 在组件实例进入页面节点树时执行
-      console.log(`[${this.data.innerId}]`, '==== attached', this.id, this.properties);
+      console.log(`[${this.data.innerId}]`, '==== attached', this.id);
+      oriConsole.log(this.properties);
 
       const [flvFilename = '', flvParams = ''] = this.properties.mjpgFile.split('?');
       const streamType = flvFilename ? getParamValue(flvParams, 'action') : '';
@@ -372,24 +379,21 @@ Component({
       };
 
       const { playerComp } = this.data;
-      let chunkCount = 0;
+      let hasFirstChunk = false;
       const dataCallback = (data) => {
         if (!data || !data.byteLength) {
           return;
         }
 
-        chunkCount++;
-        if (this.userData) {
-          this.userData.chunkCount = chunkCount;
-        }
-        if (chunkCount === 1) {
+        if (!hasFirstChunk) {
+          hasFirstChunk = true;
           console.log(`[${this.data.innerId}]`, '==== firstChunk', data.byteLength);
           this.changeState({
             playResult: 'success',
           });
         }
 
-        if (this.userData?.fileObj) {
+        if (this.userData.fileObj) {
           // 写录像文件
           const writeLen = recordManager.writeRecordFile(this.userData.fileObj, data);
           if (writeLen < 0) {

@@ -1,4 +1,4 @@
-<view class="iot-p2p-player-ipc {{ipcClass}}">
+<view class="component iot-p2p-player-ipc {{ipcClass}}">
   <view class="player-wrap">
     <iot-p2p-common-player
       wx:if="{{innerOptions}}"
@@ -11,7 +11,6 @@
       autoReplay="{{sceneType === 'live'}}"
       superMuted="{{superMuted}}"
       parseLivePlayerInfo="{{!innerOptions.needMjpg}}"
-      showLog="{{!innerOptions.needMjpg}}"
       showControlRightBtns="{{innerOptions.playerShowControlRightBtns}}"
       productId="{{productId}}"
       deviceName="{{deviceName}}"

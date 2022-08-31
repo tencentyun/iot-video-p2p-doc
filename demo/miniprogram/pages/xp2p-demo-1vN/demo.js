@@ -1,5 +1,10 @@
 import { getXp2pManager } from '../../lib/xp2pManager';
 
+// 覆盖 console
+const app = getApp();
+const oriConsole = app.console;
+const console = app.logger || oriConsole;
+
 const xp2pManager = getXp2pManager();
 
 Page({
@@ -37,6 +42,7 @@ Page({
 
     console.log('demo: checkReset when exit');
     xp2pManager.checkReset();
+    console.log('demo: onUnload end');
   },
   onStartPlayer({ detail }) {
     console.log('demo: onStartPlayer', detail);
@@ -50,12 +56,13 @@ Page({
     });
   },
   onPlayError({ detail }) {
-    console.log('demo: onPlayError', detail);
+    console.error('demo: onPlayError', detail);
     const { errMsg, errDetail, isFatalError } = detail;
     wx.showModal({
       content: `${errMsg || '播放失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常
       showCancel: false,
       complete: () => {
+        console.log(`demo: error modal complete, isFatalError ${isFatalError}`);
         if (isFatalError) {
           // 致命错误，需要reset的全部reset
           xp2pManager.checkReset();

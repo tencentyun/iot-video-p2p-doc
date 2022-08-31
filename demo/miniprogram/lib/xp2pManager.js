@@ -2,6 +2,11 @@
 import config from '../config/config';
 import { checkAuthorize } from '../utils';
 
+// 覆盖 console
+const app = getApp();
+const oriConsole = app.console;
+const console = app.logger || oriConsole;
+
 // ts才能用enum，先这么处理吧
 export const Xp2pManagerErrorEnum = {
   NoPlugin: -1,
@@ -13,18 +18,9 @@ export const Xp2pManagerErrorEnum = {
 
 const { appParams } = config;
 
-const xp2pPlugin = requirePlugin('xp2p');
-const p2pExports = xp2pPlugin.p2p;
-
-console.log('p2pExports', p2pExports.XP2PVersion, p2pExports);
-// p2pExports.enableHttpLog(true);
-// p2pExports.enableNetLog(true);
-// p2pExports.enableXNTPLog(true);
-// p2pExports.enableADP2PLog(true); // 1v多log
-p2pExports.enableAPP_P2PLog(true); // IoT应用层log
-
 const p2pTimeout = 10000;
 
+let p2pExports;
 let playerPlugin;
 
 const parseCommandResData = (data) => {
@@ -129,13 +125,25 @@ class Xp2pManager {
     // 自定义信令用
     this._msgSeq = 0;
 
+    if (!p2pExports) {
+      const xp2pPlugin = requirePlugin('xp2p');
+      p2pExports = xp2pPlugin.p2p;
+
+      oriConsole.log('p2pExports', p2pExports.XP2PVersion, p2pExports);
+      // p2pExports.enableHttpLog(true);
+      // p2pExports.enableNetLog(true);
+      // p2pExports.enableXNTPLog(true);
+      // p2pExports.enableADP2PLog(true); // 1v多log
+      p2pExports.enableAPP_P2PLog(true); // IoT应用层log
+    }
     console.log('Xp2pManager: XP2PVersion', this.XP2PVersion);
 
     if (!playerPlugin) {
       playerPlugin = requirePlugin('wechat-p2p-player');
-      console.log('Xp2pManager: playerPlugin', playerPlugin);
-      // playerPlugin.enableHttpLog(false);
-      // playerPlugin.enableRtmpLog(false);
+
+      oriConsole.log('playerPlugin', playerPlugin);
+      // playerPlugin.enableHttpLog(true);
+      // playerPlugin.enableRtmpLog(true);
       playerPlugin.initHttp && playerPlugin.initHttp({
         errorCallback: this._localHttpErrorHandler.bind(this),
       });
@@ -278,13 +286,6 @@ class Xp2pManager {
         return reject(Xp2pManagerErrorEnum.Timeout);
       }, p2pTimeout);
 
-      // p2pExports
-      //   .init({
-      //     appParams,
-      //     deviceP2PVersion: '2.4',
-      //     eventHandler: this._eventHandler.bind(this), // 需要xp2p插件1.1.1以上版本
-      //   })
-
       Promise.all([
         p2pExports
           .init({
@@ -316,19 +317,13 @@ class Xp2pManager {
           if (this._promise !== promise) {
             return;
           }
-          console.log('Xp2pManager: init res', res, 'delay', Date.now() - start);
+          console.log('Xp2pManager: init delay', Date.now() - start);
 
           this._state = 'inited';
           this._localPeername = res[0].localXp2pInfo;
           this._localPeername2 = res[1].localXp2pInfo;
           this._promise = null;
-
-          // setTimeout(() => {
-          //   res.reset().then(r => {
-          //     console.log('Xp2pManager: module inner reset res', r);
-          //     this._localPeername2 = r.localXp2pInfo;
-          //   });
-          // }, 5000);
+          console.log('Xp2pManager: init res', this._localPeername, this._localPeername2);
 
           return resolve(0);
         })
@@ -404,12 +399,13 @@ class Xp2pManager {
           if (this._promise !== promise) {
             return;
           }
-          console.log('Xp2pManager: resetP2P res', res, 'delay', Date.now() - start);
+          console.log('Xp2pManager: resetP2P delay', Date.now() - start);
 
           this._state = 'inited';
           this._localPeername = res[0].localXp2pInfo;
           this._localPeername2 = res[1].localXp2pInfo;
           this._promise = null;
+          console.log('Xp2pManager: resetP2P res', this._localPeername, this._localPeername2);
 
           return resolve(res);
         })
@@ -429,7 +425,7 @@ class Xp2pManager {
   }
 
   startP2PService(targetId, streamInfo, callbacks) {
-    console.log('Xp2pManager: startP2PService', targetId, streamInfo, callbacks);
+    console.log('Xp2pManager: startP2PService', targetId, streamInfo);
     return p2pExports.startP2PService(targetId, streamInfo, callbacks);
   }
 
@@ -440,11 +436,6 @@ class Xp2pManager {
 
   getServiceInitInfo(targetId) {
     return p2pExports.getServiceInitInfo(targetId);
-  }
-
-  updateServiceCallbacks(targetId, callbacks) {
-    console.log('Xp2pManager: updateServiceCallbacks', targetId, callbacks);
-    return p2pExports.updateServiceCallbacks(targetId, callbacks);
   }
 
   startStream(targetId, { flv, msgCallback, dataCallback }) {
@@ -624,6 +615,12 @@ let xp2pManager = null;
 export const getXp2pManager = () => {
   if (!xp2pManager) {
     xp2pManager = new Xp2pManager();
+
+    console.log('Xp2pManager: pre initModule');
+    xp2pManager.initModule();
+
+    // uuid不用等init结果
+    console.log('Xp2pManager: uuid', xp2pManager.uuid);
   }
   return xp2pManager;
 };

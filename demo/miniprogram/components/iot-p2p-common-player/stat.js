@@ -111,7 +111,6 @@ const state2StepConfig = {
 
 export class PlayStat {
   innerId;
-  console;
   onPlayStepsChange;
   onPlayResultChange;
   onIdrResultChange;
@@ -119,16 +118,15 @@ export class PlayStat {
   playResultParams;
   idrResultParams;
 
-  constructor({ innerId, console, onPlayStepsChange, onPlayResultChange, onIdrResultChange }) {
+  constructor({ innerId, onPlayStepsChange, onPlayResultChange, onIdrResultChange }) {
     this.innerId = innerId;
-    this.console = console;
     this.onPlayStepsChange = onPlayStepsChange;
     this.onPlayResultChange = onPlayResultChange;
     this.onIdrResultChange = onIdrResultChange;
   }
 
   makeResultParams({ startAction, flvParams }) {
-    this.console.log(`[${this.innerId}][stat]`, '==== start new play', startAction, flvParams);
+    console.log(`[${this.innerId}][stat]`, '==== start new play', startAction, flvParams);
     const now = Date.now();
     this.playResultParams = {
       startAction,
@@ -166,7 +164,7 @@ export class PlayStat {
     let toTime = 0;
     if (fromState) {
       if (!playTimestamps[fromState]) {
-        this.console.warn(`[${this.innerId}][stat]`, 'addStep', step, 'but no fromState', fromState);
+        console.warn(`[${this.innerId}][stat]`, 'addStep', step, 'but no fromState', fromState);
         return;
       }
       fromTime = playTimestamps[fromState];
@@ -175,7 +173,7 @@ export class PlayStat {
     }
     if (toState) {
       if (!playTimestamps[toState]) {
-        this.console.warn(`[${this.innerId}][stat]`, 'addStep', step, 'but no toState', toState);
+        console.warn(`[${this.innerId}][stat]`, 'addStep', step, 'but no toState', toState);
         return;
       }
       toTime = playTimestamps[toState];
@@ -184,7 +182,7 @@ export class PlayStat {
     }
 
     const timeCost = toTime - fromTime;
-    this.console.log(`[${this.innerId}][stat]`, 'addStep', step, timeCost, fromState ? `${fromState} -> ${toState || 'now'}` : '');
+    console.log(`[${this.innerId}][stat]`, 'addStep', step, timeCost, fromState ? `${fromState} -> ${toState || 'now'}` : '');
     this.playResultParams.lastTimestamp = now;
     this.playResultParams.steps.push({
       step,
@@ -195,7 +193,7 @@ export class PlayStat {
       this.playResultParams.result = toState;
       const { startAction, startTimestamp, result } = this.playResultParams;
       const totalTimeCost = now - startTimestamp;
-      this.console.log(`[${this.innerId}][stat]`, '==== play result', startAction, step, result, totalTimeCost, this.playResultParams);
+      console.log(`[${this.innerId}][stat]`, '==== play result', startAction, step, result, totalTimeCost, this.playResultParams);
       if (isSuccess) {
         this.idrResultParams = {
           hasReceivedIDR: false,

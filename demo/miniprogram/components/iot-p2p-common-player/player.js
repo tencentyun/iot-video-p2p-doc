@@ -5,6 +5,11 @@ import { getRecordManager, MAX_FILE_SIZE_IN_M } from '../../lib/recordManager';
 import { PlayerStateEnum, P2PStateEnum, StreamStateEnum, totalMsgMap, httpStatusErrorMsgMap } from './common';
 import { PlayStepEnum, PlayStat } from './stat';
 
+// 覆盖 console
+const app = getApp();
+const oriConsole = app.console;
+const console = app.logger || oriConsole;
+
 const xp2pManager = getXp2pManager();
 const { XP2PServiceEventEnum, XP2PEventEnum, XP2PNotify_SubType } = xp2pManager;
 
@@ -33,6 +38,14 @@ Component({
     maxCache: {
       type: Number,
       value: 0.8,
+    },
+    muted: {
+      type: Boolean,
+      value: false,
+    },
+    orientation: {
+      type: String, // vertical / horizontal
+      value: 'vertical',
     },
     // 以下是自己的属性
     p2pMode: {
@@ -112,8 +125,9 @@ Component({
   },
   data: {
     innerId: '',
-    xp2pVersion: xp2pManager.XP2PVersion,
     p2pPlayerVersion: xp2pManager.P2PPlayerVersion,
+    xp2pVersion: xp2pManager.XP2PVersion,
+    xp2pUUID: xp2pManager.uuid,
 
     // page相关
     pageHideTimestamp: 0,
@@ -172,8 +186,6 @@ Component({
     idrResultStr: '',
 
     // 控件
-    muted: false,
-    orientation: 'vertical',
     soundMode: 'speaker',
   },
   observers: {
@@ -238,14 +250,20 @@ Component({
     attached() {
       // 在组件实例进入页面节点树时执行
       if (!this.properties.showLog) {
+        // 不显示log
         this.console = {
           log: () => undefined,
-          info: console.info,
-          warn: console.warn,
-          error: console.error,
+          info: console.info.bind(console),
+          warn: console.warn.bind(console),
+          error: console.error.bind(console),
         };
       }
-      this.console.log(`[${this.data.innerId}]`, '==== attached', this.id, this.properties);
+      this.console.log(`[${this.data.innerId}]`, '==== attached', this.id, {
+        p2pMode: this.properties.p2pMode,
+        targetId: this.properties.targetId,
+        flvUrl: this.properties.flvUrl,
+        mode: this.properties.mode,
+      });
 
       const isP2PModeValid = this.properties.p2pMode === 'ipc' || this.properties.p2pMode === 'server';
       const canUseP2P = (this.properties.p2pMode === 'ipc' && canUseP2PIPCMode) || (this.properties.p2pMode === 'server' && canUseP2PServerMode);
@@ -273,7 +291,6 @@ Component({
       // 统计用
       this.stat = new PlayStat({
         innerId: this.data.innerId,
-        console: this.console,
         onPlayStepsChange: (params) => {
           const playSteps = {
             startAction: params.startAction,
@@ -475,13 +492,13 @@ Component({
 
       const checkIsFlvValid = this.properties.checkFunctions && this.properties.checkFunctions.checkIsFlvValid;
       if (checkIsFlvValid && !checkIsFlvValid({ filename: this.data.flvFilename, params: this.data.flvParams })) {
-        console.warn(`[${this.data.innerId}]`, 'flv invalid, return');
+        this.console.warn(`[${this.data.innerId}]`, 'onPlayerStartPull but flv invalid, return');
         return;
       }
 
       if (this.data.p2pState !== P2PStateEnum.ServiceStarted) {
         // 因为各种各样的原因，player在状态不对的时候又触发播放了，停掉
-        this.console.warn(`[${this.data.innerId}]`, 'onPlayerStartPull but can not play, stop player');
+        this.console.warn(`[${this.data.innerId}]`, `onPlayerStartPull but can not play in p2pState ${this.data.p2pState}, stop player`);
         this.tryStopPlayer();
         return;
       }
@@ -576,14 +593,14 @@ Component({
           break;
         case 2006: // 视频播放结束
         case 6000: // 拉流被挂起
-          this.console.log(`[${this.data.innerId}]`, '==== onLivePlayerStateChange', detail.code, detail, `streamState: ${this.data.streamState}`);
+          this.console.log(`[${this.data.innerId}]`, '==== onLivePlayerStateChange', detail.code, detail.message, `streamState: ${this.data.streamState}`);
           break;
         case 2003: // 网络接收到首个视频数据包(IDR)
-          this.console.log(`[${this.data.innerId}]`, '==== onLivePlayerStateChange', detail.code, detail, `totalBytes: ${this.userData.totalBytes}`);
+          this.console.log(`[${this.data.innerId}]`, '==== onLivePlayerStateChange', detail.code, detail.message, `totalBytes: ${this.userData.totalBytes}`);
           this.stat.receiveIDR();
           break;
         case 2103: // live-player断连, 已启动自动重连
-          this.console.warn(`[${this.data.innerId}]`, '==== onLivePlayerStateChange', detail.code, detail, `streamState: ${this.data.streamState}`);
+          this.console.warn(`[${this.data.innerId}]`, '==== onLivePlayerStateChange', detail.code, detail.message, `streamState: ${this.data.streamState}`);
           if (/errCode:-1004(\D|$)/.test(detail.message) || /Failed to connect to/.test(detail.message)) {
             // 无法连接本地服务器
             xp2pManager.needResetLocalServer = true;
@@ -627,7 +644,7 @@ Component({
           break;
         case -2301: // live-player断连，且经多次重连抢救无效，需要提示出错，由用户手动重试
           // 到这里应该已经触发过 onPlayerClose 了
-          this.console.error(`[${this.data.innerId}]`, '==== onLivePlayerStateChange', detail.code, detail);
+          this.console.error(`[${this.data.innerId}]`, '==== onLivePlayerStateChange', detail.code, detail.message);
           this.stat.addStep(PlayStepEnum.FinalStop, { isResult: true });
           this.changeState({
             playerState: xp2pManager.needResetLocalServer
@@ -642,9 +659,9 @@ Component({
         default:
           // 这些不特别处理，打个log
           if ((detail.code >= 2104 && detail.code < 2200) || detail.code < 0) {
-            this.console.warn(`[${this.data.innerId}]`, 'onLivePlayerStateChange', detail.code, detail);
+            this.console.warn(`[${this.data.innerId}]`, 'onLivePlayerStateChange', detail.code, detail.message);
           } else {
-            this.console.log(`[${this.data.innerId}]`, 'onLivePlayerStateChange', detail.code, detail);
+            this.console.log(`[${this.data.innerId}]`, 'onLivePlayerStateChange', detail.code, detail.message);
           }
           break;
       }
@@ -1228,7 +1245,9 @@ Component({
       let errType;
       let isFatalError = false;
       let msg = '';
-      if (this.data.playerState === PlayerStateEnum.PlayerError) {
+      if (this.data.playerState === PlayerStateEnum.PlayerError
+        || this.data.playerState === PlayerStateEnum.LivePlayerError
+      ) {
         // 初始化player失败
         errType = this.data.playerState;
         if (wx.getSystemInfoSync().platform === 'devtools') {
