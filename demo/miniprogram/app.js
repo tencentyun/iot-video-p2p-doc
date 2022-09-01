@@ -10,6 +10,12 @@ App({
       this.logger = new Logger({
         logManagePage: '/pages/xp2p-records/records?name=logs',
       });
+      this.pluginLogger = {
+        log: (...args) => this.logger.log('[Plugin]', ...args),
+        info: (...args) => this.logger.info('[Plugin]', ...args),
+        warn: (...args) => this.logger.warn('[Plugin]', ...args),
+        error: (...args) => this.logger.error('[Plugin]', ...args),
+      };
     }
   },
 });

@@ -144,6 +144,9 @@ class Xp2pManager {
       oriConsole.log('playerPlugin', playerPlugin);
       // playerPlugin.enableHttpLog(true);
       // playerPlugin.enableRtmpLog(true);
+      if (app.pluginLogger && playerPlugin.setPluginLogger) {
+        playerPlugin.setPluginLogger(app.pluginLogger);
+      }
       playerPlugin.initHttp && playerPlugin.initHttp({
         errorCallback: this._localHttpErrorHandler.bind(this),
       });
