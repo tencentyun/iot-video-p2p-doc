@@ -244,7 +244,7 @@ Component({
       }
     },
     createPlayer() {
-      console.log(`[${this.data.innerId}]`, 'createMjpgPlayer', Date.now());
+      console.log(`[${this.data.innerId}]`, 'createMjpgPlayer');
       if (this.data.playerState !== MjpgPlayerStateEnum.MjpgPlayerIdle) {
         console.error(`[${this.data.innerId}]`, 'can not createMjpgPlayer in playerState', this.data.playerState);
         return;
@@ -255,7 +255,7 @@ Component({
       });
     },
     onPlayerReady({ detail }) {
-      console.log(`[${this.data.innerId}]`, '==== onPlayerReady', detail);
+      console.log(`[${this.data.innerId}]`, '==== onPlayerReady in', this.data.playerState, detail);
       this.changeState({
         playerState: MjpgPlayerStateEnum.MjpgPlayerReady,
         playerComp: detail.playerExport,

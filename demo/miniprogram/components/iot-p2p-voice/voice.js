@@ -176,6 +176,10 @@ Component({
         this.getPusherComp();
       }
     },
+    ready() {
+      console.log(`[${this.data.innerId}]`, 'ready');
+      this.triggerEvent('ready');
+    },
     detached() {
       console.log(`[${this.data.innerId}]`, '==== detached');
       this.setData({ isDetached: true });

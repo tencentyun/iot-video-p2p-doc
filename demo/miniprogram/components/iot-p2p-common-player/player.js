@@ -418,6 +418,7 @@ Component({
       this.stat.addStateTimestamp(newData.p2pState);
       this.stat.addStateTimestamp(newData.streamState);
 
+      const oldPlayerState = this.data.playerState;
       const oldP2PState = this.data.p2pState;
       const oldStreamState = this.data.streamState;
       let playerDetail;
@@ -432,6 +433,11 @@ Component({
         ...playerDetail,
         playerMsg: typeof newData.playerMsg === 'string' ? newData.playerMsg : this.getPlayerMessage(newData),
       }, callback);
+      if (newData.playerState && newData.playerState !== oldPlayerState) {
+        this.triggerEvent('playerStateChange', {
+          playerState: newData.playerState,
+        });
+      }
       if (newData.p2pState && newData.p2pState !== oldP2PState) {
         this.triggerEvent('p2pStateChange', {
           p2pState: newData.p2pState,

@@ -120,8 +120,8 @@ Component({
     mjpgPlayerId: 'iot-p2p-mjpg-player',
     mjpgPlayer: null,
 
-    // 这些是语音对讲
-    voiceCompId: 'iot-p2p-voice',
+    // 这些是语音对讲，playerReady后再创建语音
+    voiceCompId: '', // 'iot-p2p-voice',
     voiceComp: null,
     voiceState: '', // VoiceStateEnum
 
@@ -226,16 +226,6 @@ Component({
           this.setData({ mjpgPlayer });
         } else {
           console.error(`[${this.data.innerId}]`, 'create mjpgPlayer error', this.data.mjpgPlayerId);
-        }
-      }
-
-      if (this.data.innerSections.voice) {
-        console.log(`[${this.data.innerId}]`, 'create voiceComp');
-        const voiceComp = this.selectComponent(`#${this.data.voiceCompId}`);
-        if (voiceComp) {
-          this.setData({ voiceComp });
-        } else {
-          console.error(`[${this.data.innerId}]`, 'create voiceComp error', this.data.voiceCompId);
         }
       }
     },
@@ -350,6 +340,14 @@ Component({
       this.triggerEvent(e.type, e.detail);
     },
     // 以下是 common-player 的事件
+    onPlayerStateChange(e) {
+      console.log(`[${this.data.innerId}]`, 'onPlayerStateChange', e.detail.playerState);
+      const playerReady = e.detail.playerState === 'PlayerReady';
+      if (!this.data.voiceCompId && playerReady) {
+        console.log(`[${this.data.innerId}]`, 'create voiceComp');
+        this.setData({ voiceCompId: 'iot-p2p-voice' });
+      }
+    },
     onP2PStateChange(e) {
       console.log(`[${this.data.innerId}]`, 'onP2PStateChange', e.detail.p2pState);
       const p2pReady = e.detail.p2pState === 'ServiceStarted';
@@ -391,7 +389,37 @@ Component({
       this.setData({ playErrMsg: e.detail.errMsg });
       this.passEvent(e);
     },
-    // 以下是 pusher 的事件
+    // 以下是 mjpgPlayer 的事件
+    onMjpgPlayerStateChange(e) {
+      console.log(`[${this.data.innerId}]`, 'onMjpgPlayerStateChange', e.detail.playerState);
+    },
+    onMjpgPlayError(e) {
+      console.error(`[${this.data.innerId}]`, 'onMjpgPlayError', e.detail);
+      const { errMsg, errDetail } = e.detail;
+      this.showModal({
+        content: `${errMsg || '播放图片流失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常,
+        showCancel: false,
+      });
+    },
+    onMjpgClickRetry(e) {
+      console.log(`[${this.data.innerId}]`, 'onMjpgClickRetry', e.detail);
+      if (!this.data.player) {
+        console.log(`[${this.data.innerId}]`, 'no player');
+        return;
+      }
+      console.log(`[${this.data.innerId}]`, 'call retry');
+      this.data.player.retry();
+    },
+    // 以下是 voice 的事件
+    onVoiceReady(e) {
+      console.log(`[${this.data.innerId}]`, 'onVoiceReady');
+      const voiceComp = this.selectComponent(`#${this.data.voiceCompId}`);
+      if (voiceComp) {
+        this.setData({ voiceComp });
+      } else {
+        console.error(`[${this.data.innerId}]`, 'create voiceComp error', this.data.voiceCompId);
+      }
+    },
     onVoiceStateChange(e) {
       console.log(`[${this.data.innerId}]`, 'onVoiceStateChange', e.detail.voiceState);
       this.setData({ voiceState: e.detail.voiceState });
@@ -428,27 +456,6 @@ Component({
         content: `${errMsg || '对讲失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常,
         showCancel: false,
       });
-    },
-    // 以下是 mjpgPlayer 的事件
-    onMjpgPlayerStateChange(e) {
-      console.log(`[${this.data.innerId}]`, 'onMjpgPlayerStateChange', e.detail.playerState);
-    },
-    onMjpgPlayError(e) {
-      console.error(`[${this.data.innerId}]`, 'onMjpgPlayError', e.detail);
-      const { errMsg, errDetail } = e.detail;
-      this.showModal({
-        content: `${errMsg || '播放图片流失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常,
-        showCancel: false,
-      });
-    },
-    onMjpgClickRetry(e) {
-      console.log(`[${this.data.innerId}]`, 'onMjpgClickRetry', e.detail);
-      if (!this.data.player) {
-        console.log(`[${this.data.innerId}]`, 'no player');
-        return;
-      }
-      console.log(`[${this.data.innerId}]`, 'call retry');
-      this.data.player.retry();
     },
     // 以下是用户交互
     changeQuality(e) {
