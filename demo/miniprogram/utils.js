@@ -129,6 +129,20 @@ export function arrayBufferToString(buffer, offset = undefined, len = undefined)
   return uint8ArrayToString(new Uint8Array(buffer, offset, len));
 }
 
+export function arrayBufferToHex(input, offset, len, separator) {
+  const uint8Arr = new Uint8Array(input, offset, len);
+  const arr = [];
+  let ch;
+  uint8Arr.forEach(v => {
+    ch = v.toString(16).toUpperCase();
+    if (ch.length === 1) {
+      ch = `0${ch}`;
+    }
+    arr.push(ch);
+  });
+  return arr.join(separator || '');
+}
+
 export async function snapshotAndSave({ snapshot }) {
   // 先检查权限
   try {

@@ -8,7 +8,6 @@
         src="{{playerSrc}}"
         audioSrc="{{playerAudioSrc}}"
         loop="{{playerLoop}}"
-        showLog="{{showPlayerLog}}"
         bind:playerready="onPlayerReady"
         bind:playererror="onPlayerError"
         bind:ended="onEnded"

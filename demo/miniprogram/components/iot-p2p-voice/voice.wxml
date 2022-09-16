@@ -30,6 +30,7 @@
       enableAgc="{{pusherProps.enableAgc}}"
       enableAns="{{pusherProps.enableAns}}"
       audioQuality="{{pusherProps.highQuality ? 'high' : 'low'}}"
+      ignoreEmptyAudioTag="{{pusherProps.ignoreEmptyAudioTag}}"
       bind:pusherStateChange="onPusherStateChange"
       bind:pusherStartPush="onPusherStartPush"
       bind:pusherClose="onPusherClose"

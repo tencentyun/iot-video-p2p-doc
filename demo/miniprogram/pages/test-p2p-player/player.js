@@ -11,9 +11,8 @@ Page({
     localRecordName: '',
     dataReady: false,
     playerId: '',
+    autoplay: false,
     playerReady: false,
-    playerComp: null,
-    playerCtx: null,
     playStatus: '', // '' | 'playing' | 'ending'
     canWrite: false, // 能否写数据，比如播放暂时中断时不能写
     livePlayerInfoStr: '',
@@ -22,6 +21,9 @@ Page({
   onLoad(query) {
     this.userData = {
       // 渲染无关的尽量放这里
+      playerComp: null,
+      playerCtx: null,
+      timestamps: null,
       recordManager: null,
       livePlayerInfo: null,
     };
@@ -51,6 +53,9 @@ Page({
             dataReady: true,
             fileData: res.data,
           });
+
+          // 自动创建、播放
+          this.bindCreatePlayer();
         })
         .catch((err) => {
           this.addLog(`读取本地录像失败，errMsg: ${err.errMsg}`);
@@ -88,19 +93,21 @@ Page({
   },
   onPlayerReady({ detail }) {
     console.log('==== onPlayerReady', detail);
-    this.addLog('==== onPlayerReady');
+    this.addLog(`==== onPlayerReady, delay ${detail.delay}`);
+    this.userData.playerComp = detail.playerExport;
+    this.userData.playerCtx = detail.livePlayerContext;
     this.setData({
       playerReady: true,
-      playerComp: detail.playerExport,
-      playerCtx: detail.livePlayerContext,
     });
+
+    // 自动播放
+    this.bindPlay({ type: 'autoplay' });
   },
   onPlayerStartPull({ detail }) {
     console.log('==== onPlayerStartPull', detail);
-    this.addLog('==== onPlayerStartPull');
     if (!this.data.playStatus) {
-      this.addLog('not playing');
-      this.data.playerCtx.stop();
+      console.log('start pull but not playing');
+      this.userData.playerCtx.stop();
       return;
     }
     if (this.data.playStatus === 'ending') {
@@ -109,14 +116,18 @@ Page({
       const cache = livePlayerInfo
         ? Math.max(livePlayerInfo.videoCache, livePlayerInfo.audioCache)
         : 0;
-      this.addLog(`is ending, cache: ${cache}`);
+      console.log(`start pull when ending, cache: ${cache}`);
       console.log('now info', livePlayerInfo);
-      if (cache < 200) {
+      if (cache < 500) {
         console.log('start pull and cache end, stop', livePlayerInfo);
         this.bindStop();
       }
       return;
     }
+    this.userData.timestamps.startPull = Date.now();
+    const delay = this.userData.timestamps.startPull - this.userData.timestamps.triggerPlay;
+    console.log('==== wait pull delay', delay);
+    this.addLog(`==== onPlayerStartPull, delay ${delay}`);
     this.clearFlvData();
     this.setData({
       canWrite: true,
@@ -127,6 +138,20 @@ Page({
   },
   onPlayerClose({ detail }) {
     console.log('==== onPlayerClose', detail);
+    if (!this.data.playStatus) {
+      console.log('close but not playing');
+      return;
+    }
+    if (this.data.playStatus === 'ending') {
+      // 在播cache
+      const { livePlayerInfo } = this.userData;
+      const cache = livePlayerInfo
+        ? Math.max(livePlayerInfo.videoCache, livePlayerInfo.audioCache)
+        : 0;
+      console.log(`is ending, cache: ${cache}`);
+      return;
+    }
+    this.userData.timestamps = null;
     const code = detail && detail.error && detail.error.code;
     this.addLog(`==== onPlayerClose, code: ${code}`);
     this.setData({
@@ -143,10 +168,10 @@ Page({
     console.error('==== onPlayerError', detail);
     const code = detail && detail.error && detail.error.code;
     this.addLog(`==== onPlayerError, code: ${code}`);
+    this.userData.playerComp = null;
+    this.userData.playerCtx = null;
     this.setData({
       playerReady: false,
-      playerComp: null,
-      playerCtx: null,
       playStatus: '',
       canWrite: false,
     });
@@ -164,16 +189,22 @@ Page({
   onLivePlayerError({ detail }) {
     console.error('==== onLivePlayerError', detail);
     this.addLog(`==== onLivePlayerError, ${detail.errMsg}`);
+    this.userData.playerComp = null;
+    this.userData.playerCtx = null;
     this.setData({
+      playerReady: false,
       playStatus: '',
       canWrite: false,
     });
+    this.bindDestroyPlayer();
   },
   onLivePlayerStateChange({ detail }) {
     // console.log('onLivePlayerStateChange', detail);
     switch (detail.code) {
       case 2003: // 网络接收到首个视频数据包(IDR)
         console.log('==== onLivePlayerStateChange', detail.code, detail);
+        this.userData.timestamps.recvIDR = Date.now();
+        console.log('==== wait IDR delay', this.userData.timestamps.recvIDR - this.userData.timestamps.recvHeader);
         this.addLog('==== receive first IDR');
         break;
       case 2103: // 网络断连, 已启动自动重连
@@ -192,6 +223,15 @@ Page({
         break;
       case -2301: // live-player断连，且经多次重连抢救无效，更多重试请自行重启播放
         console.error('==== onLivePlayerStateChange', detail.code, detail);
+        if (this.data.playStatus === 'ending') {
+          // 在播cache
+          const { livePlayerInfo } = this.userData;
+          const cache = livePlayerInfo
+            ? Math.max(livePlayerInfo.videoCache, livePlayerInfo.audioCache)
+            : 0;
+          console.log(`is ending, cache: ${cache}`);
+          return;
+        }
         this.addLog(`==== onLivePlayerStateChange ${detail.code}, final error, needResetLocalServer ${xp2pManager.needResetLocalServer}`);
         // 到这里应该已经触发过 onPlayerClose 了
         this.setData({
@@ -239,10 +279,10 @@ Page({
           : ''
       ),
     });
-    if (typeof detail.info.audioCacheThreshold === 'number' && this.data.playStatus === 'ending' && livePlayerInfo.hasCacheData) {
+    if (this.data.playStatus === 'ending' && livePlayerInfo.hasCacheData) {
       // 在播cache
       const cache = Math.max(livePlayerInfo.videoCache, livePlayerInfo.audioCache);
-      if (cache < 200) {
+      if (cache < 500) {
         console.log('net status and cache end, stop', livePlayerInfo);
         this.bindStop();
       }
@@ -262,6 +302,7 @@ Page({
     this.addLog('create player');
     this.setData({
       playerId: 'player-demo',
+      autoplay: false,
     });
   },
   bindDestroyPlayer() {
@@ -269,59 +310,68 @@ Page({
       console.log('not existed');
       return;
     }
-    this.bindStop();
+    this.data.playStatus && this.bindStop();
 
     this.addLog('destroy player');
     this.clearFlvData();
+    this.userData.playerComp = null;
+    this.userData.playerCtx = null;
     this.setData({
       playerId: '',
+      autoplay: false,
       playerReady: false,
-      playerComp: null,
-      playerCtx: null,
       playStatus: '',
       canWrite: false,
     });
   },
-  bindPlay() {
+  bindPlay({ type } = {}) {
     if (!this.data.playerReady) {
-      console.log('player not ready');
+      console.log('start play but player not ready');
       return;
     }
     if (this.data.playStatus) {
-      console.log('already playing');
+      console.log('start play but already playing');
       return;
     }
-    this.addLog('start play');
+    this.addLog(`start play, type ${type}`);
     this.clearFlvData();
+    this.userData.timestamps = {
+      triggerPlay: Date.now(),
+    };
     this.setData({
       playStatus: 'playing',
     });
     // 这个会触发 onPlayerStartPull
-    this.data.playerCtx.play({
-      success: (res) => {
-        this.addLog('play success');
-      },
-      fail: (res) => {
-        this.addLog('play fail');
-      },
-    });
+    if (type === 'autoplay') {
+      this.setData({ autoplay: true });
+    } else {
+      this.userData.playerCtx.play({
+        success: (res) => {
+          this.addLog('play success');
+        },
+        fail: (res) => {
+          this.addLog('play fail');
+        },
+      });
+    }
   },
   bindStop() {
     if (!this.data.playerReady) {
-      console.log('player not ready');
+      console.log('stop play but player not ready');
       return;
     }
     if (!this.data.playStatus) {
-      console.log('not playing');
+      console.log('stop play but not playing');
       return;
     }
     this.addLog('stop play');
+    this.userData.timestamps = null;
     this.setData({
       playStatus: '',
       canWrite: false,
     });
     // 这个会触发 onPlayerClose
-    this.data.playerCtx.stop({
+    this.userData.playerCtx.stop({
       success: (res) => {
         this.addLog('stop success');
       },
@@ -341,7 +391,7 @@ Page({
       if (loopCount > 0) {
         offset = 0;
       } else {
-        this.data.playerComp.finishMedia();
+        this.userData.playerComp.finishMedia();
         return;
       }
     }
@@ -354,19 +404,21 @@ Page({
   },
   pullFileVideo() {
     const chunkSize = 10 * 1024;
-    const chunkInterval = 30;
+    const chunkInterval = 25;
     if (this.data.fileData) {
+      this.userData.timestamps.recvHeader = Date.now();
+      console.log('==== wait header delay', this.userData.timestamps.recvHeader - this.userData.timestamps.startPull);
       this.addLog('start loopWrite');
       this.loopWrite(
         this.data.fileData,
         0,
-        this.data.playerComp.addChunk,
+        this.userData.playerComp.addChunk,
         chunkSize,
         chunkInterval,
       );
     } else {
       console.error('pullFileVideo error', err);
-      this.data.playerComp.abortMedia(err);
+      this.userData.playerComp.abortMedia(err);
     }
   },
 });

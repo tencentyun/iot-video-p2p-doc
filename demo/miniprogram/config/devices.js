@@ -33,18 +33,16 @@ const devices = {
       intercomType: 'Pusher',
     },
   },
-  test_mjpg2: {
+  test_lock: {
     showInHomePageBtn: true,
-    productName: 'Mjpg',
-    productId: '1FV89F1U7U',
-    deviceName: 'evanxy_43610521_2',
-    xp2pInfo: 'XP2Ptcng6Y/kQJVj+Wo/Hb/Z1g==%2.4.29m',
-    liveParams: 'action=live-audio&channel=0',
-    liveMjpgParams: 'action=live-mjpg&channel=0',
-    playbackParams: 'action=playback-audio&channel=0',
-    playbackMjpgParams: 'action=playback-mjpg&channel=0',
+    productName: 'Lock',
+    productId: '9L1S66FZ3Q',
+    deviceName: 'z_83326880_1',
+    xp2pInfo: 'XP2P9b3HzHKvNSbg9GvqI9JuyQ==%2.4.31',
+    liveParams: 'action=live&channel=0',
+    playbackParams: 'action=playback&channel=0',
     options: {
-      needMjpg: true,
+      intercomType: 'Pusher',
     },
   },
 };

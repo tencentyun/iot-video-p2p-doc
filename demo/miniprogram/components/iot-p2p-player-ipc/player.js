@@ -23,13 +23,13 @@ const sceneConfig = {
       ptz: true,
       voice: true,
       commands: true,
-    }
+    },
   },
   playback: {
     sections: {
       download: true,
       commands: true,
-    }
+    },
   },
 };
 
@@ -411,7 +411,7 @@ Component({
       this.data.player.retry();
     },
     // 以下是 voice 的事件
-    onVoiceReady(e) {
+    onVoiceReady() {
       console.log(`[${this.data.innerId}]`, 'onVoiceReady');
       const voiceComp = this.selectComponent(`#${this.data.voiceCompId}`);
       if (voiceComp) {

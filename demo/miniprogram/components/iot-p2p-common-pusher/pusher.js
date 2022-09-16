@@ -1,3 +1,4 @@
+import { arrayBufferToHex } from '../../utils';
 import { getXp2pManager } from '../../lib/xp2pManager';
 import { PusherStateEnum, totalMsgMap, livePusherErrMsgMap } from './common';
 
@@ -7,6 +8,16 @@ const oriConsole = app.console;
 const console = app.logger || oriConsole;
 
 const xp2pManager = getXp2pManager();
+
+const printBuffer = (buffer) => {
+  if (buffer.byteLength <= 32) {
+    const bufferHex = arrayBufferToHex(buffer, undefined, undefined, ' ');
+    console.log(`< ${bufferHex} >`);
+  } else {
+    const bufferHex = arrayBufferToHex(buffer, 0, 32, ' ');
+    console.log(`< ${bufferHex} ... >`);
+  }
+};
 
 let pusherSeq = 0;
 
@@ -38,6 +49,11 @@ Component({
       type: String,
       value: 'low',
     },
+    // 以下是 p2p-pusher 的属性
+    ignoreEmptyAudioTag: {
+      type: Boolean,
+      value: false,
+    },
     // 以下是自己的属性
     needLivePusherInfo: {
       type: Boolean,
@@ -51,8 +67,6 @@ Component({
     hasPusher: false, // 出错销毁时设为false
     pusherId: '', // 这是 p2p-pusher 组件的id，不是自己的id
     pusherState: PusherStateEnum.PusherIdle,
-    pusherComp: null,
-    pusherCtx: null,
     pusherMsg: '',
     acceptLivePusherEvents: {
       // 太多事件log了，只接收这几个
@@ -85,8 +99,11 @@ Component({
 
       // 渲染无关，不放在data里，以免影响性能
       this.userData = {
+        pusherComp: null,
+        pusherCtx: null,
         writer: null,
         livePlayerInfo: null,
+        flvTagStat: null,
       };
     },
     attached() {
@@ -96,7 +113,6 @@ Component({
       });
 
       const pusherId = `${this.data.innerId}-pusher`; // 这是 p2p-pusher 组件的id，不是自己的id
-      const handleFlvChunk = this.handleFlvChunk.bind(this);
       this.setData({
         hasPusher: true,
         pusherId,
@@ -105,10 +121,10 @@ Component({
           netstatus: this.properties.needLivePusherInfo || false,
         },
         flvFunctions: {
-          onFlvHeader: detail => this.onPusherFlvHeader({ detail }), // 不直接用 handleFlvChunk 是为了打个log
-          onFlvAudioTag: handleFlvChunk,
-          onFlvVideoTag: handleFlvChunk,
-          onFlvDataTag: handleFlvChunk,
+          onFlvHeader: this.handleFlvHeader.bind(this), // 不直接用 handleFlvChunk 是为了打个log
+          onFlvAudioTag: detail => this.handleFlvTag(detail, 'audioTag'),
+          onFlvVideoTag: detail => this.handleFlvTag(detail, 'videoTag'),
+          onFlvDataTag: detail => this.handleFlvTag(detail, 'dataTag'),
         },
       });
 
@@ -142,17 +158,13 @@ Component({
     },
     // 包一层，方便更新 pusherMsg
     changeState(newData, callback) {
-      const oldPusherState = this.data.pusherState;
-      let pusherDetail;
       if (newData.hasPusher === false) {
-        pusherDetail = {
-          pusherComp: null,
-          pusherCtx: null,
-        };
+        this.userData.pusherComp = null;
+        this.userData.pusherCtx = null;
       }
+      const oldPusherState = this.data.pusherState;
       this.setData({
         ...newData,
-        ...pusherDetail,
         pusherMsg: this.getPusherMessage(newData),
       }, callback);
       if (newData.pusherState && newData.pusherState !== oldPusherState) {
@@ -174,10 +186,10 @@ Component({
     },
     onPusherReady({ detail }) {
       console.log(`[${this.data.innerId}]`, '==== onPusherReady in', this.data.pusherState, detail);
+      this.userData.pusherComp = detail.pusherExport;
+      this.userData.pusherCtx = detail.livePusherContext;
       this.changeState({
         pusherState: PusherStateEnum.PusherReady,
-        pusherComp: detail.pusherExport,
-        pusherCtx: detail.livePusherContext,
       });
     },
     onPusherStartPush({ type, detail }) {
@@ -189,14 +201,47 @@ Component({
         return;
       }
       this.clearStreamData();
+      this.userData.flvTagStat = {
+        headerTime: 0,
+        startClock: 0,
+        startTime: 0,
+        tagCount: 0,
+      };
       this.setData({ isPushing: true });
       this.triggerEvent(type, detail);
     },
-    onPusherFlvHeader({ detail }) {
-      console.log(`[${this.data.innerId}]`, '==== onPusherFlvHeader', detail.data?.byteLength);
+    handleFlvHeader(detail) {
+      const headerTime = Date.now();
+      console.log(`[${this.data.innerId}] ==== handleFlvHeader, ${detail.data?.byteLength}B, headerTime ${headerTime}`);
+      printBuffer(detail.data);
+      if (this.userData.flvTagStat) {
+        this.userData.flvTagStat.headerTime = headerTime;
+      }
       this.handleFlvChunk(detail);
     },
-    onPusherFlvTag({ detail }) {
+    handleFlvTag(detail, tagType) {
+      if (this.userData.flvTagStat) {
+        const { flvTagStat } = this.userData;
+        flvTagStat.tagCount++;
+        if (flvTagStat.tagCount === 1) {
+          flvTagStat.startClock = detail.clock;
+          flvTagStat.startTime = Date.now();
+          console.log(
+            `[${this.data.innerId}] ==== first tag, ${tagType} ${detail.data.byteLength}B,`,
+            `tagClock ${flvTagStat.startClock}, localTime ${flvTagStat.startTime}, afterHeader ${flvTagStat.startTime - flvTagStat.headerTime}`,
+            detail.params,
+          );
+        } else if (flvTagStat.tagCount <= 20 || flvTagStat.tagCount % 100 === 0) {
+          const date = new Date();
+          const tagClockAfterStart = detail.clock - flvTagStat.startClock;
+          const localTimeAfterStart = date.getTime() - flvTagStat.startTime;
+          const localDelay = localTimeAfterStart - tagClockAfterStart;
+          console.log(
+            `[${this.data.innerId}] ==== tag ${flvTagStat.tagCount}, ${tagType} ${detail.data.byteLength}B,`,
+            `tagClockAfterStart ${tagClockAfterStart}, localTimeAfterStart ${localTimeAfterStart}, diff ${localDelay}`,
+          );
+        }
+      }
       this.handleFlvChunk(detail);
     },
     handleFlvChunk(detail) {
@@ -204,6 +249,7 @@ Component({
     },
     onPusherClose({ type, detail }) {
       console.log(`[${this.data.innerId}]`, '==== onPusherClose', detail);
+      this.userData.flvTagStat = null;
       this.setData({ isPushing: false });
       this.triggerEvent(type, detail);
     },
@@ -366,13 +412,13 @@ Component({
       });
     },
     start({ writer, success, fail, complete } = {}) {
-      console.log(`[${this.data.innerId}] start, hasPusherCtx: ${!!this.data.pusherCtx}, hasWriter: ${!!this.userData.writer}`);
+      console.log(`[${this.data.innerId}] start, hasPusherCtx: ${!!this.userData.pusherCtx}, hasWriter: ${!!this.userData.writer}`);
       if (!writer || !writer.addChunk) {
         fail && fail({ errMsg: 'writer invalid' });
         complete && complete();
         return;
       }
-      if (!this.data.pusherCtx) {
+      if (!this.userData.pusherCtx) {
         fail && fail({ errMsg: 'pusher not ready' });
         complete && complete();
         return;
@@ -398,7 +444,7 @@ Component({
       this.setData({ hasWriter: true });
 
       console.log(`[${this.data.innerId}] pusherCtx.start`);
-      this.data.pusherCtx.start({
+      this.userData.pusherCtx.start({
         success,
         fail: (err) => {
           console.log(`[${this.data.innerId}] pusherCtx.start fail`, err);
@@ -411,8 +457,8 @@ Component({
       });
     },
     stop({ success, fail, complete } = {}) {
-      console.log(`[${this.data.innerId}] stop, hasPusherCtx: ${!!this.data.pusherCtx}, hasWriter: ${!!this.userData.writer}`);
-      if (!this.data.pusherCtx) {
+      console.log(`[${this.data.innerId}] stop, hasPusherCtx: ${!!this.userData.pusherCtx}, hasWriter: ${!!this.userData.writer}`);
+      if (!this.userData.pusherCtx) {
         fail && fail({ errMsg: 'pusher not ready' });
         complete && complete();
         return;
@@ -432,10 +478,10 @@ Component({
       this.tryStopPusher({ success, fail, complete });
     },
     tryStopPusher(params) {
-      if (this.data.pusherCtx) {
+      if (this.userData.pusherCtx) {
         try {
           console.log(`[${this.data.innerId}] pusherCtx.stop`);
-          this.data.pusherCtx.stop(params);
+          this.userData.pusherCtx.stop(params);
         } catch (err) {}
       }
     },

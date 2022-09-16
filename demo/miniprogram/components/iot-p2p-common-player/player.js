@@ -149,8 +149,6 @@ Component({
     playerId: '', // 这是 p2p-player 组件的id，不是自己的id
     playerState: PlayerStateEnum.PlayerIdle,
     playerDenied: false,
-    playerComp: null,
-    playerCtx: null,
     playerMsg: '',
     playerPaused: false, // false / true / 'stopped'
     needPauseStream: false, // 为true时不addChunk
@@ -237,6 +235,8 @@ Component({
 
       // 渲染无关，不放在data里，以免影响性能
       this.userData = {
+        playerComp: null,
+        playerCtx: null,
         chunkTime: 0,
         chunkCount: 0,
         totalBytes: 0,
@@ -418,19 +418,15 @@ Component({
       this.stat.addStateTimestamp(newData.p2pState);
       this.stat.addStateTimestamp(newData.streamState);
 
+      if (newData.hasPlayer === false) {
+        this.userData.playerComp = null;
+        this.userData.playerCtx = null;
+      }
       const oldPlayerState = this.data.playerState;
       const oldP2PState = this.data.p2pState;
       const oldStreamState = this.data.streamState;
-      let playerDetail;
-      if (newData.hasPlayer === false) {
-        playerDetail = {
-          playerComp: null,
-          playerCtx: null,
-        };
-      }
       this.setData({
         ...newData,
-        ...playerDetail,
         playerMsg: typeof newData.playerMsg === 'string' ? newData.playerMsg : this.getPlayerMessage(newData),
       }, callback);
       if (newData.playerState && newData.playerState !== oldPlayerState) {
@@ -471,12 +467,12 @@ Component({
       this.console.log(`[${this.data.innerId}]`, '==== onPlayerReady in', this.data.playerState, this.data.p2pState, detail);
       const oldPlayerState = this.data.playerState;
       if (oldPlayerState === PlayerStateEnum.PlayerReady) {
-        this.console.warn(`[${this.data.innerId}] onPlayerReady again, playerCtx ${detail.livePlayerContext === this.data.playerCtx ? 'same' : 'different'}`);
+        this.console.warn(`[${this.data.innerId}] onPlayerReady again, playerCtx ${detail.livePlayerContext === this.userData.playerCtx ? 'same' : 'different'}`);
       }
+      this.userData.playerComp = detail.playerExport;
+      this.userData.playerCtx = detail.livePlayerContext;
       this.changeState({
         playerState: PlayerStateEnum.PlayerReady,
-        playerComp: detail.playerExport,
-        playerCtx: detail.livePlayerContext,
       });
       this.tryTriggerPlay(`${oldPlayerState} -> ${this.data.playerState}`);
     },
@@ -488,7 +484,7 @@ Component({
         // 注意要把playerPaused改成特殊的 'stopped'，否则resume会有问题，并且不能用 tryStopPlayer
         this.console.warn(`[${this.data.innerId}]`, 'onPlayerStartPull but player paused and need pause stream, stop player');
         try {
-          this.data.playerCtx.stop(params);
+          this.userData.playerCtx.stop(params);
         } catch (err) {}
         this.setData({
           playerPaused: 'stopped',
@@ -709,7 +705,7 @@ Component({
               streamState: StreamStateEnum.StreamWaitPull,
             });
             this.console.log(`[${this.data.innerId}]`, 'trigger replay');
-            this.data.playerCtx.play();
+            this.userData.playerCtx.play();
           },
         });
       }
@@ -900,7 +896,7 @@ Component({
         this.onP2PMessage(targetId, event, subtype, detail, { isStream: true });
       };
 
-      const { playerComp } = this.data;
+      const { playerComp } = this.userData;
       let chunkTime = 0;
       let chunkCount = 0;
       let totalBytes = 0;
@@ -1098,8 +1094,8 @@ Component({
       });
     },
     pause({ success, fail, complete, needPauseStream = false }) {
-      this.console.log(`[${this.data.innerId}] pause, hasPlayerCrx: ${!!this.data.playerCtx}, needPauseStream ${needPauseStream}`);
-      if (!this.data.playerCtx) {
+      this.console.log(`[${this.data.innerId}] pause, hasPlayerCrx: ${!!this.userData.playerCtx}, needPauseStream ${needPauseStream}`);
+      if (!this.userData.playerCtx) {
         fail && fail({ errMsg: 'player not ready' });
         complete && complete();
         return;
@@ -1108,7 +1104,7 @@ Component({
       if (!needPauseStream) {
         // 真的pause
         this.console.log(`[${this.data.innerId}] playerCtx.pause`);
-        this.data.playerCtx.pause({
+        this.userData.playerCtx.pause({
           success: () => {
             this.console.log(`[${this.data.innerId}] playerCtx.pause success`);
             this.setData({
@@ -1129,7 +1125,7 @@ Component({
           needPauseStream: true,
         });
         this.console.log(`[${this.data.innerId}] playerCtx.stop`);
-        this.data.playerCtx.stop({
+        this.userData.playerCtx.stop({
           complete: () => {
             this.console.log(`[${this.data.innerId}] playerCtx.stop success`);
             this.setData({
@@ -1143,15 +1139,15 @@ Component({
       }
     },
     resume({ success, fail, complete }) {
-      this.console.log(`[${this.data.innerId}] resume, hasPlayerCrx: ${!!this.data.playerCtx}`);
-      if (!this.data.playerCtx) {
+      this.console.log(`[${this.data.innerId}] resume, hasPlayerCrx: ${!!this.userData.playerCtx}`);
+      if (!this.userData.playerCtx) {
         fail && fail({ errMsg: 'player not ready' });
         complete && complete();
         return;
       }
       const funcName = this.data.playerPaused === 'stopped' ? 'play' : 'resume';
       this.console.log(`[${this.data.innerId}] playerCtx.${funcName}`);
-      this.data.playerCtx[funcName]({
+      this.userData.playerCtx[funcName]({
         success: () => {
           this.console.log(`[${this.data.innerId}] playerCtx.${funcName} success, needPauseStream ${this.data.needPauseStream}`);
           this.setData({
@@ -1184,9 +1180,9 @@ Component({
         playerPaused: false,
         needPauseStream: false,
       });
-      if (this.data.playerCtx) {
+      if (this.userData.playerCtx) {
         try {
-          this.data.playerCtx.stop(params);
+          this.userData.playerCtx.stop(params);
         } catch (err) {}
       }
     },
@@ -1212,7 +1208,7 @@ Component({
         isPlayerStateCanPlay = this.data.playerState === PlayerStateEnum.LivePlayerError
           || this.data.playerState === PlayerStateEnum.LivePlayerStateError;
       }
-      if (!isP2PStateCanPlay || !this.data.playerCtx || !isPlayerStateCanPlay) {
+      if (!isP2PStateCanPlay || !this.userData.playerCtx || !isPlayerStateCanPlay) {
         this.console.log(`[${this.data.innerId}]`, 'state can not play, return');
         return;
       }
@@ -1222,6 +1218,10 @@ Component({
         this.console.warn(`[${this.data.innerId}]`, 'flv invalid, return');
         return;
       }
+
+      // FIXME 临时调试语音，不拉流
+      // this.console.warn(`[${this.data.innerId}]`, '==== disable play for voice debug, return');
+      // return;
 
       // 都准备好了，触发播放，这个会触发 onPlayerStartPull
       this.changeState({
@@ -1237,7 +1237,7 @@ Component({
         this.setData({ autoPlay: true });
       } else {
         this.console.log(`[${this.data.innerId}]`, '==== trigger play by playerCtx');
-        this.data.playerCtx.play({
+        this.userData.playerCtx.play({
           success: (res) => {
             this.console.log(`[${this.data.innerId}]`, 'call play success', res);
           },
@@ -1315,7 +1315,7 @@ Component({
             streamState: StreamStateEnum.StreamWaitPull,
           });
           this.console.log(`[${this.data.innerId}]`, 'trigger replay');
-          this.data.playerCtx.play();
+          this.userData.playerCtx.play();
         },
       });
     },
@@ -1545,11 +1545,11 @@ Component({
     },
     snapshot() {
       this.console.log(`[${this.data.innerId}]`, 'snapshot');
-      if (!this.data.playerCtx) {
+      if (!this.userData.playerCtx) {
         return Promise.reject({ errMsg: 'player not ready' });
       }
       return new Promise((resolve, reject) => {
-        this.data.playerCtx.snapshot({
+        this.userData.playerCtx.snapshot({
           quality: 'raw',
           success: (res) => {
             this.console.log(`[${this.data.innerId}]`, 'snapshot success', res);
@@ -1619,7 +1619,7 @@ Component({
         streamState: StreamStateEnum.StreamWaitPull,
       });
       this.console.log(`[${this.data.innerId}]`, 'trigger record play');
-      this.data.playerCtx.play();
+      this.userData.playerCtx.play();
     },
     async stopRecording() {
       if (!this.data.isRecording || !this.userData.fileObj) {

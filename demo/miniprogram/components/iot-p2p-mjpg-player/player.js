@@ -95,8 +95,6 @@ Component({
     // player状态
     hasPlayer: false,
     playerState: MjpgPlayerStateEnum.MjpgPlayerIdle,
-    playerComp: null,
-    playerCtx: null,
     playerMsg: '',
 
     // 主流状态，需要和主流的播放同步
@@ -149,6 +147,8 @@ Component({
 
       // 渲染无关，不放在data里，以免影响性能
       this.userData = {
+        playerComp: null,
+        playerCtx: null,
         imgInfo: null,
         fileObj: null,
       };
@@ -224,17 +224,13 @@ Component({
     },
     // 包一层，方便更新 playerMsg
     changeState(newData, callback) {
-      const oldPlayerState = this.data.playerState;
-      let playerDetail;
       if (newData.hasPlayer === false) {
-        playerDetail = {
-          playerComp: null,
-          playerCtx: null,
-        };
+        this.userData.playerComp = null;
+        this.userData.playerCtx = null;
       }
+      const oldPlayerState = this.data.playerState;
       this.setData({
         ...newData,
-        ...playerDetail,
         playerMsg: this.getPlayerMessage(newData),
       }, callback);
       if (newData.playerState && newData.playerState !== oldPlayerState) {
@@ -256,10 +252,10 @@ Component({
     },
     onPlayerReady({ detail }) {
       console.log(`[${this.data.innerId}]`, '==== onPlayerReady in', this.data.playerState, detail);
+      this.userData.playerComp = detail.playerExport;
+      this.userData.playerCtx = detail.mjpgPlayerContext;
       this.changeState({
         playerState: MjpgPlayerStateEnum.MjpgPlayerReady,
-        playerComp: detail.playerExport,
-        playerCtx: detail.mjpgPlayerContext,
       });
 
       if (this.data.isMainStreamPlaying) {
@@ -339,7 +335,7 @@ Component({
       });
     },
     play({ success, fail, complete } = {}) {
-      if (!this.data.playerCtx) {
+      if (!this.userData.playerCtx) {
         console.log(`[${this.data.innerId}]`, 'call play but mjpg player not ready');
         fail && fail({ errMsg: 'mjpg player not ready' });
         complete && complete();
@@ -348,10 +344,10 @@ Component({
 
       this.clearStreamData();
 
-      this.data.playerCtx.play({ success, fail, complete });
+      this.userData.playerCtx.play({ success, fail, complete });
     },
     stop({ success, fail, complete } = {}) {
-      if (!this.data.playerCtx) {
+      if (!this.userData.playerCtx) {
         console.log(`[${this.data.innerId}]`, 'call play but mjpg player not ready');
         fail && fail({ errMsg: 'mjpg player not ready' });
         complete && complete();
@@ -360,7 +356,7 @@ Component({
 
       this.clearStreamData();
 
-      this.data.playerCtx.stop({ success, fail, complete });
+      this.userData.playerCtx.stop({ success, fail, complete });
     },
     startStream() {
       console.log(`[${this.data.innerId}]`, 'startStream', this.properties.targetId);
@@ -378,7 +374,7 @@ Component({
         this.onP2PMessage(targetId, event, subtype, detail, { isStream: true });
       };
 
-      const { playerComp } = this.data;
+      const { playerComp } = this.userData;
       let hasFirstChunk = false;
       const dataCallback = (data) => {
         if (!data || !data.byteLength) {
@@ -472,7 +468,7 @@ Component({
           if (!detail || detail.status === 200) {
             // 收到 headers
             if (detail?.headers) {
-              this.data.playerComp.setHeaders(detail.headers);
+              this.userData.playerComp.setHeaders(detail.headers);
             }
           } else {
             this.resetStreamData();
@@ -540,14 +536,14 @@ Component({
     },
     snapshot() {
       console.log(`[${this.data.innerId}]`, 'snapshot');
-      if (!this.data.playerCtx) {
+      if (!this.userData.playerCtx) {
         return Promise.reject({ errMsg: 'player not ready' });
       }
-      if (!this.data.playerCtx.snapshot) {
+      if (!this.userData.playerCtx.snapshot) {
         return Promise.reject({ errMsg: 'player not support snapshot' });
       }
       return new Promise((resolve, reject) => {
-        this.data.playerCtx.snapshot({
+        this.userData.playerCtx.snapshot({
           quality: 'raw',
           success: (res) => {
             console.log(`[${this.data.innerId}]`, 'snapshot success', res?.data?.byteLength);

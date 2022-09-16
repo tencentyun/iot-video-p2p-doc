@@ -7,10 +7,8 @@ Page({
   data: {
     systemInfo: {},
     pluginVersion: '',
-    showPlayerLog: true,
     playerId: '',
     playerReady: false,
-    playerCtx: null,
     playerSrc: '',
     playerAudioSrc: '',
     playerLoop: false,
@@ -20,6 +18,7 @@ Page({
   onLoad(query) {
     this.userData = {
       // 渲染无关的尽量放这里
+      playerCtx: null,
       recordManager: null,
       mjpgPath: '',
     };
@@ -57,9 +56,9 @@ Page({
   onPlayerReady({ detail }) {
     console.log('==== onPlayerReady', detail);
     this.addLog('==== onPlayerReady');
+    this.userData.playerCtx = detail.mjpgPlayerContext;
     this.setData({
       playerReady: true,
-      playerCtx: detail.mjpgPlayerContext,
       playerSrc: this.userData.mjpgPath,
     });
   },
@@ -67,9 +66,9 @@ Page({
     console.error('==== onPlayerError', detail);
     const code = detail?.error?.code;
     this.addLog(`==== onPlayerError, code: ${code}`);
+    this.userData.playerCtx = null;
     this.setData({
       playerReady: false,
-      playerCtx: null,
       playerSrc: '',
       playStatus: '',
     });
@@ -131,14 +130,14 @@ Page({
     this.bindClear();
 
     this.addLog('destroy player');
+    this.userData.playerCtx = null;
     this.setData({
       playerId: '',
       playerReady: false,
-      playerCtx: null,
     });
   },
   async bindChoose({ currentTarget }) {
-    if (!this.data.playerCtx) {
+    if (!this.userData.playerCtx) {
       console.log('player not ready');
       return;
     }
@@ -180,7 +179,7 @@ Page({
     });
   },
   bindPlay({ currentTarget }) {
-    if (!this.data.playerCtx) {
+    if (!this.userData.playerCtx) {
       console.log('player not ready');
       return;
     }
@@ -193,10 +192,10 @@ Page({
       playerLoop: parseInt(currentTarget.dataset.loop, 10),
       playStatus: 'playing',
     });
-    this.data.playerCtx?.play();
+    this.userData.playerCtx?.play();
   },
   bindStop() {
-    if (!this.data.playerCtx) {
+    if (!this.userData.playerCtx) {
       console.log('player not ready');
       return;
     }
@@ -205,23 +204,23 @@ Page({
       return;
     }
     this.addLog('stop');
-    this.data.playerCtx.stop();
+    this.userData.playerCtx.stop();
     this.setData({
       playStatus: '',
     });
   },
   bindPause() {
-    if (!this.data.playerCtx) {
+    if (!this.userData.playerCtx) {
       console.log('player not ready');
       return;
     }
-    this.data.playerCtx?.pause();
+    this.userData.playerCtx?.pause();
   },
   bindResume() {
-    if (!this.data.playerCtx) {
+    if (!this.userData.playerCtx) {
       console.log('player not ready');
       return;
     }
-    this.data.playerCtx?.resume();
+    this.userData.playerCtx?.resume();
   },
 });

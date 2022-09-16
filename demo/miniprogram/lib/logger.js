@@ -75,7 +75,13 @@ export class Logger {
     this.logFilePath = `${logBaseDir}/${logFileName}`;
     console.log('logger: logFilePath', this.logFilePath);
 
-    fileSystem.writeFileSync(this.logFilePath, `${logFileName}\n${toDateTimeMsString(date)} ---- ${reason}\n`, 'utf-8');
+    try {
+      fileSystem.writeFileSync(this.logFilePath, `${logFileName}\n${toDateTimeMsString(date)} ---- ${reason}\n`, 'utf-8');
+      this.canWrite = true;
+    } catch (err) {
+      console.error('logger: writeFileSync error', err);
+      this.canWrite = false;
+    }
 
     const systemInfo = wx.getSystemInfoSync();
     this.log('SystemInfo', {
@@ -97,6 +103,9 @@ export class Logger {
   }
 
   writeLogFile(...data) {
+    if (!this.canWrite) {
+      return;
+    }
     try {
       const log = `${[toDateTimeMsString(new Date()), '----', ...data.map(v => formatItem(v))].join(' ')}\n`;
       fileSystem.appendFileSync(this.logFilePath, log, 'utf-8');

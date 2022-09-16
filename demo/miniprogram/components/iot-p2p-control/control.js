@@ -133,12 +133,12 @@ Component({
           console.log(`[${this.id}]`, 'localPeername', localPeername, localPeername2);
           this.changeState({ state: 'inited', localPeername, localPeername2 });
         })
-        .catch((errcode) => {
-          console.error(`[${this.id}]`, 'init error', errcode);
+        .catch((err) => {
+          console.error(`[${this.id}]`, 'init error', err);
 
           this.destroyModule();
           wx.showModal({
-            content: `init 失败, errcode: ${errcode}`,
+            content: `init 失败, errcode: ${err?.errcode}; errmsg: ${err?.errmsg}`,
             showCancel: false,
           });
         });

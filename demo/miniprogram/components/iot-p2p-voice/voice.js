@@ -80,6 +80,10 @@ Component({
         field: 'highQuality',
         text: '高音质（高-48KHz，低-16KHz）',
       },
+      {
+        field: 'ignoreEmptyAudioTag',
+        text: '不发送空 audioTag',
+      },
     ],
     isModifyPusher: false,
   },

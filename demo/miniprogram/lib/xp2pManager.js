@@ -142,11 +142,11 @@ class Xp2pManager {
       playerPlugin = requirePlugin('wechat-p2p-player');
 
       oriConsole.log('playerPlugin', playerPlugin);
-      // playerPlugin.enableHttpLog(true);
-      // playerPlugin.enableRtmpLog(true);
       if (app.pluginLogger && playerPlugin.setPluginLogger) {
         playerPlugin.setPluginLogger(app.pluginLogger);
       }
+      // playerPlugin.enableHttpLog(true);
+      // playerPlugin.enableRtmpLog(true);
       playerPlugin.initHttp && playerPlugin.initHttp({
         errorCallback: this._localHttpErrorHandler.bind(this),
       });
@@ -286,7 +286,7 @@ class Xp2pManager {
         console.error('Xp2pManager: init timeout');
 
         this.destroyModule();
-        return reject(Xp2pManagerErrorEnum.Timeout);
+        return reject({ errcode: Xp2pManagerErrorEnum.Timeout, errmsg: 'Xp2pManager: init timeout' });
       }, p2pTimeout);
 
       Promise.all([

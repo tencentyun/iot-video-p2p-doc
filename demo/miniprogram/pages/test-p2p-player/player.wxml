@@ -4,6 +4,7 @@
       <p2p-player
         wx:if="{{playerId}}"
         id="{{playerId}}"
+        autoplay="{{autoplay}}"
         orientation="vertical"
         minCache="0.2"
         maxCache="0.8"

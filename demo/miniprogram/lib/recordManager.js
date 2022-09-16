@@ -460,7 +460,7 @@ class RecordManager {
 
 const mgrMap = {};
 export const getRecordManager = (name) => {
-  const key = name || 'others';
+  const key = name || 'records';
   if (!mgrMap[key]) {
     mgrMap[key] = new RecordManager(key);
   }

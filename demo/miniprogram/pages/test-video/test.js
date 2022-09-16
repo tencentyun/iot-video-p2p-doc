@@ -1,7 +1,7 @@
-import { getRecordManager } from '../../lib/recordManager';
+// import { getRecordManager } from '../../lib/recordManager';
 
-const videoManager = getRecordManager('videos');
-const fileSystem = wx.getFileSystemManager();
+// const videoManager = getRecordManager('videos');
+// const fileSystem = wx.getFileSystemManager();
 
 Page({
   data: {
@@ -60,10 +60,10 @@ Page({
       }
     }
 
-    videoManager.prepareDir();
-    const fileName = file.name || `noname.${Date.now()}.mp4`;
-    const filePath = `${videoManager.baseDir}/${fileName}`;
-    fileSystem.saveFileSync(file.path || file.tempFilePath, filePath);
+    // videoManager.prepareDir();
+    // const fileName = file.name || `noname.${Date.now()}.mp4`;
+    // const filePath = `${videoManager.baseDir}/${fileName}`;
+    // fileSystem.saveFileSync(file.path || file.tempFilePath, filePath);
 
     this.setData({
       inputSrc: filePath,
