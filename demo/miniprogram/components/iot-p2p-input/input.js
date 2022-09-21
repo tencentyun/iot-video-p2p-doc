@@ -100,7 +100,7 @@ Component({
       {
         field: 'playerRTC',
         text: '播放使用RTC模式',
-        checked: false,
+        checked: true,
       },
     ],
     intercomType: 'Recorder',

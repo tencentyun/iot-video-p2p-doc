@@ -308,7 +308,7 @@ class RecordManager {
     // this.removeSavedRecordList();
 
     // 录像文件名自动带上录制时间
-    const fixedFilename = recordFilename.replace(new RegExp(`\\.${fileType}$`), '').replace(/\W/g, '-');
+    const fixedFilename = recordFilename.replace(new RegExp(`\\.${fileType}$`), '').replace(/[^\w.-]/g, '-');
     const fileName = `${fixedFilename}.${toDateTimeFilename(new Date())}.${fileType || 'flv'}`;
 
     return this.openFile(fileName);

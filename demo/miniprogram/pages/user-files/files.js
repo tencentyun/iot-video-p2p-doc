@@ -8,10 +8,12 @@ const isMJPG = filename => /\.mjpg$/i.test(filename);
 const isLOG = filename => /\.log$/i.test(filename);
 const processFileItem = (item) => {
   if (item) {
-    item.isFLV = isFLV(item.fileName);
     item.isMP4 = isMP4(item.fileName);
+    item.isFLV = isFLV(item.fileName);
     item.isMJPG = isMJPG(item.fileName);
     item.isLOG = isLOG(item.fileName);
+    item.showPlay = item.isFLV;
+    item.showSave = item.isMP4 || item.isFLV || item.isMJPG;
   }
   return item;
 };
