@@ -1,7 +1,7 @@
 <view class="component iot-player {{playerClass}}">
   <view class="player-container">
     <p2p-player
-      wx:if="{{canUseP2P && needPlayer && hasPlayer}}"
+      wx:if="{{playerId && canUseP2P && needPlayer && hasPlayer}}"
       id="{{playerId}}"
       autoplay="{{autoPlay}}"
       mode="{{mode}}"
@@ -20,7 +20,7 @@
       bind:netstatus="onLivePlayerNetStatus"
     />
     <mock-p2p-player
-      wx:if="{{canUseP2P && !needPlayer}}"
+      wx:if="{{playerId && canUseP2P && !needPlayer}}"
       bind:playerReady="onPlayerReady"
       bind:playerStartPull="onPlayerStartPull"
       bind:playerClose="onPlayerClose"

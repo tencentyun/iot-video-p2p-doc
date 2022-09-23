@@ -94,6 +94,7 @@ Component({
 
     // player状态
     hasPlayer: false,
+    playerId: '', // 这是 p2p-mjpg-player 组件的id，不是自己的id
     playerState: MjpgPlayerStateEnum.MjpgPlayerIdle,
     playerMsg: '',
 
@@ -163,12 +164,14 @@ Component({
       const onlyp2p = this.properties.onlyp2p || false;
       const needPlayer = !onlyp2p;
       const hasPlayer = needPlayer && this.properties.targetId && this.properties.mjpgFile && streamType;
+      const playerId = `${this.data.innerId}-player`; // 这是 p2p-mjpg-player 组件的id，不是自己的id
       this.setData({
         flvFilename,
         flvParams,
         streamType,
         needPlayer,
         hasPlayer,
+        playerId,
       });
 
       this.createPlayer();
@@ -344,6 +347,7 @@ Component({
 
       this.clearStreamData();
 
+      console.log(`[${this.data.innerId}]`, 'call play');
       this.userData.playerCtx.play({ success, fail, complete });
     },
     stop({ success, fail, complete } = {}) {
@@ -356,6 +360,7 @@ Component({
 
       this.clearStreamData();
 
+      console.log(`[${this.data.innerId}]`, 'call stop');
       this.userData.playerCtx.stop({ success, fail, complete });
     },
     startStream() {
