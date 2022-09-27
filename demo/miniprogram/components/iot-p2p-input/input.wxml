@@ -2,7 +2,8 @@
   <view class="component-section" wx:if="{{p2pMode === 'ipc'}}">
     <view class="component-section-title">
       P2P模式: 1v1
-      <view style="float: right">
+      <text wx:if="{{showCancel}}" class="text-btn float-right margin-left" bindtap="cancel">取消</text>
+      <view class="float-right">
         <radio-group bindchange="changeSceneRadio">
           <label wx:for="{{sceneList}}" wx:key="value" class="scene-label"><radio value="{{item.value}}" checked="{{item.checked}}"/>{{item.text}}</label>
         </radio-group>

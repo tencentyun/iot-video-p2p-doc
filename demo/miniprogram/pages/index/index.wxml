@@ -1,55 +1,56 @@
-<view class="page-body">
-  <view class="page-section page-section-gap">
-    <view>hostInfo: {{hostInfo}}</view>
-    <view>xp2pPluginInfo: {{xp2pPluginInfo}}</view>
-    <view>playerPluginInfo: {{playerPluginInfo}}</view>
-    <view>wxVersion: wx {{wxVersion}} / sdk {{wxSDKVersion}}</view>
-    <view>pluginVersion: xp2p {{xp2pVersion}} / p2p-player {{playerVersion}}</view>
-  </view>
-  <view class="page-section page-section-gap">
-    <iot-p2p-control
-      id="iot-p2p-main-control"
-      bind:statechange="onP2PModuleStateChange"
+<view class="page-body page-body-padding">
+  <view wx:if="{{cfg}}">
+    <iot-p2p-input
+      cfg="{{cfg}}"
+      showCancel
+      bind:startPlayer="onStartPlayer"
+      bind:cancel="onCancelInput"
     />
   </view>
-  <view class="page-section" wx:if="{{recentIPCItem}}">
-    <view class="page-section-title">Recent</view>
-    <button type="primary" class="page-body-button"
-      bindtap="gotoDemoPage"
-      data-url="/pages/xp2p-demo-1vN/demo?cfg={{recentIPCItem.cfg}}"
-    >
-      {{recentIPCItem.title}}
-    </button>
-  </view>
-  <view class="page-section">
-    <view class="page-section-title">List</view>
-    <button wx:for="{{listBtn}}" wx:key="cfg" type="primary" class="page-body-button"
-      bindtap="gotoDemoPage"
-      data-url="/pages/xp2p-demo-1vN/demo?cfg={{item.cfg}}"
-    >
-      {{item.title}}
-    </button>
-  </view>
-  <view class="page-section">
-    <view wx:for="{{listNav}}" wx:key="cfg">
-      <navigator url="/pages/xp2p-demo-1vN/demo?cfg={{item.cfg}}" hover-class="navigator-hover">
-        跳转到 {{item.title}}
-      </navigator>
+  <view wx:else>
+    <view class="page-section page-section-gap">
+      <view>hostInfo: {{hostInfo}}</view>
+      <view>xp2pPluginInfo: {{xp2pPluginInfo}}</view>
+      <view>playerPluginInfo: {{playerPluginInfo}}</view>
+      <view>wxVersion: wx {{wxVersion}} / sdk {{wxSDKVersion}}</view>
+      <view>pluginVersion: xp2p {{xp2pVersion}} / p2p-player {{playerVersion}}</view>
     </view>
+    <view class="page-section page-section-gap">
+      <iot-p2p-control
+        id="iot-p2p-main-control"
+        bind:statechange="onP2PModuleStateChange"
+      />
+    </view>
+    <view class="page-section" wx:if="{{recentIPCItem}}">
+      <view class="page-section-title">Recent</view>
+      <button type="primary" class="page-body-button"
+        bindtap="onClickCfg"
+        data-cfg="{{recentIPCItem.cfg}}"
+      >
+        {{recentIPCItem.title}}
+      </button>
+    </view>
+    <view class="page-section">
+      <view class="page-section-title">List</view>
+      <button wx:for="{{listBtn}}" wx:key="cfg" type="primary" class="page-body-button"
+        bindtap="onClickCfg"
+        data-cfg="{{item.cfg}}"
+      >
+        {{item.title}}
+      </button>
+    </view>
+    <!-- 调试页面不放在首页了，以免用户疑惑
+    <navigator wx:if="{{firstServerStream && firstIPCStream}}" url="/pages/xp2p-multiplayers/demo?cfg1={{firstServerStream.cfg}}&cfg2={{firstIPCStream.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 多播放器 {{firstServerStream.cfg}}+{{firstIPCStream.cfg}}</navigator>
+    -->
+    <navigator url="/pages/user-files/files?name=logs" hover-class="navigator-hover">跳转到 Log 管理页</navigator>
+    <navigator url="/pages/user-files/files?name=downloads" hover-class="navigator-hover">跳转到 下载管理页</navigator>
+    <navigator url="/pages/user-files/files?name=records" hover-class="navigator-hover">跳转到 录像管理页-flv</navigator>
+    <navigator url="/pages/user-files/files?name=mjpgs" hover-class="navigator-hover">跳转到 录像管理页-mjpg</navigator>
+    <navigator url="/pages/user-files/files?name=voices" hover-class="navigator-hover">跳转到 语音管理页</navigator>
+    <navigator url="/pages/test-live-player/test" hover-class="navigator-hover">跳转到 LivePlayer 测试页</navigator>
+    <navigator url="/pages/test-video/test" hover-class="navigator-hover">跳转到 Video 测试页</navigator>
+    <!-- <navigator url="/pages/user-files/files?name=videos" hover-class="navigator-hover">跳转到 Video 管理页</navigator> -->
+    <!-- <navigator url="/pages/test-mjpg/test" hover-class="navigator-hover">跳转到 MJPG 测试页</navigator> -->
   </view>
-  <!-- 调试页面不放在首页了，以免用户疑惑
-  <navigator wx:if="{{firstServerStream}}" url="/pages/xp2p-singleplayer/demo?cfg={{firstServerStream.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 单播放器 {{firstServerStream.cfg}}</navigator>
-  <navigator wx:if="{{firstIPCStream}}" url="/pages/xp2p-singleplayer/demo?cfg={{firstIPCStream.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 单播放器 {{firstIPCStream.cfg}}</navigator>
-  <navigator wx:if="{{firstServerStream && firstIPCStream}}" url="/pages/xp2p-multiplayers/demo?cfg1={{firstServerStream.cfg}}&cfg2={{firstIPCStream.cfg}}" hover-class="navigator-hover">跳转到 X-P2P 多播放器 {{firstServerStream.cfg}}+{{firstIPCStream.cfg}}</navigator>
-  -->
-  <navigator url="/pages/user-files/files?name=logs" hover-class="navigator-hover">跳转到 Log 管理页</navigator>
-  <navigator url="/pages/user-files/files?name=downloads" hover-class="navigator-hover">跳转到 下载管理页</navigator>
-  <navigator url="/pages/user-files/files?name=records" hover-class="navigator-hover">跳转到 录像管理页-flv</navigator>
-  <navigator url="/pages/user-files/files?name=mjpgs" hover-class="navigator-hover">跳转到 录像管理页-mjpg</navigator>
-  <navigator url="/pages/user-files/files?name=voices" hover-class="navigator-hover">跳转到 语音管理页</navigator>
-  <navigator url="/pages/test-live-player/test" hover-class="navigator-hover">跳转到 LivePlayer 测试页</navigator>
-  <navigator url="/pages/test-video/test" hover-class="navigator-hover">跳转到 Video 测试页</navigator>
-  <!-- <navigator url="/pages/user-files/files?name=videos" hover-class="navigator-hover">跳转到 Video 管理页</navigator> -->
-  <!-- <navigator url="/pages/test-mjpg/test" hover-class="navigator-hover">跳转到 MJPG 测试页</navigator> -->
 </view>
 

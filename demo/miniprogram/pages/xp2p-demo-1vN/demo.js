@@ -14,10 +14,14 @@ Page({
 
     // 这些是控制player和p2p的
     playerId: 'iot-p2p-player',
-    player: null,
   },
   onLoad(query) {
     console.log('demo: onLoad', query);
+
+    this.userData = {
+      targetId: '',
+      player: null,
+    };
 
     const cfg = query.cfg || '';
     this.setData({
@@ -35,9 +39,17 @@ Page({
     this.hasExited = true;
 
     // 监控页关掉player就好，不用销毁 p2p 模块
-    if (this.data.player) {
-      this.data.player.stopAll('auto'); // 按player内部属性来
-      this.setData({ player: null });
+    if (this.userData.player) {
+      console.log('demo: player.stopAll');
+      this.userData.player.stopAll();
+      this.userData.player = null;
+    }
+
+    // 断开连接
+    if (this.userData.targetId) {
+      console.log('demo: stopP2PService', this.userData.targetId);
+      xp2pManager.stopP2PService(this.userData.targetId);
+      this.userData.targetId = '';
     }
 
     console.log('demo: checkReset when exit');
@@ -46,12 +58,30 @@ Page({
   },
   onStartPlayer({ detail }) {
     console.log('demo: onStartPlayer', detail);
+    this.userData.targetId = detail.targetId;
+
+    // 开始连接
+    console.log('demo: startP2PService', this.userData.targetId);
+    try {
+      xp2pManager.startP2PService(this.userData.targetId, {
+        url: detail.flvUrl,
+        productId: detail.productId,
+        deviceName: detail.deviceName,
+        xp2pInfo: detail.xp2pInfo,
+        liveStreamDomain: detail.liveStreamDomain,
+        codeUrl: detail.codeUrl,
+      }).catch(() => undefined); // 只是提前连接，不用处理错误
+    } catch (err) {
+      console.error('demo: startP2PService err', err);
+    }
+
+    console.log('demo: create player');
     this.setData(detail, () => {
       const player = this.selectComponent(`#${this.data.playerId}`);
       if (player) {
-        this.setData({ player });
+        this.userData.player = player;
       } else {
-        console.error('create player error', this.data.playerId);
+        console.error('demo: create player error', this.data.playerId);
       }
     });
   },
@@ -66,7 +96,7 @@ Page({
         if (isFatalError) {
           // 致命错误，需要reset的全部reset
           xp2pManager.checkReset();
-          this.data.player.reset();
+          this.userData.player?.reset();
         }
       },
     });

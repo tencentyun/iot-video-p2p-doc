@@ -1,7 +1,7 @@
 <view class="component iot-mjpg-player {{playerClass}}">
   <view class="player-container">
     <p2p-mjpg-player
-      wx:if="{{playerId && needPlayer && hasPlayer}}"
+      wx:if="{{needPlayer && hasPlayer}}"
       bind:playerReady="onPlayerReady"
       bind:playerStartPull="onPlayerStartPull"
       bind:playerClose="onPlayerClose"
@@ -10,7 +10,7 @@
       bind:error="onImageError"
     />
     <mock-p2p-player
-      wx:if="{{playerId && !needPlayer}}"
+      wx:if="{{!needPlayer}}"
       type="mjpgPlayer"
       bind:playerReady="onPlayerReady"
       bind:playerStartPull="onPlayerStartPull"

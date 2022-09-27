@@ -41,7 +41,6 @@ Component({
   },
   data: {
     innerId: '',
-    isDetached: false,
 
     // 语音对讲
     needPusher: false, // attached 时根据 intercomType 设置
@@ -154,6 +153,7 @@ Component({
 
       // 渲染无关，不放在data里，以免影响性能
       this.userData = {
+        isDetached: false,
         timestamps: null,
         steps: null,
         pusher: null,
@@ -186,7 +186,7 @@ Component({
     },
     detached() {
       console.log(`[${this.data.innerId}]`, '==== detached');
-      this.setData({ isDetached: true });
+      this.userData.isDetached = true;
       this.stopVoice();
       console.log(`[${this.data.innerId}]`, '==== detached end');
     },
@@ -199,13 +199,13 @@ Component({
   },
   methods: {
     showToast(content) {
-      !this.data.isDetached && wx.showToast({
+      !this.userData.isDetached && wx.showToast({
         title: content,
         icon: 'none',
       });
     },
     showModal(params) {
-      !this.data.isDetached && wx.showModal(params);
+      !this.userData.isDetached && wx.showModal(params);
     },
     getPusherComp() {
       const pusher = this.selectComponent(`#${this.data.pusherId}`);
@@ -324,7 +324,7 @@ Component({
       });
     },
     async startVoice(e) {
-      if (this.data.isDetached) {
+      if (this.userData.isDetached) {
         return;
       }
 
@@ -369,7 +369,7 @@ Component({
       this.doStartVoice();
     },
     async doStartVoice() {
-      if (this.data.isDetached) {
+      if (this.userData.isDetached) {
         return;
       }
 
@@ -418,7 +418,7 @@ Component({
         return;
       }
 
-      if (this.data.isDetached || !this.data.voiceState) {
+      if (this.userData.isDetached || !this.data.voiceState) {
         // 已经stop了
         return;
       }
@@ -573,7 +573,7 @@ Component({
         });
     },
     stopVoice() {
-      if (this.data.isDetached) {
+      if (this.userData.isDetached) {
         return;
       }
 

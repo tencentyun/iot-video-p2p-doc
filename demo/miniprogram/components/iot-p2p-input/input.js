@@ -16,6 +16,10 @@ Component({
       type: String,
       value: '',
     },
+    showCancel: {
+      type: Boolean,
+      value: false,
+    },
   },
   data: {
     // 这是onLoad时就固定的
@@ -397,6 +401,9 @@ Component({
         options,
         onlyp2pMap,
       });
+    },
+    cancel() {
+      this.triggerEvent('cancel');
     },
   },
 });

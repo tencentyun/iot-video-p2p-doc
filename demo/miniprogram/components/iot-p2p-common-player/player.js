@@ -235,6 +235,7 @@ Component({
 
       // 渲染无关，不放在data里，以免影响性能
       this.userData = {
+        isDetached: false,
         playerComp: null,
         playerCtx: null,
         chunkTime: 0,
@@ -280,7 +281,7 @@ Component({
         p2pState = P2PStateEnum.P2PIdle;
         playerState = PlayerStateEnum.PlayerIdle;
       } else {
-        p2pState = P2PStateEnum.P2PInitError;
+        p2pState = P2PStateEnum.P2PLocalError;
         playerState = PlayerStateEnum.PlayerError;
         playerMsg = isP2PModeValid ? '您的微信基础库版本过低，请升级后再使用' : `无效的p2pType: ${this.properties.p2pMode}`;
       }
@@ -359,6 +360,7 @@ Component({
     detached() {
       // 在组件实例被从页面节点树移除时执行
       this.console.log(`[${this.data.innerId}]`, '==== detached');
+      this.userData.isDetached = true;
       this.stopAll();
       this.console.log(`[${this.data.innerId}]`, '==== detached end');
     },
@@ -476,8 +478,11 @@ Component({
       });
       this.tryTriggerPlay(`${oldPlayerState} -> ${this.data.playerState}`);
     },
-    onPlayerStartPull({ detail }) {
-      this.console.log(`[${this.data.innerId}]`, `==== onPlayerStartPull in p2pState ${this.data.p2pState}, flvParams ${this.data.flvParams}, playerPaused ${this.data.playerPaused}, needPauseStream ${this.data.needPauseStream}`, detail);
+    onPlayerStartPull() {
+      this.console.log(
+        `[${this.data.innerId}] ==== onPlayerStartPull in p2pState ${this.data.p2pState},`,
+        `flvParams ${this.data.flvParams}, playerPaused ${this.data.playerPaused}, needPauseStream ${this.data.needPauseStream}`,
+      );
 
       if (this.data.playerPaused && this.data.needPauseStream) {
         // ios暂停时不会断开连接，一段时间没收到数据就会触发startPull，但needPauseStream时不应该拉流
@@ -796,23 +801,13 @@ Component({
 
       this.console.log(`[${this.data.innerId}]`, 'startP2PService', targetId, flvUrl, streamExInfo);
 
-      const msgCallback = (event, subtype, detail) => {
-        this.onP2PServiceMessage(targetId, event, subtype, detail);
-      };
-
       this.changeState({
         currentP2PId: targetId,
         p2pState: P2PStateEnum.ServicePreparing,
       });
 
       xp2pManager
-        .startP2PService(
-          targetId,
-          { url: flvUrl, ...streamExInfo },
-          {
-            msgCallback,
-          },
-        )
+        .startP2PService(targetId, { url: flvUrl, ...streamExInfo })
         .then((res) => {
           this.console.log(`[${this.data.innerId}]`, '==== startP2PService res', res);
           if (res === 0) {
@@ -1043,13 +1038,6 @@ Component({
         || checkState === P2PStateEnum.ServiceStartError
         || checkState === P2PStateEnum.ServiceError;
     },
-    isStreamInErrorState(streamState) {
-      const checkState = streamState || this.data.streamState;
-      return checkState === StreamStateEnum.StreamLocalServerError
-        || checkState === StreamStateEnum.StreamCheckError
-        || checkState === StreamStateEnum.StreamStartError
-        || checkState === StreamStateEnum.StreamError;
-    },
     stopAll(newP2PState = P2PStateEnum.P2PUnkown) {
       if (!this.data.currentP2PId) {
         // 没prepare，或者已经stop了
@@ -1187,7 +1175,6 @@ Component({
       }
     },
     tryTriggerPlay(reason) {
-      const isReplay = reason === 'replay';
       this.console.log(
         `[${this.data.innerId}]`, '==== tryTriggerPlay',
         '\n  reason', reason,
@@ -1203,7 +1190,7 @@ Component({
 
       const isP2PStateCanPlay = this.data.p2pState === P2PStateEnum.ServiceStarted;
       let isPlayerStateCanPlay = this.data.playerState === PlayerStateEnum.PlayerReady;
-      if (!isPlayerStateCanPlay && isReplay) {
+      if (!isPlayerStateCanPlay && reason === 'replay') {
         // 是重试，出错状态也可以触发play
         isPlayerStateCanPlay = this.data.playerState === PlayerStateEnum.LivePlayerError
           || this.data.playerState === PlayerStateEnum.LivePlayerStateError;
@@ -1281,14 +1268,15 @@ Component({
         isFatalError = true;
       }
       if (isFatalError) {
-        // 不可恢复错误，销毁player
+        // 不可恢复错误，断开p2p连接
         if (!this.isP2PInErrorState(this.data.p2pState)) {
           this.stopAll();
         }
+        // 不可恢复错误，销毁player
         if (this.data.hasPlayer) {
           this.changeState({ hasPlayer: false });
         }
-        this.console.log(`[${this.data.innerId}] ${errType} isFatalError, trigger playError`);
+        this.console.error(`[${this.data.innerId}] ${errType} isFatalError, trigger playError`);
         this.triggerEvent('playError', {
           errType,
           errMsg: totalMsgMap[errType],
@@ -1369,8 +1357,27 @@ Component({
     },
     // 处理播放错误，detail: { msg: string }
     handlePlayError(type, detail) {
+      this.console.log(`[${this.data.innerId}] handlePlayError`, type);
+      if (this.userData.isDetached) {
+        this.console.info(`[${this.data.innerId}] handlePlayError after detached, ignore`);
+        return;
+      }
+
       if (!this.checkCanRetry()) {
         return;
+      }
+
+      const isFatalError = detail?.isFatalError;
+      if (isFatalError) {
+        // 不可恢复错误，断开p2p连接
+        if (!this.isP2PInErrorState(this.data.p2pState)) {
+          this.stopAll();
+        }
+        // 不可恢复错误，销毁player
+        if (this.data.hasPlayer) {
+          this.console.error(`[${this.data.innerId}] ${errType} isFatalError, destroy player`);
+          this.changeState({ hasPlayer: false });
+        }
       }
 
       // 能retry的才提示这个，不能retry的前面已经触发弹窗了
@@ -1378,10 +1385,17 @@ Component({
         errType: type,
         errMsg: totalMsgMap[type] || '播放失败',
         errDetail: detail,
+        isFatalError,
       });
     },
     // 处理播放结束
     handlePlayEnd(newStreamState) {
+      this.console.log(`[${this.data.innerId}] handlePlayEnd`, newStreamState);
+      if (this.userData.isDetached) {
+        this.console.info(`[${this.data.innerId}] handlePlayEnd after detached, ignore`);
+        return;
+      }
+
       if (this.properties.autoReplay) {
         this.checkNetworkAndReplay(newStreamState);
       } else {
@@ -1443,7 +1457,7 @@ Component({
       }
     },
     onP2PMessage_Notify(type, detail) {
-      this.console.info(`[${this.data.innerId}]`, 'onP2PMessage_Notify', type, detail);
+      this.console.info(`[${this.data.innerId}] onP2PMessage_Notify ${type}, playing ${this.data.playing}`, detail);
       if (!this.data.playing && type !== XP2PNotify_SubType.Close) {
         // 退出播放时 stopStream 会触发 close 事件，是正常的，其他事件才 warn
         this.console.warn(`[${this.data.innerId}] receive onP2PMessage_Notify when not playing`, type, detail);
@@ -1478,7 +1492,8 @@ Component({
         case XP2PNotify_SubType.Eof:
           {
             // 数据传输正常结束
-            this.console.log(`[${this.data.innerId}]`,
+            this.console.log(
+              `[${this.data.innerId}]`,
               `==== Notify ${type} in p2pState ${this.data.p2pState}, chunkCount ${this.userData.chunkCount}, time after last chunk ${Date.now() - this.userData.chunkTime}`,
               detail,
             );
@@ -1492,7 +1507,7 @@ Component({
           }
           break;
         case XP2PNotify_SubType.Fail:
-          // 数据传输出错
+          // 数据传输出错，当作结束，直播场景可以自动重试
           this.console.error(`[${this.data.innerId}]`, `==== Notify ${type} in p2pState ${this.data.p2pState}`, detail);
           this.handlePlayEnd(StreamStateEnum.StreamError);
           break;
@@ -1503,6 +1518,7 @@ Component({
               return;
             }
             // 播放中收到了Close，当作播放失败
+            this.console.error(`[${this.data.innerId}] ==== Notify ${type}`, detail);
             const detailMsg = typeof detail === 'string' ? detail : (detail && detail.type);
             this.handlePlayError(StreamStateEnum.StreamError, { msg: `p2pNotify: ${type}, ${detailMsg}`, detail });
           }

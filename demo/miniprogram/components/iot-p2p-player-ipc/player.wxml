@@ -1,6 +1,6 @@
 <view class="component iot-p2p-player-ipc {{ipcClass}}">
   <view class="player-wrap">
-    <iot-p2p-common-player
+    <iot-p2p-common-player-quick
       wx:if="{{innerOptions}}"
       id="{{playerId}}"
       playerClass="{{playerClass}} {{innerOptions.needMjpg ? 'hide' : ''}}"
@@ -19,7 +19,6 @@
       checkFunctions="{{checkFunctions}}"
       onlyp2p="{{onlyp2pMap && onlyp2pMap.flv}}"
       bind:playerStateChange="onPlayerStateChange"
-      bind:p2pStateChange="onP2PStateChange"
       bind:streamStateChange="onStreamStateChange"
       bind:playError="onPlayError"
     />

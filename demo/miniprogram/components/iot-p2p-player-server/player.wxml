@@ -7,7 +7,7 @@
       flvUrl="{{flvUrl}}"
       codeUrl="{{codeUrl}}"
       onlyp2p="{{onlyp2p}}"
-      bind:p2pStateChange="onP2PStateChange"
+      bind:streamStateChange="onStreamStateChange"
       bind:p2pDevNotify="onP2PDevNotify"
       bind:playError="passEvent"
     />

@@ -14,7 +14,6 @@ Component({
     created() {
       // 渲染无关，不放在data里，以免影响性能
       this.userData = {
-        isDetached: false,
         ctx: null,
         chunkCount: 0,
         totalBytes: 0,
@@ -25,7 +24,6 @@ Component({
       this.prepare();
     },
     detached() {
-      this.userData.isDetached = true;
       this.clearStreamData();
       if (this.userData?.ctx?.isPlaying) {
         this.userData.ctx.stop();
@@ -123,12 +121,8 @@ Component({
       });
 
       setTimeout(() => {
-        if (this.userData.isDetached) {
-          return;
-        }
         const fieldName = `${this.properties.type}Context`;
         this.triggerEvent('playerReady', {
-          msg: 'mockPlayer',
           [fieldName]: livePlayerContext,
           playerExport: {
             setHeaders: this.setHeaders.bind(this),

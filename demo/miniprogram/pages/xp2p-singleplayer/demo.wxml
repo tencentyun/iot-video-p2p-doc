@@ -1,15 +1,18 @@
 <view class="page-body">
   <view class="page-section page-section-gap" wx:if="{{playerId && p2pMode && targetId}}">
-    <view class="page-section-title player-title">{{playerTitle || targetId}}</view>
     <iot-p2p-player-ipc
       wx:if="{{p2pMode === 'ipc'}}"
       id="{{playerId}}"
       targetId="{{targetId}}"
+      sceneType="{{sceneType}}"
       flvUrl="{{flvUrl}}"
+      mjpgFile="{{mjpgFile}}"
       productId="{{productId}}"
       deviceName="{{deviceName}}"
       xp2pInfo="{{xp2pInfo}}"
-      onlyp2p="{{onlyp2p}}"
+      liveStreamDomain="{{liveStreamDomain}}"
+      options="{{options}}"
+      onlyp2pMap="{{onlyp2pMap}}"
       bind:playError="onPlayError"
     />
     <iot-p2p-player-server
@@ -18,7 +21,7 @@
       targetId="{{targetId}}"
       flvUrl="{{flvUrl}}"
       codeUrl="{{codeUrl}}"
-      onlyp2p="{{onlyp2p}}"
+      onlyp2p="{{onlyp2pMap && onlyp2pMap.flv}}"
       bind:playError="onPlayError"
     />
   </view>

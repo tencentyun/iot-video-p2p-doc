@@ -1,7 +1,6 @@
 /**
  * stream属性说明：
  * showInHomePageBtn: boolean 是否显示在首页大按钮，产品用
- * showInHomePageNav: boolean 是否显示在首页导航，有onlyp2p入口，开发用
  *
  * serverName: string 会根据serverName从serverMap里查询预置的server信息
  * flvFile: string 视频流的 flvFile，可以带参数
@@ -35,7 +34,7 @@ const serverStreams = {
   //   flvFile: '6e0b2be040a943489ef0b9bb344b96b8.hd.flv',
   // },
   // xntpStream0: {
-  //   showInHomePageNav: true,
+  //   showInHomePageBtn: false,
   //   serverName: 'xntpSvr',
   //   flvFile: '6e0b2be040a943489ef0b9bb344b96b8.hd.flv',
   // },

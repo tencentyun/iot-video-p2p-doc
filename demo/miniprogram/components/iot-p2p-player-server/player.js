@@ -1,3 +1,4 @@
+import { getClockTime } from '../../utils';
 import { getXp2pManager } from '../../lib/xp2pManager';
 
 const xp2pManager = getXp2pManager();
@@ -21,6 +22,7 @@ Component({
     // 以下仅供调试，正式组件不需要
     onlyp2p: {
       type: Boolean,
+      value: false,
     },
   },
   data: {
@@ -29,7 +31,6 @@ Component({
     // 这些是控制player和p2p的
     playerId: 'iot-p2p-common-player',
     player: null,
-    p2pReady: false,
 
     // 节点列表
     peerlist: '',
@@ -106,30 +107,17 @@ Component({
       this.triggerEvent(e.type, e.detail);
     },
     // 以下是 common-player 的事件
-    onP2PStateChange(e) {
-      console.log(`[${this.data.innerId}]`, 'onP2PStateChange', e.detail.p2pState);
-      const p2pReady = e.detail.p2pState === 'ServiceStarted';
-      this.setData({ p2pReady });
-      if (!p2pReady) {
+    onStreamStateChange(e) {
+      console.log(`[${this.data.innerId}]`, 'onStreamStateChange', e.detail.p2pState);
+      if (e.detail.streamState === 'StreamWaitPull') {
+        // 准备拉流，清理数据
         this.setData({
           peerlist: '',
           subscribeLog: '',
         });
       }
-      this.passEvent(e);
-    },
-    formatFixed2(n, p = 2) {
-      return n < Math.pow(10, p - 1) ? `0${n}` : n;
-    },
-
-    getClockTime() {
-      const date = new Date();
-      return `${date.getFullYear()}-${this.formatFixed2(date.getMonth() + 1)}-${this.formatFixed2(date.getDate())} ${this.formatFixed2(date.getHours())}:${this.formatFixed2(date.getMinutes())}:${this.formatFixed2(date.getSeconds())}.${this.formatFixed2(date.getMilliseconds(), 3)}`;
     },
     onP2PDevNotify({ detail }) {
-      if (!this.data.p2pReady) {
-        return;
-      }
       switch (detail.type) {
         case XP2PDevNotify_SubType.P2P:
           this.setData({
@@ -154,11 +142,11 @@ Component({
           });
           break;
         case XP2PDevNotify_SubType.Peerlist:
-          this.setData({ peerlist: `${this.getClockTime()} - ${detail.detail}` });
+          this.setData({ peerlist: `${getClockTime()} - ${detail.detail}` });
           break;
         case XP2PDevNotify_SubType.Subscribe:
           console.log(`[${this.data.innerId}]`, 'onP2PDevNotify', detail.type, detail.detail);
-          this.setData({ subscribeLog: `${this.data.subscribeLog}${this.getClockTime()} - ${detail.detail}\n` });
+          this.setData({ subscribeLog: `${this.data.subscribeLog}${getClockTime()} - ${detail.detail}\n` });
           break;
         case XP2PDevNotify_SubType.Err:
           this.setData({ errLog: `${this.data.errLog} ${detail.detail.err}\n`});

@@ -54,6 +54,11 @@ export const toDateTimeString = (date) => `${toDateString(date)} ${toTimeString(
 export const toDateTimeMsString = (date) => `${toDateString(date)} ${toTimeMsString(date)}`;
 export const toDateTimeFilename = (date) => `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 
+export const getClockTime = () => {
+  const date = new Date();
+  return toDateTimeMsString(date);
+};
+
 export const isPeername = (xp2pInfo) => /^\w+$/.test(xp2pInfo) && !/^XP2P/.test(xp2pInfo);
 
 // 兼容直接填 peername 的情况

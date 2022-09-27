@@ -37,14 +37,15 @@ Page({
     // 这些是监控页入口
     recentIPCItem: null,
     listBtn: [],
-    listNav: [],
     firstServerStream: null,
     firstIPCStream: null,
+
+    // 选择的cfg
+    cfg: '',
   },
   onLoad() {
     console.log('index: onLoad');
     const listBtn = [];
-    const listNav = [];
     let firstServerStream = null;
     let firstIPCStream = null;
     for (const key in devices) {
@@ -61,7 +62,6 @@ Page({
           firstIPCStream = navItem;
         }
       }
-      item.showInHomePageNav && listNav.push(navItem);
     }
     for (const key in streams) {
       const item = streams[key];
@@ -77,9 +77,8 @@ Page({
           firstServerStream = navItem;
         }
       }
-      item.showInHomePageNav && listNav.push(navItem);
     }
-    this.setData({ listBtn, listNav, firstServerStream, firstIPCStream });
+    this.setData({ listBtn, firstServerStream, firstIPCStream });
 
     this.refreshRecnetIPC();
   },
@@ -100,8 +99,18 @@ Page({
   onP2PModuleStateChange({ detail }) {
     console.log('index: onP2PModuleStateChange', detail);
   },
-  gotoDemoPage(e) {
-    const { url } = e.currentTarget.dataset;
-    wx.navigateTo({ url });
+  onClickCfg(e) {
+    const { cfg } = e.currentTarget.dataset;
+    wx.navigateTo({ url: `/pages/xp2p-demo-1vN/demo?cfg=${cfg}` });
+    // 容易误退出，还是跳到播放页再input
+    // this.setData({ cfg });
+  },
+  onStartPlayer({ detail }) {
+    console.log('index: onStartPlayer', detail);
+    wx.navigateTo({ url: `/pages/xp2p-singleplayer/demo?json=${encodeURIComponent(JSON.stringify(detail))}` });
+    this.setData({ cfg: '' });
+  },
+  onCancelInput() {
+    this.setData({ cfg: '' });
   },
 });

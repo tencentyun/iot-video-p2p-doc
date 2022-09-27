@@ -18,7 +18,7 @@
       "export": "exportForPlugin.js"
     },
     "xp2p": {
-      "version": "3.1.6",
+      "version": "dev",
       "provider": "wx1319af22356934bf"
     }
   },
@@ -28,6 +28,7 @@
     "p2p-mjpg-player": "plugin://wechat-p2p-player/p2p-mjpg-player",
     "mock-p2p-player": "components/mock-p2p-player/player",
     "iot-p2p-common-player": "components/iot-p2p-common-player/player",
+    "iot-p2p-common-player-quick": "components/iot-p2p-common-player-quick/player",
     "iot-p2p-common-pusher": "components/iot-p2p-common-pusher/pusher",
     "iot-p2p-mjpg-player": "components/iot-p2p-mjpg-player/player",
     "iot-p2p-voice": "components/iot-p2p-voice/voice",

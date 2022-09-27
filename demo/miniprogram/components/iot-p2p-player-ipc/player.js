@@ -95,15 +95,12 @@ Component({
   },
   data: {
     innerId: '',
-    isDetached: false,
 
     innerOptions: null,
     innerSections: null,
 
     // 这些是控制player和p2p的
     playerId: 'iot-p2p-common-player',
-    player: null,
-    p2pReady: false,
     streamSuccess: false,
     checkFunctions: null,
 
@@ -118,11 +115,9 @@ Component({
 
     // 这些是控制mjpgPlayer的
     mjpgPlayerId: 'iot-p2p-mjpg-player',
-    mjpgPlayer: null,
 
     // 这些是语音对讲，playerReady后再创建语音
     voiceCompId: '', // 'iot-p2p-voice',
-    voiceComp: null,
     voiceState: '', // VoiceStateEnum
 
     // 自定义信令
@@ -173,6 +168,14 @@ Component({
       ipcPlayerSeq++;
       this.setData({ innerId: `ipc-player-${ipcPlayerSeq}` });
       console.log(`[${this.data.innerId}]`, '==== created');
+
+      // 渲染无关，不放在data里，以免影响性能
+      this.userData = {
+        isDetached: false,
+        player: null,
+        mjpgPlayer: null,
+        voiceComp: null,
+      };
     },
     attached() {
       // 在组件实例进入页面节点树时执行
@@ -214,7 +217,7 @@ Component({
       console.log(`[${this.data.innerId}]`, 'create player');
       const player = this.selectComponent(`#${this.data.playerId}`);
       if (player) {
-        this.setData({ player });
+        this.userData.player = player;
       } else {
         console.error(`[${this.data.innerId}]`, 'create player error', this.data.playerId);
       }
@@ -223,7 +226,7 @@ Component({
         console.log(`[${this.data.innerId}]`, 'create mjpgPlayer');
         const mjpgPlayer = this.selectComponent(`#${this.data.mjpgPlayerId}`);
         if (mjpgPlayer) {
-          this.setData({ mjpgPlayer });
+          this.userData.mjpgPlayer = mjpgPlayer;
         } else {
           console.error(`[${this.data.innerId}]`, 'create mjpgPlayer error', this.data.mjpgPlayerId);
         }
@@ -235,7 +238,7 @@ Component({
     detached() {
       // 在组件实例被从页面节点树移除时执行
       console.log(`[${this.data.innerId}]`, '==== detached');
-      this.setData({ isDetached: true });
+      this.userData.isDetached = true;
       this.stopAll();
       console.log(`[${this.data.innerId}]`, '==== detached end');
     },
@@ -264,12 +267,12 @@ Component({
         this.stopDownload();
       }
 
-      if (this.data.voiceComp) {
-        this.data.voiceComp.stop();
+      if (this.userData.voiceComp) {
+        this.userData.voiceComp.stop();
       }
 
-      if (this.data.mjpgPlayer) {
-        this.data.mjpgPlayer.stop();
+      if (this.userData.mjpgPlayer) {
+        this.userData.mjpgPlayer.stop();
       }
 
       this.clearPlaybackData();
@@ -278,39 +281,39 @@ Component({
       console.log(`[${this.data.innerId}]`, 'stopAll');
       this.stopControls();
 
-      if (this.data.player) {
-        this.data.player.stopAll();
+      if (this.userData.player) {
+        this.userData.player.stopAll();
       }
     },
     reset() {
       console.log(`[${this.data.innerId}]`, 'reset');
       this.stopControls();
 
-      if (this.data.player) {
-        this.data.player.reset();
+      if (this.userData.player) {
+        this.userData.player.reset();
       }
     },
     startVoice() {
       console.log(`[${this.data.innerId}]`, 'startVoice in voiceState', this.data.voiceState);
-      if (!this.data.voiceComp) {
+      if (!this.userData.voiceComp) {
         console.log(`[${this.data.innerId}]`, 'no voiceComp');
         return;
       }
 
-      this.data.voiceComp.start();
+      this.userData.voiceComp.start();
     },
     stopVoice() {
       console.log(`[${this.data.innerId}]`, 'stopVoice in voiceState', this.data.voiceState);
-      if (!this.data.voiceComp) {
+      if (!this.userData.voiceComp) {
         console.log(`[${this.data.innerId}]`, 'no voiceComp');
         return;
       }
 
-      this.data.voiceComp.stop();
+      this.userData.voiceComp.stop();
     },
     snapshot() {
       console.log(`[${this.data.innerId}]`, 'snapshot');
-      const player = this.data.innerOptions?.needMjpg ? this.data.mjpgPlayer : this.data.player;
+      const player = this.data.innerOptions?.needMjpg ? this.userData.mjpgPlayer : this.userData.player;
       if (!player) {
         return Promise.reject({ errMsg: 'player not ready' });
       }
@@ -319,7 +322,7 @@ Component({
     },
     snapshotAndSave() {
       console.log(`[${this.data.innerId}]`, 'snapshotAndSave');
-      const player = this.data.innerOptions?.needMjpg ? this.data.mjpgPlayer : this.data.player;
+      const player = this.data.innerOptions?.needMjpg ? this.userData.mjpgPlayer : this.userData.player;
       if (!player) {
         this.showToast('player not ready');
         return;
@@ -328,16 +331,19 @@ Component({
       player.snapshotAndSave();
     },
     showToast(content) {
-      !this.data.isDetached && wx.showToast({
+      !this.userData.isDetached && wx.showToast({
         title: content,
         icon: 'none',
       });
     },
     showModal(params) {
-      !this.data.isDetached && wx.showModal(params);
+      !this.userData.isDetached && wx.showModal(params);
     },
     passEvent(e) {
       this.triggerEvent(e.type, e.detail);
+    },
+    isP2PReady() {
+      return xp2pManager.isP2PServiceStarted(this.properties.targetId);
     },
     // 以下是 common-player 的事件
     onPlayerStateChange(e) {
@@ -348,16 +354,6 @@ Component({
         this.setData({ voiceCompId: 'iot-p2p-voice' });
       }
     },
-    onP2PStateChange(e) {
-      console.log(`[${this.data.innerId}]`, 'onP2PStateChange', e.detail.p2pState);
-      const p2pReady = e.detail.p2pState === 'ServiceStarted';
-      if (this.data.p2pReady && !p2pReady) {
-        // 注意要在修改 p2pReady 之前
-        this.stopAll();
-      }
-      this.setData({ p2pReady });
-      this.passEvent(e);
-    },
     onStreamStateChange(e) {
       console.log(`[${this.data.innerId}]`, 'onStreamStateChange', e.detail.streamState);
       const streamSuccess = e.detail.streamState === 'StreamHeaderParsed' || e.detail.streamState === 'StreamDataReceived';
@@ -366,7 +362,7 @@ Component({
           // success后需要seek
           this.data.playbackProgressToResume && this.sendPlaybackSeekAfterSuccess();
         } else if (this.data.streamSuccess && (
-          !this.data.p2pReady
+          !this.isP2PReady()
           || isStreamEnd(e.detail.streamState)
           || isStreamError(e.detail.streamState)
         )) {
@@ -403,19 +399,19 @@ Component({
     },
     onMjpgClickRetry(e) {
       console.log(`[${this.data.innerId}]`, 'onMjpgClickRetry', e.detail);
-      if (!this.data.player) {
+      if (!this.userData.player) {
         console.log(`[${this.data.innerId}]`, 'no player');
         return;
       }
       console.log(`[${this.data.innerId}]`, 'call retry');
-      this.data.player.retry();
+      this.userData.player.retry();
     },
     // 以下是 voice 的事件
     onVoiceReady() {
       console.log(`[${this.data.innerId}]`, 'onVoiceReady');
       const voiceComp = this.selectComponent(`#${this.data.voiceCompId}`);
       if (voiceComp) {
-        this.setData({ voiceComp });
+        this.userData.voiceComp = voiceComp;
       } else {
         console.error(`[${this.data.innerId}]`, 'create voiceComp error', this.data.voiceCompId);
       }
@@ -460,11 +456,11 @@ Component({
     // 以下是用户交互
     changeQuality(e) {
       console.log(`[${this.data.innerId}]`, 'changeQuality');
-      if (!this.data.p2pReady) {
+      if (!this.isP2PReady()) {
         console.log(`[${this.data.innerId}]`, 'p2p not ready');
         return;
       }
-      if (!this.data.player) {
+      if (!this.userData.player) {
         console.log(`[${this.data.innerId}]`, 'no player');
         return;
       }
@@ -478,7 +474,7 @@ Component({
       const otherParams = params.replace(/&?quality=[^&]*/g, '');
       const newParams = `${otherParams}&quality=${quality}`;
       console.log(`[${this.data.innerId}]`, 'call changeFlv', newParams);
-      this.data.player.changeFlv({ params: newParams });
+      this.userData.player.changeFlv({ params: newParams });
     },
     checkIsFlvValid({ filename, params = '' }) {
       console.log(`[${this.data.innerId}]`, 'checkIsFlvValid', filename, params);
@@ -562,7 +558,7 @@ Component({
       });
     },
     pausePlayer({ success, fail, needPauseStream = false } = {}) {
-      if (!this.data.player) {
+      if (!this.userData.player) {
         console.log(`[${this.data.innerId}]`, 'no player');
         return;
       }
@@ -573,7 +569,7 @@ Component({
       }
 
       console.log(`[${this.data.innerId}]`, 'call pause');
-      this.data.player.pause({
+      this.userData.player.pause({
         needPauseStream,
         success: () => {
           console.log(`[${this.data.innerId}]`, 'call pause success');
@@ -590,7 +586,7 @@ Component({
       });
     },
     resumePlayer({ success, fail } = {}) {
-      if (!this.data.player) {
+      if (!this.userData.player) {
         console.log(`[${this.data.innerId}]`, 'no player');
         return;
       }
@@ -601,7 +597,7 @@ Component({
       }
 
       console.log(`[${this.data.innerId}]`, 'call resume');
-      this.data.player.resume({
+      this.userData.player.resume({
         success: () => {
           console.log(`[${this.data.innerId}]`, 'call resume success');
           this.setData({
@@ -618,7 +614,7 @@ Component({
     },
     pauseLive() {
       console.log(`[${this.data.innerId}]`, 'pauseLive');
-      if (!this.data.p2pReady) {
+      if (!this.isP2PReady()) {
         console.log(`[${this.data.innerId}]`, 'p2p not ready');
         return;
       }
@@ -627,7 +623,7 @@ Component({
     },
     resumeLive() {
       console.log(`[${this.data.innerId}]`, 'resumeLive');
-      if (!this.data.p2pReady) {
+      if (!this.isP2PReady()) {
         console.log(`[${this.data.innerId}]`, 'p2p not ready');
         return;
       }
@@ -709,11 +705,11 @@ Component({
     },
     startPlayback() {
       console.log(`[${this.data.innerId}]`, 'startPlayback');
-      if (!this.data.p2pReady) {
+      if (!this.isP2PReady()) {
         console.log(`[${this.data.innerId}]`, 'p2p not ready');
         return;
       }
-      if (!this.data.player) {
+      if (!this.userData.player) {
         console.log(`[${this.data.innerId}]`, 'no player');
         return;
       }
@@ -736,15 +732,15 @@ Component({
 
       const params = `action=${this.data.streamType}&channel=0&${this.data.inputPlaybackTime}`;
       console.log(`[${this.data.innerId}]`, 'call changeFlv', params);
-      this.data.player.changeFlv({ params });
+      this.userData.player.changeFlv({ params });
     },
     stopPlayback() {
       console.log(`[${this.data.innerId}]`, 'stopPlayback');
-      if (!this.data.p2pReady) {
+      if (!this.isP2PReady()) {
         console.log(`[${this.data.innerId}]`, 'p2p not ready');
         return;
       }
-      if (!this.data.player) {
+      if (!this.userData.player) {
         console.log(`[${this.data.innerId}]`, 'no player');
         return;
       }
@@ -753,7 +749,7 @@ Component({
 
       const params = `action=${this.data.streamType}&channel=0`;
       console.log(`[${this.data.innerId}]`, 'call changeFlv', params);
-      this.data.player.changeFlv({ params });
+      this.userData.player.changeFlv({ params });
     },
     inputIPCDownloadFilename(e) {
       this.setData({
@@ -762,7 +758,7 @@ Component({
     },
     downloadInputFile() {
       console.log(`[${this.data.innerId}]`, 'downloadInputFile');
-      if (!this.data.p2pReady) {
+      if (!this.isP2PReady()) {
         console.log(`[${this.data.innerId}]`, 'p2p not ready');
         return;
       }
@@ -976,7 +972,7 @@ Component({
     },
     getPlaybackProgress({ success, fail } = {}) {
       console.log(`[${this.data.innerId}]`, 'getPlaybackProgress');
-      if (!this.data.p2pReady) {
+      if (!this.isP2PReady()) {
         console.log(`[${this.data.innerId}]`, 'p2p not ready');
         fail && fail();
         return;
@@ -1025,7 +1021,7 @@ Component({
     },
     seekPlayback() {
       console.log(`[${this.data.innerId}]`, 'seekPlayback');
-      if (!this.data.p2pReady) {
+      if (!this.isP2PReady()) {
         console.log(`[${this.data.innerId}]`, 'p2p not ready');
         return;
       }
@@ -1102,7 +1098,7 @@ Component({
     },
     pausePlayback() {
       console.log(`[${this.data.innerId}]`, 'pausePlayback');
-      if (!this.data.p2pReady) {
+      if (!this.isP2PReady()) {
         console.log(`[${this.data.innerId}]`, 'p2p not ready');
         return;
       }
@@ -1157,7 +1153,7 @@ Component({
     },
     resumePlayback() {
       console.log(`[${this.data.innerId}]`, 'resumePlayback');
-      if (!this.data.p2pReady) {
+      if (!this.isP2PReady()) {
         console.log(`[${this.data.innerId}]`, 'p2p not ready');
         return;
       }
@@ -1195,7 +1191,7 @@ Component({
         .then((res) => {
           // 不管成功失败都resumeStream
           console.log(`[${this.data.innerId}]`, 'call resumeStream');
-          this.data.player.resumeStream();
+          this.userData.player.resumeStream();
 
           console.log(`[${this.data.innerId}]`, 'playback_resume res', res);
           const status = parseInt(res && res.status, 10); // 有的设备返回的 status 是字符串，兼容一下
@@ -1217,7 +1213,7 @@ Component({
         .catch((errmsg) => {
           // 不管成功失败都resumeStream
           console.log(`[${this.data.innerId}]`, 'call resumeStream');
-          this.data.player.resumeStream();
+          this.userData.player.resumeStream();
 
           console.log(`[${this.data.innerId}]`, 'playback_resume fail', errmsg);
           this.showToast('playback_resume fail');
@@ -1256,7 +1252,7 @@ Component({
           }
           // 不管成功失败都resumeStream
           console.log(`[${this.data.innerId}]`, `call resumeStream after ${Date.now() - start}ms`);
-          this.data.player.resumeStream();
+          this.userData.player.resumeStream();
 
           console.log(`[${this.data.innerId}]`, 'playback_seek res', res);
           const status = parseInt(res && res.status, 10); // 有的设备返回的 status 是字符串，兼容一下
@@ -1287,7 +1283,7 @@ Component({
           }
           // 不管成功失败都resumeStream
           console.log(`[${this.data.innerId}]`, `call resumeStream after ${Date.now() - start}ms`);
-          this.data.player.resumeStream();
+          this.userData.player.resumeStream();
 
           console.log(`[${this.data.innerId}]`, 'playback_seek fail', errmsg);
           this.showToast('playback_seek fail');
@@ -1295,7 +1291,7 @@ Component({
     },
     sendInnerCommand(e, inputParams = undefined, callback = undefined) {
       console.log(`[${this.data.innerId}]`, 'sendInnerCommand');
-      if (!this.data.p2pReady) {
+      if (!this.isP2PReady()) {
         console.log(`[${this.data.innerId}]`, 'p2p not ready');
         return;
       }
@@ -1357,7 +1353,7 @@ Component({
     },
     sendCommand() {
       console.log(`[${this.data.innerId}]`, 'sendCommand');
-      if (!this.data.p2pReady) {
+      if (!this.isP2PReady()) {
         console.log(`[${this.data.innerId}]`, 'p2p not ready');
         return;
       }
@@ -1397,7 +1393,7 @@ Component({
     },
     toggleVoice() {
       console.log(`[${this.data.innerId}]`, 'toggleVoice in voiceState', this.data.voiceState);
-      if (!this.data.voiceComp) {
+      if (!this.userData.voiceComp) {
         console.log(`[${this.data.innerId}]`, 'no voiceComp');
         return;
       }
@@ -1417,7 +1413,7 @@ Component({
     },
     controlDevicePTZ(e) {
       console.log(`[${this.data.innerId}]`, 'controlDevicePTZ');
-      if (!this.data.p2pReady) {
+      if (!this.isP2PReady()) {
         console.log(`[${this.data.innerId}]`, 'p2p not ready');
         return;
       }
@@ -1457,7 +1453,7 @@ Component({
     },
     releasePTZBtn() {
       console.log(`[${this.data.innerId}]`, 'releasePTZBtn');
-      if (!this.data.p2pReady) {
+      if (!this.isP2PReady()) {
         console.log(`[${this.data.innerId}]`, 'p2p not ready');
         return;
       }

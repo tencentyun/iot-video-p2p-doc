@@ -1,5 +1,9 @@
 .page-body {
   position: relative;
+  /* padding: 20rpx 0; */
+}
+
+.page-body-padding {
   padding: 20rpx 0;
 }
 

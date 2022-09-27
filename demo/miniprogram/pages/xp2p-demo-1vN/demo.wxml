@@ -1,11 +1,11 @@
 <view wx:if="{{cfg}}">
-  <view wx:if="{{!targetId}}" class="page-body">
+  <view wx:if="{{!targetId}}" class="page-body page-body-padding">
     <iot-p2p-input
       cfg="{{cfg}}"
       bind:startPlayer="onStartPlayer"
     />
   </view>
-  <view wx:if="{{playerId && p2pMode && targetId}}">
+  <view wx:if="{{playerId && p2pMode && targetId}}" class="page-body">
     <iot-p2p-player-ipc
       wx:if="{{p2pMode === 'ipc'}}"
       id="{{playerId}}"
@@ -27,7 +27,7 @@
       targetId="{{targetId}}"
       flvUrl="{{flvUrl}}"
       codeUrl="{{codeUrl}}"
-      onlyp2p="{{onlyp2p}}"
+      onlyp2p="{{onlyp2pMap && onlyp2pMap.flv}}"
       bind:playError="onPlayError"
     />
     <view class="top-right-btn" bind:tap="onOpenPage">…</view>
