@@ -34,6 +34,69 @@ const parseCommandResData = (data) => {
   return JSON.parse(jsonStr);
 };
 
+class Xp2pService {
+  constructor({ targetId, streamInfo }) {
+    this.targetId = targetId;
+    this.streamInfo = streamInfo;
+    this.p2pState = '';
+    this.promise = null;
+    console.log(`[Xp2pService_${this.targetId}] created`, streamInfo);
+  }
+
+  get started() {
+    return this.p2pState === 'started';
+  }
+
+  async start() {
+    console.log(`[Xp2pService_${this.targetId}] start`);
+    if (this.p2pState === 'started') {
+      // 已经初始化好了
+      console.log(`[Xp2pService_${this.targetId}] already started`);
+      return Promise.resolve(0);
+    }
+
+    if (this.promise) {
+      // 正在启动
+      return await this.promise;
+    }
+
+    this.p2pState = 'preparing';
+    this.promise = p2pExports.startP2PService(
+      this.targetId,
+      this.streamInfo,
+      {
+        msgCallback: this.msgCallback.bind(this),
+      },
+    );
+    const res = await this.promise;
+    if (res === 0) {
+      this.p2pState = 'started';
+      console.log(`[Xp2pService_${this.targetId}] started`);
+    } else {
+      this.p2pState = 'startError';
+      console.error(`[Xp2pService_${this.targetId}] startError`);
+    }
+    return res;
+  }
+
+  stop() {
+    console.log(`[Xp2pService_${this.targetId}] stop`);
+    this.promise = null;
+    this.p2pState = '';
+    return p2pExports.stopP2PService(this.targetId);
+  }
+
+  msgCallback(event, subtype, detail) {
+    console.log(`[Xp2pService_${this.targetId}] msgCallback`, event, subtype, detail);
+    switch (subtype) {
+      case 'serviceDisconnect':
+        this.p2pState = 'disconnect';
+        console.log(`[Xp2pService_${this.targetId}] disconnect`);
+        break;
+    }
+  }
+}
+
 class Xp2pManager {
   get P2PPlayerVersion() {
     return playerPlugin?.Version;
@@ -124,6 +187,9 @@ class Xp2pManager {
 
     // 自定义信令用
     this._msgSeq = 0;
+
+    // targetId -> service
+    this._serviceMap = {};
 
     if (!p2pExports) {
       const xp2pPlugin = requirePlugin('xp2p');
@@ -427,23 +493,73 @@ class Xp2pManager {
     return this._promise = promise;
   }
 
-  startP2PService(targetId, streamInfo, callbacks) {
+  // service 的 msgCallback 统一在这里处理，不用传了
+  async startP2PService(targetId, streamInfo) {
     console.log('Xp2pManager: startP2PService', targetId, streamInfo);
-    return p2pExports.startP2PService(targetId, streamInfo, callbacks);
+
+    if (!this.isModuleActive) {
+      // 还没初始化或者已经异常，重新初始化
+      console.log('Xp2pManager: module not active, init first');
+      const res = await this.initModule();
+      if (res !== 0) {
+        return res;
+      }
+    }
+
+    if (!this._serviceMap[targetId]) {
+      this._serviceMap[targetId] = new Xp2pService({
+        targetId,
+        streamInfo,
+      });
+    }
+
+    const service = this._serviceMap[targetId];
+    const res = await service.start();
+    if (res !== 0) {
+      delete this._serviceMap[targetId];
+    }
+
+    return res;
   }
 
   stopP2PService(targetId) {
     console.log('Xp2pManager: stopP2PService', targetId);
-    return p2pExports.stopP2PService(targetId);
+
+    if (!targetId || !this._serviceMap[targetId]) {
+      console.error('Xp2pManager: stopP2PService param error');
+      return;
+    }
+
+    // 先delete
+    const service = this._serviceMap[targetId];
+    delete this._serviceMap[targetId];
+
+    return service.stop();
   }
 
-  getServiceInitInfo(targetId) {
-    return p2pExports.getServiceInitInfo(targetId);
+  getP2PServiceState(targetId) {
+    const service = this._serviceMap[targetId];
+    return service?.p2pState;
   }
 
-  startStream(targetId, { flv, msgCallback, dataCallback }) {
-    console.log('Xp2pManager: startStream', targetId, flv);
-    return p2pExports.startStream(targetId, { flv, msgCallback, dataCallback });
+  isP2PServiceStarted(targetId) {
+    const service = this._serviceMap[targetId];
+    return service?.started;
+  }
+
+  async startStream(targetId, { flv, msgCallback, dataCallback }, streamInfo) {
+    console.log('Xp2pManager: startStream', targetId, flv, streamInfo);
+
+    if (!this.isP2PServiceStarted(targetId)) {
+      // 还没连接
+      console.log('Xp2pManager: service not started, start first');
+      const res = await this.startP2PService(targetId, streamInfo);
+      if (res !== 0) {
+        return res;
+      }
+    }
+
+    return await p2pExports.startStream(targetId, { flv, msgCallback, dataCallback });
   }
 
   stopStream(targetId, streamType) {

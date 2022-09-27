@@ -18,4 +18,23 @@ App({
       };
     }
   },
+
+  preInitP2P() {
+    if (this.xp2pManager) {
+      // 已经加载过了
+      this.logger.log('app: preload xp2pManager, already has xp2pManager');
+      return Promise.resolve(this.xp2pManager);
+    }
+
+    return new Promise((resolve, reject) => {
+      this.logger.log('app: preload xp2pManager');
+      require.async('./libs/xp2pManager.js').then(pkg => {
+        this.logger.log(`app: preload xp2pManager success, now xp2pManager ${!!this.xp2pManager}`);
+        resolve(this.xp2pManager);
+      }).catch(({mod, errMsg}) => {
+        this.logger.error(`app: preload xp2pManager fail, path: ${mod}, ${errMsg}`);
+        reject({mod, errMsg});
+      });
+    });
+  },
 });

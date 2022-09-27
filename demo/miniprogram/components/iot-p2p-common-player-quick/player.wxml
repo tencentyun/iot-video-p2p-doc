@@ -1,0 +1,80 @@
+<view class="component iot-player {{playerClass}}">
+  <view class="player-container">
+    <p2p-player
+      wx:if="{{canUseP2P && needPlayer && hasPlayer}}"
+      id="{{playerId}}"
+      autoplay="{{autoPlay}}"
+      mode="{{mode}}"
+      minCache="{{minCache}}"
+      maxCache="{{maxCache}}"
+      muted="{{superMuted || muted}}"
+      soundMode="{{soundMode}}"
+      orientation="{{orientation}}"
+      acceptLivePlayerEvents="{{acceptLivePlayerEvents}}"
+      bind:playerReady="onPlayerReady"
+      bind:playerStartPull="onPlayerStartPull"
+      bind:playerClose="onPlayerClose"
+      bind:playerError="onPlayerError"
+      bind:error="onLivePlayerError"
+      bind:statechange="onLivePlayerStateChange"
+      bind:netstatus="onLivePlayerNetStatus"
+    />
+    <mock-p2p-player
+      wx:if="{{canUseP2P && !needPlayer}}"
+      bind:playerReady="onPlayerReady"
+      bind:playerStartPull="onPlayerStartPull"
+      bind:playerClose="onPlayerClose"
+      bind:playerError="onPlayerError"
+    />
+    <view class="player-message" bindtap="onClickRetry">{{playerMsg}}</view>
+    <view wx:if="{{showControlRightBtns}}" class="player-controls-container right">
+      <view class="player-controls">
+        <view class="player-control-item">{{playerPaused ? 'paused' : ''}}</view>
+        <view class="player-control-item" bindtap="changeMuted">{{muted ? 'muted' : 'notMuted'}}</view>
+        <view class="player-control-item" bindtap="changeOrientation">{{orientation}}</view>
+        <view class="player-control-item" bindtap="snapshotAndSave">snapshot</view>
+      </view>
+    </view>
+    <view class="debug-info-switch-container">
+      <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
+    </view>
+  </view>
+  <view wx:if="{{showDebugInfo}}" class="debug-info-container">
+    <view class="debug-info">
+      <view>plugin: xp2p {{xp2pVersion}} / p2p-player {{p2pPlayerVersion}}</view>
+      <view>xp2pUUID: {{xp2pUUID}}</view>
+      <view>
+        <view>flvFile: </view>
+        <view class="text-box lines-2">
+          <text class="text-break">{{flvFile}}</text>
+        </view>
+      </view>
+      <view>playerMode: {{mode}}</view>
+      <view>playerState: {{playerState}} <text wx:if="{{playerPaused}}">pauseType: {{playerPaused}}</text></view>
+      <view>p2pState: {{p2pState}}</view>
+      <view>streamState: {{streamState}}</view>
+      <view>
+        playing: {{playing}}
+        <text class="text-btn float-right" bindtap="toggleSlow">{{isSlow ? '恢复' : '模拟丢包'}}</text>
+      </view>
+      <view>
+        record:
+        <text wx:if="{{streamState === 'StreamDataReceived' || isRecording}}" class="text-btn float-right" bindtap="toggleRecording">{{isRecording ? '停止录像' : '开始录像'}}</text>
+        <text wx:else class="text-btn float-right disabled">开始播放后才可以录像</text>
+      </view>
+      <view>
+        <view>livePlayerInfo: </view>
+        <view class="text-box lines-3">
+          <text class="text-break">{{livePlayerInfoStr}}</text>
+        </view>
+      </view>
+      <view>
+        <view>playResult: </view>
+        <view class="text-box" style="min-height: 650rpx;">
+          <text class="text-break">{{playResultStr}}</text>
+        </view>
+        <view>{{idrResultStr}}</view>
+      </view>
+    </view>
+  </view>
+</view>
