@@ -125,6 +125,10 @@ Page({
     this.bindPlay({ type: 'autoplay' });
   },
   onPlayerStartPull({ detail }) {
+    // 收到这个说明本地server是正常的
+    if (xp2pManager.needResetLocalServer) {
+      xp2pManager.needResetLocalServer = false;
+    }
     if (!this.data.playStatus) {
       console.log('onPlayerStartPull but not playing');
       this.userData.playerCtx.stop();
@@ -415,7 +419,7 @@ Page({
     }
     if (offset >= data.byteLength) {
       loopCount--;
-      this.addLog(`loopWrite end, ${loopCount} left`);
+      this.addBothLog(`loopWrite end, ${loopCount} loopCount left`);
       if (loopCount > 0) {
         offset = 0;
       } else {

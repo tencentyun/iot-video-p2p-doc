@@ -8,11 +8,12 @@ Page({
     // 这是onLoad时就固定的
     p2pMode: '',
     targetId: '',
-    flvUrl: '',
     productId: '',
     deviceName: '',
     xp2pInfo: '',
+    flvFile: '',
     codeUrl: '',
+    flvUrl: '',
     onlyp2p: false,
 
     // 这些是控制player和p2p的
@@ -22,6 +23,9 @@ Page({
   },
   onLoad(query) {
     console.log('singleplayer: onLoad', query);
+
+    console.log('singleplayer: checkReset when enter');
+    xp2pManager.checkReset();
 
     const cfg = query.cfg || '';
     const onlyp2p = !!parseInt(query.onlyp2p, 10);

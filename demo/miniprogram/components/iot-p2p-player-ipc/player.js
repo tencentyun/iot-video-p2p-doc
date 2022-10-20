@@ -46,6 +46,10 @@ Component({
       type: String,
       value: '',
     },
+    muted: {
+      type: Boolean,
+      value: false,
+    },
     targetId: {
       type: String,
       value: '',
@@ -54,7 +58,7 @@ Component({
       type: String,
       value: 'live',
     },
-    flvUrl: {
+    flvFile: {
       type: String,
       value: '',
     },
@@ -97,6 +101,8 @@ Component({
     innerId: '',
     isDetached: false,
 
+    isMjpgDevice: false,
+    flvUrl: '',
     innerOptions: null,
     innerSections: null,
 
@@ -179,10 +185,12 @@ Component({
       console.log(`[${this.data.innerId}]`, '==== attached', this.id);
       oriConsole.log(this.properties);
 
+      // 有 mjpgFile 认为是图片流设备
+      const isMjpgDevice = !!this.properties.mjpgFile;
+
       const innerOptions = {
         needCheckStream: false,
-        needMjpg: !!this.properties.mjpgFile,
-        playerRTC: !this.properties.mjpgFile, // 图片流的默认live，非图片流的默认RTC（RTC时延更低，但是ios只支持16k以上）
+        playerRTC: !isMjpgDevice, // 图片流的默认live，非图片流的默认RTC（RTC时延更低，但是ios只支持16k以上）
         playerShowControlRightBtns: true,
         intercomType: 'Recorder',
         ...this.properties.options,
@@ -193,15 +201,18 @@ Component({
         ...sceneConfig[this.properties.sceneType].sections,
         ...this.properties.sections,
       };
-      if (innerOptions.needMjpg) {
-        // 图片流模式不支持切换 quality
+      if (isMjpgDevice) {
+        // 图片流设备不支持切换 quality
         innerSections.quality = false;
       }
       console.log(`[${this.data.innerId}]`, 'innerSections', innerSections);
 
-      const streamType = getParamValue(this.properties.flvUrl, 'action') || 'live';
+      const flvUrl = this.properties.flvFile ? `http://XP2P_INFO.xnet/ipc.p2p.com/${this.properties.flvFile}` : '';
+      const streamType = flvUrl ? (getParamValue(flvUrl, 'action') || 'live') : '';
       console.log(`[${this.data.innerId}]`, 'streamType', streamType);
       this.setData({
+        isMjpgDevice,
+        flvUrl,
         innerOptions,
         innerSections,
         streamType,
@@ -219,7 +230,7 @@ Component({
         console.error(`[${this.data.innerId}]`, 'create player error', this.data.playerId);
       }
 
-      if (this.data.innerOptions.needMjpg) {
+      if (this.data.isMjpgDevice) {
         console.log(`[${this.data.innerId}]`, 'create mjpgPlayer');
         const mjpgPlayer = this.selectComponent(`#${this.data.mjpgPlayerId}`);
         if (mjpgPlayer) {
@@ -265,7 +276,7 @@ Component({
       }
 
       if (this.data.voiceComp) {
-        this.data.voiceComp.stop();
+        this.data.voiceComp.stopVoice();
       }
 
       if (this.data.mjpgPlayer) {
@@ -297,7 +308,7 @@ Component({
         return;
       }
 
-      this.data.voiceComp.start();
+      this.data.voiceComp.startVoice();
     },
     stopVoice() {
       console.log(`[${this.data.innerId}]`, 'stopVoice in voiceState', this.data.voiceState);
@@ -306,11 +317,11 @@ Component({
         return;
       }
 
-      this.data.voiceComp.stop();
+      this.data.voiceComp.stopVoice();
     },
     snapshot() {
       console.log(`[${this.data.innerId}]`, 'snapshot');
-      const player = this.data.innerOptions?.needMjpg ? this.data.mjpgPlayer : this.data.player;
+      const player = this.data.isMjpgDevice ? this.data.mjpgPlayer : this.data.player;
       if (!player) {
         return Promise.reject({ errMsg: 'player not ready' });
       }
@@ -319,7 +330,7 @@ Component({
     },
     snapshotAndSave() {
       console.log(`[${this.data.innerId}]`, 'snapshotAndSave');
-      const player = this.data.innerOptions?.needMjpg ? this.data.mjpgPlayer : this.data.player;
+      const player = this.data.isMjpgDevice ? this.data.mjpgPlayer : this.data.player;
       if (!player) {
         this.showToast('player not ready');
         return;
@@ -343,9 +354,23 @@ Component({
     onPlayerStateChange(e) {
       console.log(`[${this.data.innerId}]`, 'onPlayerStateChange', e.detail.playerState);
       const playerReady = e.detail.playerState === 'PlayerReady';
-      if (!this.data.voiceCompId && playerReady) {
-        console.log(`[${this.data.innerId}]`, 'create voiceComp');
-        this.setData({ voiceCompId: 'iot-p2p-voice' });
+      if (!playerReady) {
+        return;
+      }
+      console.log(`[${this.data.innerId}] mainPlayerReady, need voice ${this.data.innerSections.voice}, has created ${!!this.data.voiceCompId}`);
+      if (this.data.innerSections.voice && !this.data.voiceCompId) {
+        console.log(`[${this.data.innerId}] create voiceComp`);
+        this.setData({
+          voiceCompId: 'iot-p2p-voice',
+        }, () => {
+          const voiceComp = this.selectComponent(`#${this.data.voiceCompId}`);
+          console.log(`[${this.data.innerId}] create voiceComp end, voiceComp ${!!voiceComp}`);
+          if (voiceComp) {
+            this.setData({ voiceComp });
+          } else {
+            console.error(`[${this.data.innerId}]`, 'create voiceComp error', this.data.voiceCompId);
+          }
+        });
       }
     },
     onP2PStateChange(e) {
@@ -411,15 +436,6 @@ Component({
       this.data.player.retry();
     },
     // 以下是 voice 的事件
-    onVoiceReady() {
-      console.log(`[${this.data.innerId}]`, 'onVoiceReady');
-      const voiceComp = this.selectComponent(`#${this.data.voiceCompId}`);
-      if (voiceComp) {
-        this.setData({ voiceComp });
-      } else {
-        console.error(`[${this.data.innerId}]`, 'create voiceComp error', this.data.voiceCompId);
-      }
-    },
     onVoiceStateChange(e) {
       console.log(`[${this.data.innerId}]`, 'onVoiceStateChange', e.detail.voiceState);
       this.setData({ voiceState: e.detail.voiceState });
@@ -474,8 +490,8 @@ Component({
       });
 
       const { quality } = e.currentTarget.dataset;
-      const [_filename, params] = this.properties.flvUrl.split('?');
-      const otherParams = params.replace(/&?quality=[^&]*/g, '');
+      const [_filename, params] = this.properties.flvFile?.split('?');
+      const otherParams = params?.replace(/&?quality=[^&]*/g, '');
       const newParams = `${otherParams}&quality=${quality}`;
       console.log(`[${this.data.innerId}]`, 'call changeFlv', newParams);
       this.data.player.changeFlv({ params: newParams });

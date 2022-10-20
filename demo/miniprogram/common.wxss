@@ -46,7 +46,7 @@
 .text-btn.disabled {
   color: rgba(0, 0, 0, 0.3);
 }
-.right {
+.absolute-right {
   position: absolute;
   right: 0rpx;
 }
@@ -60,6 +60,18 @@
   margin-right: 20rpx;
 }
 
+.font-small {
+  font-size: 14px;
+}
+.font-large {
+  font-size: 18px;
+}
+
+.small-tip {
+  color: #999999;
+  font-size: 14px;
+}
+
 .log-box {
   box-sizing: border-box;
   border: solid 2rpx #dddddd;
@@ -71,6 +83,7 @@
   border: solid 2rpx #dddddd;
   background-color: lightyellow;
   padding: 10rpx;
+  font-size: 14px;
 }
 
 .hide {

@@ -15,6 +15,9 @@ Page({
   onLoad(query) {
     console.log('multiplayers: onLoad', query);
 
+    console.log('multiplayers: checkReset when enter');
+    xp2pManager.checkReset();
+
     const cfg1 = query.cfg1 || '';
     const cfg2 = query.cfg2 || '';
     const onlyp2p = !!parseInt(query.onlyp2p, 10);

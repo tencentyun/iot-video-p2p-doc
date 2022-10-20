@@ -1,5 +1,3 @@
-import devices from '../../config/devices';
-import streams from '../../config/streams';
 import config from '../../config/config';
 import { getXp2pManager } from '../../lib/xp2pManager';
 
@@ -11,10 +9,8 @@ const miniProgramInfo = accountInfo.miniProgram;
 console.log('miniProgramInfo', miniProgramInfo);
 
 const xp2pManager = getXp2pManager();
-const xp2pPluginInfo = xp2pManager.getXp2pPluginInfo();
-const playerPluginInfo = xp2pManager.getPlayerPluginInfo();
 
-const { totalData } = config;
+const { presetDevices, presetServerStreams, totalData } = config;
 
 const getShortFlvName = (flvFile) => {
   const filename = flvFile.split('.')[0];
@@ -29,26 +25,26 @@ Page({
     wxVersion: sysInfo.version,
     wxSDKVersion: sysInfo.SDKVersion,
     hostInfo: `${miniProgramInfo.appId}-${miniProgramInfo.envVersion}`,
-    xp2pPluginInfo: xp2pPluginInfo ? `${xp2pPluginInfo.appId}-${xp2pPluginInfo.version}` : '',
     xp2pVersion: xp2pManager.XP2PVersion,
-    playerPluginInfo: playerPluginInfo ? `${playerPluginInfo.appId}-${playerPluginInfo.version}` : '',
     playerVersion: xp2pManager.P2PPlayerVersion,
 
     // 这些是监控页入口
     recentIPCItem: null,
-    listBtn: [],
-    listNav: [],
+    listVideoDevices: [],
+    listMjpgDevices: [],
+    listServerStreams: [],
     firstServerStream: null,
     firstIPCStream: null,
   },
   onLoad() {
     console.log('index: onLoad');
-    const listBtn = [];
-    const listNav = [];
+    const listVideoDevices = [];
+    const listMjpgDevices = [];
+    const listServerStreams = [];
     let firstServerStream = null;
     let firstIPCStream = null;
-    for (const key in devices) {
-      const item = devices[key];
+    for (const key in presetDevices) {
+      const item = presetDevices[key];
       const navItem = {
         p2pMode: 'ipc',
         cfg: key,
@@ -56,15 +52,18 @@ Page({
         ...item,
       };
       if (item.showInHomePageBtn) {
-        listBtn.push(navItem);
+        if (navItem.isMjpgDevice) {
+          listMjpgDevices.push(navItem);
+        } else {
+          listVideoDevices.push(navItem);
+        }
         if (!firstIPCStream) {
           firstIPCStream = navItem;
         }
       }
-      item.showInHomePageNav && listNav.push(navItem);
     }
-    for (const key in streams) {
-      const item = streams[key];
+    for (const key in presetServerStreams) {
+      const item = presetServerStreams[key];
       const navItem = {
         p2pMode: 'server',
         cfg: key,
@@ -72,14 +71,13 @@ Page({
         ...item,
       };
       if (item.showInHomePageBtn) {
-        listBtn.push(navItem);
+        listServerStreams.push(navItem);
         if (!firstServerStream) {
           firstServerStream = navItem;
         }
       }
-      item.showInHomePageNav && listNav.push(navItem);
     }
-    this.setData({ listBtn, listNav, firstServerStream, firstIPCStream });
+    this.setData({ listVideoDevices, listMjpgDevices, listServerStreams, firstServerStream, firstIPCStream });
 
     this.refreshRecnetIPC();
   },
@@ -87,12 +85,12 @@ Page({
     this.refreshRecnetIPC();
   },
   refreshRecnetIPC() {
-    const cfg = totalData.recentIPC || wx.getStorageSync('recentIPC');
+    const cfg = totalData.recentIPC;
     this.setData({
       recentIPCItem: cfg ? {
         p2pMode: 'ipc',
         cfg: 'recentIPC',
-        title: `${cfg.productId}/${cfg.deviceName}`,
+        title: `${cfg.isMjpgDevice ? 'M' : 'V'}: ${cfg.productId}/${cfg.deviceName}`,
         ...cfg,
       } : null,
     });
@@ -100,8 +98,18 @@ Page({
   onP2PModuleStateChange({ detail }) {
     console.log('index: onP2PModuleStateChange', detail);
   },
-  gotoDemoPage(e) {
+  gotoPage(e) {
     const { url } = e.currentTarget.dataset;
     wx.navigateTo({ url });
+  },
+  async copyDocUrl(e) {
+    const { doc } = e.currentTarget.dataset;
+    if (!doc) {
+      return;
+    }
+    await wx.setClipboardData({
+      data: doc,
+    });
+    wx.showToast({ title: '文档地址已复制到剪贴板', icon: 'none' });
   },
 });

@@ -2,7 +2,7 @@
 import { canUseP2PIPCMode, canUseP2PServerMode, getParamValue, snapshotAndSave } from '../../utils';
 import { getXp2pManager } from '../../lib/xp2pManager';
 import { getRecordManager, MAX_FILE_SIZE_IN_M } from '../../lib/recordManager';
-import { PlayerStateEnum, P2PStateEnum, StreamStateEnum, totalMsgMap, httpStatusErrorMsgMap } from './common';
+import { PlayerStateEnum, P2PStateEnum, StreamStateEnum, totalMsgMap, httpStatusErrorMsgMap, isLocalServerError } from './common';
 import { PlayStepEnum, PlayStat } from './stat';
 
 // 覆盖 console
@@ -61,10 +61,6 @@ Component({
       value: '',
     },
     autoReplay: {
-      type: Boolean,
-      value: false,
-    },
-    parseLivePlayerInfo: {
       type: Boolean,
       value: false,
     },
@@ -154,10 +150,11 @@ Component({
     needPauseStream: false, // 为true时不addChunk
     firstChunkDataInPaused: null,
     acceptLivePlayerEvents: {
-      // 太多事件log了，只接收这3个
+      // 太多事件log了，只接收这几个
       error: true,
       statechange: true,
       netstatus: true,
+      fullscreenchange: true,
       // audiovolumenotify: true,
     },
 
@@ -235,6 +232,7 @@ Component({
 
       // 渲染无关，不放在data里，以免影响性能
       this.userData = {
+        isDetached: false,
         playerComp: null,
         playerCtx: null,
         chunkTime: 0,
@@ -246,6 +244,14 @@ Component({
       };
 
       this.console = console;
+
+      wx.setInnerAudioOption({
+        obeyMuteSwitch: false, // 即使是在静音模式下，也能播放声音
+        speakerOn: true, // 用扬声器播放
+        fail: (err) => {
+          console.warn(`[${this.data.innerId}]`, 'setInnerAudioOption error', err);
+        },
+      });
     },
     attached() {
       // 在组件实例进入页面节点树时执行
@@ -280,13 +286,10 @@ Component({
         p2pState = P2PStateEnum.P2PIdle;
         playerState = PlayerStateEnum.PlayerIdle;
       } else {
-        p2pState = P2PStateEnum.P2PInitError;
+        p2pState = P2PStateEnum.P2PLocalError;
         playerState = PlayerStateEnum.PlayerError;
         playerMsg = isP2PModeValid ? '您的微信基础库版本过低，请升级后再使用' : `无效的p2pType: ${this.properties.p2pMode}`;
       }
-
-      const { acceptLivePlayerEvents } = this.data;
-      acceptLivePlayerEvents.netstatus = this.properties.parseLivePlayerInfo;
 
       // 统计用
       this.stat = new PlayStat({
@@ -344,7 +347,6 @@ Component({
         playerState,
         playerMsg,
         p2pState,
-        acceptLivePlayerEvents,
       });
 
       if (!canUseP2P) {
@@ -359,6 +361,7 @@ Component({
     detached() {
       // 在组件实例被从页面节点树移除时执行
       this.console.log(`[${this.data.innerId}]`, '==== detached');
+      this.userData.isDetached = true;
       this.stopAll();
       this.console.log(`[${this.data.innerId}]`, '==== detached end');
     },
@@ -465,6 +468,12 @@ Component({
     },
     onPlayerReady({ detail }) {
       this.console.log(`[${this.data.innerId}]`, '==== onPlayerReady in', this.data.playerState, this.data.p2pState, detail);
+
+      // 收到这个说明本地server是正常的
+      if (xp2pManager.needResetLocalServer) {
+        xp2pManager.needResetLocalServer = false;
+      }
+
       const oldPlayerState = this.data.playerState;
       if (oldPlayerState === PlayerStateEnum.PlayerReady) {
         this.console.warn(`[${this.data.innerId}] onPlayerReady again, playerCtx ${detail.livePlayerContext === this.userData.playerCtx ? 'same' : 'different'}`);
@@ -477,7 +486,16 @@ Component({
       this.tryTriggerPlay(`${oldPlayerState} -> ${this.data.playerState}`);
     },
     onPlayerStartPull({ detail }) {
-      this.console.log(`[${this.data.innerId}]`, `==== onPlayerStartPull in p2pState ${this.data.p2pState}, flvParams ${this.data.flvParams}, playerPaused ${this.data.playerPaused}, needPauseStream ${this.data.needPauseStream}`, detail);
+      this.console.log(
+        `[${this.data.innerId}] ==== onPlayerStartPull in p2pState ${this.data.p2pState},`,
+        `flvParams ${this.data.flvParams}, playerPaused ${this.data.playerPaused}, needPauseStream ${this.data.needPauseStream},`,
+        detail,
+      );
+
+      // 收到这个说明本地server是正常的
+      if (xp2pManager.needResetLocalServer) {
+        xp2pManager.needResetLocalServer = false;
+      }
 
       if (this.data.playerPaused && this.data.needPauseStream) {
         // ios暂停时不会断开连接，一段时间没收到数据就会触发startPull，但needPauseStream时不应该拉流
@@ -603,7 +621,8 @@ Component({
           break;
         case 2103: // live-player断连, 已启动自动重连
           this.console.warn(`[${this.data.innerId}]`, '==== onLivePlayerStateChange', detail.code, detail.message, `streamState: ${this.data.streamState}`);
-          if (/errCode:-1004(\D|$)/.test(detail.message) || /Failed to connect to/.test(detail.message)) {
+          // player插件 1.1.3 开始会触发 playerError WECHAT_SERVER_ERROR
+          if (false && isLocalServerError(detail)) {
             // 无法连接本地服务器
             xp2pManager.needResetLocalServer = true;
 
@@ -684,13 +703,9 @@ Component({
           livePlayerInfo[key] = detail.info[key];
         }
       }
-      this.setData({
-        livePlayerInfoStr: [
-          `size: ${livePlayerInfo.videoWidth}x${livePlayerInfo.videoHeight}, fps: ${livePlayerInfo.videoFPS?.toFixed(2)}`,
-          `bitrate(kbps): video ${livePlayerInfo.videoBitrate}, audio ${livePlayerInfo.audioBitrate}`,
-          `cache(ms): video ${livePlayerInfo.videoCache}, audio ${livePlayerInfo.audioCache}`,
-        ].join('\n'),
-      });
+
+      // 显示调试面板时才需要更新 livePlayerInfoStr
+      this.data.showDebugInfo && this.refreshLivePlayerInfoStr();
 
       const cache = Math.max(livePlayerInfo?.videoCache || 0, livePlayerInfo?.audioCache || 0);
       if (this.properties.cacheThreshold > 0 && cache > this.properties.cacheThreshold) {
@@ -709,6 +724,26 @@ Component({
           },
         });
       }
+    },
+    onFullScreenChange({ detail }) {
+      this.console.log(`[${this.data.innerId}]`, 'onFullScreenChange', detail);
+      if (typeof detail.fullScreen === 'boolean') {
+        this.setData({ fullScreen: detail.fullScreen });
+      }
+    },
+    refreshLivePlayerInfoStr() {
+      const { livePlayerInfo } = this.userData;
+      if (!livePlayerInfo) {
+        this.setData({ livePlayerInfoStr: '' });
+        return;
+      }
+      this.setData({
+        livePlayerInfoStr: [
+          `size: ${livePlayerInfo.videoWidth}x${livePlayerInfo.videoHeight}, fps: ${livePlayerInfo.videoFPS?.toFixed(2)}`,
+          `bitrate(kbps): video ${livePlayerInfo.videoBitrate}, audio ${livePlayerInfo.audioBitrate}`,
+          `cache(ms): video ${livePlayerInfo.videoCache}, audio ${livePlayerInfo.audioCache}`,
+        ].join('\n'),
+      });
     },
     resetServiceData(newP2PState) {
       this.changeState({
@@ -1187,7 +1222,6 @@ Component({
       }
     },
     tryTriggerPlay(reason) {
-      const isReplay = reason === 'replay';
       this.console.log(
         `[${this.data.innerId}]`, '==== tryTriggerPlay',
         '\n  reason', reason,
@@ -1203,7 +1237,7 @@ Component({
 
       const isP2PStateCanPlay = this.data.p2pState === P2PStateEnum.ServiceStarted;
       let isPlayerStateCanPlay = this.data.playerState === PlayerStateEnum.PlayerReady;
-      if (!isPlayerStateCanPlay && isReplay) {
+      if (!isPlayerStateCanPlay && reason === 'replay') {
         // 是重试，出错状态也可以触发play
         isPlayerStateCanPlay = this.data.playerState === PlayerStateEnum.LivePlayerError
           || this.data.playerState === PlayerStateEnum.LivePlayerStateError;
@@ -1218,10 +1252,6 @@ Component({
         this.console.warn(`[${this.data.innerId}]`, 'flv invalid, return');
         return;
       }
-
-      // FIXME 临时调试语音，不拉流
-      // this.console.warn(`[${this.data.innerId}]`, '==== disable play for voice debug, return');
-      // return;
 
       // 都准备好了，触发播放，这个会触发 onPlayerStartPull
       this.changeState({
@@ -1281,14 +1311,15 @@ Component({
         isFatalError = true;
       }
       if (isFatalError) {
-        // 不可恢复错误，销毁player
+        // 不可恢复错误，断开p2p连接
         if (!this.isP2PInErrorState(this.data.p2pState)) {
           this.stopAll();
         }
+        // 不可恢复错误，销毁player
         if (this.data.hasPlayer) {
           this.changeState({ hasPlayer: false });
         }
-        this.console.log(`[${this.data.innerId}] ${errType} isFatalError, trigger playError`);
+        this.console.error(`[${this.data.innerId}] ${errType} isFatalError, trigger playError`);
         this.triggerEvent('playError', {
           errType,
           errMsg: totalMsgMap[errType],
@@ -1365,12 +1396,33 @@ Component({
         this.prepare();
       } else if (this.data.p2pState === P2PStateEnum.P2PIdle) {
         this.initP2P();
+      } else {
+        this.console.log(`[${this.data.innerId}]`, `keep waiting in p2pState ${this.data.p2pState}`);
       }
     },
     // 处理播放错误，detail: { msg: string }
     handlePlayError(type, detail) {
+      this.console.log(`[${this.data.innerId}] handlePlayError`, type);
+      if (this.userData.isDetached) {
+        this.console.info(`[${this.data.innerId}] handlePlayError after detached, ignore`);
+        return;
+      }
+
       if (!this.checkCanRetry()) {
         return;
+      }
+
+      const isFatalError = detail?.isFatalError;
+      if (isFatalError) {
+        // 不可恢复错误，断开p2p连接
+        if (!this.isP2PInErrorState(this.data.p2pState)) {
+          this.stopAll();
+        }
+        // 不可恢复错误，销毁player
+        if (this.data.hasPlayer) {
+          this.console.error(`[${this.data.innerId}] ${errType} isFatalError, destroy player`);
+          this.changeState({ hasPlayer: false });
+        }
       }
 
       // 能retry的才提示这个，不能retry的前面已经触发弹窗了
@@ -1378,10 +1430,17 @@ Component({
         errType: type,
         errMsg: totalMsgMap[type] || '播放失败',
         errDetail: detail,
+        isFatalError,
       });
     },
     // 处理播放结束
     handlePlayEnd(newStreamState) {
+      this.console.log(`[${this.data.innerId}] handlePlayEnd`, newStreamState);
+      if (this.userData.isDetached) {
+        this.console.info(`[${this.data.innerId}] handlePlayEnd after detached, ignore`);
+        return;
+      }
+
       if (this.properties.autoReplay) {
         this.checkNetworkAndReplay(newStreamState);
       } else {
@@ -1443,7 +1502,7 @@ Component({
       }
     },
     onP2PMessage_Notify(type, detail) {
-      this.console.info(`[${this.data.innerId}]`, 'onP2PMessage_Notify', type, detail);
+      this.console.info(`[${this.data.innerId}] onP2PMessage_Notify ${type}, playing ${this.data.playing}`, detail);
       if (!this.data.playing && type !== XP2PNotify_SubType.Close) {
         // 退出播放时 stopStream 会触发 close 事件，是正常的，其他事件才 warn
         this.console.warn(`[${this.data.innerId}] receive onP2PMessage_Notify when not playing`, type, detail);
@@ -1468,17 +1527,30 @@ Component({
               streamState: StreamStateEnum.StreamHeaderParsed,
             });
           } else {
-            this.resetStreamData(StreamStateEnum.StreamHttpStatusError);
-            this.tryStopPlayer();
-            const msg = httpStatusErrorMsgMap[detail.status] || `httpStatus: ${detail.status}`;
-            this.handlePlayError(StreamStateEnum.StreamHttpStatusError, { msg, detail });
+            if (detail.status >= 500) {
+              // 连接错误
+              this.console.error(`[${this.data.innerId}] HttpStatus ${detail.status}`, detail);
+              this.setData({
+                p2pConnected: false,
+              });
+              this.stopAll(P2PStateEnum.ServiceError);
+              const msg = `httpStatus: ${detail.status}\n${httpStatusErrorMsgMap[detail.status]}`;
+              this.handlePlayError(P2PStateEnum.ServiceError, { msg, detail });
+            } else {
+              // 其他非连接错误
+              this.resetStreamData(StreamStateEnum.StreamHttpStatusError);
+              this.tryStopPlayer();
+              const msg = `httpStatus: ${detail.status}\n${httpStatusErrorMsgMap[detail.status]}`;
+              this.handlePlayError(StreamStateEnum.StreamHttpStatusError, { msg, detail });
+            }
           }
           break;
         case XP2PNotify_SubType.Success:
         case XP2PNotify_SubType.Eof:
           {
             // 数据传输正常结束
-            this.console.log(`[${this.data.innerId}]`,
+            this.console.log(
+              `[${this.data.innerId}]`,
               `==== Notify ${type} in p2pState ${this.data.p2pState}, chunkCount ${this.userData.chunkCount}, time after last chunk ${Date.now() - this.userData.chunkTime}`,
               detail,
             );
@@ -1492,7 +1564,7 @@ Component({
           }
           break;
         case XP2PNotify_SubType.Fail:
-          // 数据传输出错
+          // 数据传输出错，当作结束，直播场景可以自动重试
           this.console.error(`[${this.data.innerId}]`, `==== Notify ${type} in p2pState ${this.data.p2pState}`, detail);
           this.handlePlayEnd(StreamStateEnum.StreamError);
           break;
@@ -1503,6 +1575,7 @@ Component({
               return;
             }
             // 播放中收到了Close，当作播放失败
+            this.console.error(`[${this.data.innerId}] ==== Notify ${type}`, detail);
             const detailMsg = typeof detail === 'string' ? detail : (detail && detail.type);
             this.handlePlayError(StreamStateEnum.StreamError, { msg: `p2pNotify: ${type}, ${detailMsg}`, detail });
           }
@@ -1537,6 +1610,37 @@ Component({
         orientation: this.data.orientation === 'horizontal' ? 'vertical' : 'horizontal',
       });
     },
+    changeFullScreen() {
+      if (!this.userData.playerCtx) {
+        return;
+      }
+      if (!this.data.fullScreen) {
+        this.userData.playerCtx.requestFullScreen({
+          direction: 90,
+          success: (res) => {
+            this.console.log(`[${this.data.innerId}]`, 'requestFullScreen success', res);
+            this.setData({
+              fullScreen: true,
+            });
+          },
+          fail: (res) => {
+            this.console.warn(`[${this.data.innerId}]`, 'requestFullScreen fail', res);
+          },
+        });
+      } else {
+        this.userData.playerCtx.exitFullScreen({
+          success: (res) => {
+            this.console.log(`[${this.data.innerId}]`, 'exitFullScreen success', res);
+            this.setData({
+              fullScreen: false,
+            });
+          },
+          fail: (res) => {
+            this.console.warn(`[${this.data.innerId}]`, 'exitFullScreen fail', res);
+          },
+        });
+      }
+    },
     snapshotAndSave() {
       this.console.log(`[${this.data.innerId}]`, 'snapshotAndSave');
       snapshotAndSave({
@@ -1564,7 +1668,12 @@ Component({
     },
     // 以下是调试面板相关的
     toggleDebugInfo() {
-      this.setData({ showDebugInfo: !this.data.showDebugInfo });
+      const newVal = !this.data.showDebugInfo;
+      if (newVal) {
+        // 显示调试面板，把 livePlayerInfoStr 更新到最新
+        this.refreshLivePlayerInfoStr();
+      }
+      this.setData({ showDebugInfo: newVal });
     },
     toggleSlow() {
       this.setData({ isSlow: !this.data.isSlow });

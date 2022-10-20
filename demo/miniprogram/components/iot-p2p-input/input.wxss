@@ -1,12 +1,12 @@
 @import '../../common.wxss';
 @import '../../input.wxss';
 
-.control-info {
-  position: relative;
-}
-
 .scene-label {
   margin-right: 20rpx;
+}
+
+.control-info {
+  position: relative;
 }
 
 .input-item {

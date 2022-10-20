@@ -1,6 +1,7 @@
 <view class="component iot-p2p-voice">
   <view wx:if="{{needDuplex}}">
     <iot-p2p-common-pusher
+      wx:if="{{pusherId && !isModifyPusher}}"
       id="{{pusherId}}"
       enableCamera="{{true}}"
       enableMic="{{true}}"
@@ -12,7 +13,7 @@
     <view>intercomType: {{intercomType}}</view>
     <view>voiceState: {{voiceState}}</view>
     <view class="group-button-area">
-      <button bindtap="startVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !pusherReady || (voiceState && voiceState !== 'error')}}">
+      <button bindtap="startVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState && voiceState !== 'error')}}">
         开始
       </button>
       <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !voiceState || voiceState === 'error'}}">
@@ -22,7 +23,7 @@
   </view>
   <view wx:elif="{{needPusher}}">
     <iot-p2p-common-pusher
-      wx:if="{{!isModifyPusher}}"
+      wx:if="{{pusherId && !isModifyPusher}}"
       id="{{pusherId}}"
       mode="{{pusherProps.isRTC ? 'RTC' : 'SD'}}"
       enableCamera="{{false}}"
@@ -56,10 +57,10 @@
       </label>
     </view>
     <view class="group-button-area">
-      <button bindtap="startVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !pusherReady || (voiceState && voiceState !== 'error')}}">
+      <button bindtap="startVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState && voiceState !== 'error')}}">
         对讲
       </button>
-      <button bindtap="startVoice" data-need-record="1" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !pusherReady || (voiceState && voiceState !== 'error')}}">
+      <button bindtap="startVoice" data-need-record="1" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState && voiceState !== 'error')}}">
         对讲+录制
       </button>
       <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !voiceState || voiceState === 'error'}}">

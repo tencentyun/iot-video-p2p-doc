@@ -18,7 +18,22 @@
       bind:error="onLivePlayerError"
       bind:statechange="onLivePlayerStateChange"
       bind:netstatus="onLivePlayerNetStatus"
-    />
+      bind:fullscreenchange="onFullScreenChange"
+    >
+      <view wx:if="{{fullScreen}}">
+        <view class="player-message" bindtap="onClickRetry">{{playerMsg}}</view>
+        <view wx:if="{{showControlRightBtns}}" class="player-controls-container">
+          <view class="player-controls left"></view>
+          <view class="player-controls right">
+            <view class="player-control-item">{{playerPaused ? 'Paused' : ''}}</view>
+            <view class="player-control-item" bindtap="changeMuted">{{muted ? 'VOLx' : 'VOL'}}</view>
+            <view class="player-control-item" bindtap="changeOrientation">{{orientation === 'horizontal' ? 'HOR' : 'VERT'}}</view>
+            <view class="player-control-item" bindtap="changeFullScreen">{{fullScreen ? 'ExitFull' : 'EnterFull'}}</view>
+            <view class="player-control-item" bindtap="snapshotAndSave">Snapshot</view>
+          </view>
+        </view>
+      </view>
+    </p2p-player>
     <mock-p2p-player
       wx:if="{{playerId && canUseP2P && !needPlayer}}"
       bind:playerReady="onPlayerReady"
@@ -27,12 +42,14 @@
       bind:playerError="onPlayerError"
     />
     <view class="player-message" bindtap="onClickRetry">{{playerMsg}}</view>
-    <view wx:if="{{showControlRightBtns}}" class="player-controls-container right">
-      <view class="player-controls">
-        <view class="player-control-item">{{playerPaused ? 'paused' : ''}}</view>
-        <view class="player-control-item" bindtap="changeMuted">{{muted ? 'muted' : 'notMuted'}}</view>
-        <view class="player-control-item" bindtap="changeOrientation">{{orientation}}</view>
-        <view class="player-control-item" bindtap="snapshotAndSave">snapshot</view>
+    <view wx:if="{{showControlRightBtns}}" class="player-controls-container">
+      <view class="player-controls left"></view>
+      <view class="player-controls right">
+        <view class="player-control-item">{{playerPaused ? 'Paused' : ''}}</view>
+        <view class="player-control-item" bindtap="changeMuted">{{muted ? 'VOLx' : 'VOL'}}</view>
+        <view class="player-control-item" bindtap="changeOrientation">{{orientation === 'horizontal' ? 'HOR' : 'VERT'}}</view>
+        <view class="player-control-item" bindtap="changeFullScreen">{{fullScreen ? 'ExitFull' : 'EnterFull'}}</view>
+        <view class="player-control-item" bindtap="snapshotAndSave">Snapshot</view>
       </view>
     </view>
     <view class="debug-info-switch-container">

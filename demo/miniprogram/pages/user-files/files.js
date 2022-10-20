@@ -1,3 +1,4 @@
+import { isDevTools } from '../../utils';
 import { getRecordManager } from '../../lib/recordManager';
 
 const app = getApp();
@@ -12,7 +13,7 @@ const processFileItem = (item) => {
     item.isFLV = isFLV(item.fileName);
     item.isMJPG = isMJPG(item.fileName);
     item.isLOG = isLOG(item.fileName);
-    item.showPlay = item.isFLV;
+    item.showPlay = item.isFLV || item.isMJPG;
     item.showSave = item.isMP4 || item.isFLV || item.isMJPG;
   }
   return item;
@@ -25,7 +26,9 @@ Page({
     isRefreshing: false,
     recordList: null,
     totalBytes: NaN,
-    isDevTools: wx.getSystemInfoSync().platform === 'devtools', // 开发者工具可以直接保存到磁盘，不用显示发送文档
+    // 真机显示发送，开发者工具可以直接保存到磁盘
+    showSendFile: !isDevTools,
+    showSaveFile: isDevTools,
   },
   onLoad(query) {
     console.log('records: onLoad', query);

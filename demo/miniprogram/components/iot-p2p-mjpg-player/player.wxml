@@ -2,6 +2,7 @@
   <view class="player-container">
     <p2p-mjpg-player
       wx:if="{{playerId && needPlayer && hasPlayer}}"
+      id="{{playerId}}"
       bind:playerReady="onPlayerReady"
       bind:playerStartPull="onPlayerStartPull"
       bind:playerClose="onPlayerClose"
@@ -18,9 +19,10 @@
       bind:playerError="onPlayerError"
     />
     <view class="player-message" bindtap="onClickRetry">{{playerMsg}}</view>
-    <view wx:if="{{showControlRightBtns}}" class="player-controls-container right">
-      <view class="player-controls">
-        <view class="player-control-item" bindtap="snapshotAndSave">snapshot</view>
+    <view wx:if="{{showControlRightBtns}}" class="player-controls-container">
+      <view class="player-controls left"></view>
+      <view class="player-controls right">
+        <view class="player-control-item" bindtap="snapshotAndSave">Snapshot</view>
       </view>
     </view>
     <view class="debug-info-switch-container">

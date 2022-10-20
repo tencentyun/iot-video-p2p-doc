@@ -186,6 +186,12 @@ Component({
     },
     onPusherReady({ detail }) {
       console.log(`[${this.data.innerId}]`, '==== onPusherReady in', this.data.pusherState, detail);
+
+      // 收到这个说明本地server是正常的
+      if (xp2pManager.needResetLocalRtmpServer) {
+        xp2pManager.needResetLocalRtmpServer = false;
+      }
+
       this.userData.pusherComp = detail.pusherExport;
       this.userData.pusherCtx = detail.livePusherContext;
       this.changeState({
@@ -194,6 +200,12 @@ Component({
     },
     onPusherStartPush({ type, detail }) {
       console.log(`[${this.data.innerId}]`, '==== onPusherStartPush', detail);
+
+      // 收到这个说明本地server是正常的
+      if (xp2pManager.needResetLocalRtmpServer) {
+        xp2pManager.needResetLocalRtmpServer = false;
+      }
+
       if (!this.userData.writer) {
         // 现在不能push
         console.warn(`[${this.data.innerId}]`, 'onPusherStartPush but can not push without writer, stop pusher');

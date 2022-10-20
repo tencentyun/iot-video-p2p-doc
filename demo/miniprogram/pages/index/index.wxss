@@ -1,3 +1,5 @@
+@import '../../common.wxss';
+
 navigator {
   font-size: 18px;
   margin-bottom: 20rpx;

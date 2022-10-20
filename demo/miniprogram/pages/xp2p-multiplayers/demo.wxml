@@ -5,7 +5,7 @@
       wx:if="{{item.p2pMode === 'ipc'}}"
       id="{{item.playerId}}"
       targetId="{{item.targetId}}" 
-      flvUrl="{{item.flvUrl}}" 
+      flvFile="{{item.flvFile}}" 
       productId="{{item.productId}}" 
       deviceName="{{item.deviceName}}" 
       xp2pInfo="{{item.xp2pInfo}}" 

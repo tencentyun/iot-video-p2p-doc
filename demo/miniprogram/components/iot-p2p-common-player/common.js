@@ -12,10 +12,11 @@ export const PlayerStateEnum = {
 export const P2PStateEnum = {
   P2PIdle: 'P2PIdle',
   P2PUnkown: 'P2PUnkown',
+  P2PLocalError: 'P2PLocalError',
+  P2PLocalNATChanged: 'P2PLocalNATChanged',
   P2PIniting: 'P2PIniting',
   P2PInited: 'P2PInited',
   P2PInitError: 'P2PInitError',
-  P2PLocalNATChanged: 'P2PLocalNATChanged',
   ServicePreparing: 'ServicePreparing',
   ServiceStarted: 'ServiceStarted',
   ServiceStartError: 'ServiceStartError',
@@ -51,10 +52,11 @@ export const totalMsgMap = {
   [PlayerStateEnum.LocalServerError]: '本地HttpServer错误',
 
   [P2PStateEnum.P2PUnkown]: 'P2PUnkown',
+  [P2PStateEnum.P2PLocalError]: 'P2PLocalError',
+  [P2PStateEnum.P2PLocalNATChanged]: '本地NAT发生变化',
   [P2PStateEnum.P2PIniting]: '正在初始化p2p模块...',
   [P2PStateEnum.P2PInited]: '初始化p2p模块完成',
   [P2PStateEnum.P2PInitError]: '初始化p2p模块失败',
-  [P2PStateEnum.P2PLocalNATChanged]: '本地NAT发生变化',
   [P2PStateEnum.ServicePreparing]: '正在启动p2p服务...',
   [P2PStateEnum.ServiceStarted]: '启动p2p服务完成',
   [P2PStateEnum.ServiceStartError]: '启动p2p服务失败',
@@ -101,3 +103,5 @@ export const isStreamError = (streamState) => [
   StreamStateEnum.StreamHttpStatusError,
   StreamStateEnum.StreamError,
 ].indexOf(streamState) >= 0;
+
+export const isLocalServerError = detail => /errCode:-1004(\D|$)/.test(detail?.message) || /Failed to connect to/.test(detail?.message);

@@ -19,6 +19,9 @@ Page({
   onLoad(query) {
     console.log('demo: onLoad', query);
 
+    console.log('demo: checkReset when enter');
+    xp2pManager.checkReset();
+
     const cfg = query.cfg || '';
     this.setData({
       cfg,

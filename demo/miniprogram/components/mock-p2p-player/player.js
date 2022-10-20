@@ -115,6 +115,20 @@ Component({
             complete && complete();
           }, 0);
         },
+        // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+        requestFullScreen: ({ success, fail, complete } = {}) => {
+          setTimeout(() => {
+            fail && fail({ errMsg: 'mock-player not support requestFullScreen' });
+            complete && complete();
+          }, 0);
+        },
+        // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+        exitFullScreen: ({ success, fail, complete } = {}) => {
+          setTimeout(() => {
+            fail && fail({ errMsg: 'mock-player not support exitFullScreen' });
+            complete && complete();
+          }, 0);
+        },
       };
 
       this.userData.ctx = livePlayerContext;

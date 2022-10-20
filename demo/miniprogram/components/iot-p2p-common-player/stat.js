@@ -1,12 +1,15 @@
 import { PlayerStateEnum, P2PStateEnum, StreamStateEnum } from './common';
 
+// 覆盖 console
+const app = getApp();
+const oriConsole = app.console;
+const console = app.logger || oriConsole;
+
 // 启播步骤
 export const PlayStepEnum = {
   CreatePlayer: 'StepCreatePlayer',
   InitModule: 'StepInitModule',
   StartP2PService: 'StepStartP2PService',
-  // WaitBothReady: 'StepWaitBothReady',
-  // WaitTriggerPlay: 'StepWaitTriggerPlay', // 回放时等待选择录像的时间，不需要了，回放从选择录像开始计时
   ConnectLocalServer: 'StepConnectLocalServer',
   WaitStream: 'StepWaitStream',
   CheckStream: 'StepCheckStream',

@@ -52,4 +52,4 @@ for (const key in serverStreams) {
   };
 }
 
-export default serverStreams;
+export const presetServerStreams = serverStreams;

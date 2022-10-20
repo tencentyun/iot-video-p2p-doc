@@ -11,7 +11,7 @@
       id="{{playerId}}"
       targetId="{{targetId}}"
       sceneType="{{sceneType}}"
-      flvUrl="{{flvUrl}}"
+      flvFile="{{flvFile}}"
       mjpgFile="{{mjpgFile}}"
       productId="{{productId}}"
       deviceName="{{deviceName}}"

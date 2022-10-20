@@ -1,3 +1,4 @@
+/* eslint-disable camelcase, @typescript-eslint/naming-convention */
 import config from './config/config';
 
 export function compareVersion(ver1, ver2) {
@@ -27,6 +28,7 @@ export function compareVersion(ver1, ver2) {
 }
 
 export const sysInfo = wx.getSystemInfoSync();
+export const isDevTools = sysInfo.platform === 'devtools';
 export const canUseP2PIPCMode = compareVersion(sysInfo.SDKVersion, '2.19.3') >= 0;
 export const canUseP2PServerMode = compareVersion(sysInfo.SDKVersion, '2.20.2') >= 0;
 
@@ -59,15 +61,34 @@ export const isPeername = (xp2pInfo) => /^\w+$/.test(xp2pInfo) && !/^XP2P/.test(
 // 兼容直接填 peername 的情况
 export const adjustXp2pInfo = (xp2pInfo) => (isPeername(xp2pInfo) ? `XP2P${xp2pInfo}` : xp2pInfo);
 
+const deviceFlagNameMap = {
+  m: 'mjpg', // 图片流
+};
+export const getDeviceFlags = (xp2pInfo) => {
+  const tmp = xp2pInfo?.split('%') || [];
+  const chs = (tmp[1] || '').replace(/^[\d.]+/, '').split('');
+  const flags = {};
+  chs.forEach((ch) => {
+    const flagName = deviceFlagNameMap[ch];
+    if (flagName) {
+      flags[flagName] = true;
+    }
+  });
+  return flags;
+};
+
 export const getPlayerProperties = (cfg, opts) => {
   const cfgData = cfg && config.totalData[cfg];
   if (!cfgData) {
     return null;
   }
 
+  let flvFile = '';
+  let mjpgFile = '';
   let flvUrl = '';
   if (cfgData.p2pMode === 'ipc') {
-    flvUrl = `http://XP2P_INFO.xnet/ipc.p2p.com/ipc.flv?${cfgData.liveParams}`;
+    flvFile = `ipc.flv?${cfgData.liveParams}`;
+    mjpgFile = `ipc.flv?${cfgData.liveMjpgParams}`;
   } else {
     flvUrl = cfgData.flvUrl;
   }
@@ -75,11 +96,21 @@ export const getPlayerProperties = (cfg, opts) => {
   return {
     p2pMode: cfgData.p2pMode,
     targetId: cfgData.targetId,
-    flvUrl: flvUrl || '',
     productId: cfgData.productId || '',
     deviceName: cfgData.deviceName || '',
     xp2pInfo: adjustXp2pInfo(cfgData.xp2pInfo || cfgData.peername || ''), // 兼容直接填 peername 的情况
+    liveStreamDomain: cfgData.liveStreamDomain || '',
+    sceneType: 'live',
+    flvFile: flvFile || '',
+    mjpgFile: mjpgFile || '',
     codeUrl: cfgData.codeUrl || '',
+    flvUrl: flvUrl || '',
+    options: cfgData.options,
+    onlyp2pMap: {
+      flv: isDevTools,
+      mjpg: isDevTools,
+    },
+    onlyp2p: isDevTools,
     ...opts,
   };
 };

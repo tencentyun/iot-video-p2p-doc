@@ -1,55 +1,57 @@
 /**
  * device属性说明：
  * showInHomePageBtn: boolean 是否显示在首页大按钮
- * showInHomePageNav: boolean 是否显示在首页导航
+ *
+ * 下面的必填
+ * isMjpgDevice: boolean 是否图片流设备
  *
  * 下面这些会自动填到player组件的输入框里，也可以手动修改
  * productId: string 摄像头的 productId
  * deviceName: string 摄像头的 deviceName
  * xp2pInfo: string 摄像头的 xp2pInfo
- * liveParams: string 摄像头的直播参数，默认 action=live&channel=0&quality=standard
- * playbackParams: string 摄像头的回放参数，默认 action=playback&channel=0
  * liveStreamDomain: string 1v1连接过多时自动转到1v多模式的server域名
+ * liveQuality: string 直播清晰度，非必填，standard | high | super，视频流设备默认 standard
  * options:
- *   needMjpg: boolean 需要图片流，默认false
  *   needCheckStream: boolean 播放前先检查能否拉流，默认 false
  *   intercomType: 'Recorder' | 'Pusher' 对讲类型，默认 Recorder
  */
 
 // 这些是预置的ipc设备
 const devices = {
-  test_mjpg: {
+  test_ipc: {
     showInHomePageBtn: true,
-    productName: 'ac7916',
+    productName: 'IPC',
     productId: 'SO1Z9Y787A',
-    deviceName: 'youzi_79972790_1',
-    xp2pInfo: 'XP2P4dDSc1VbFpls3QZAE+cEMg==%2.4.29m',
-    liveParams: 'action=live-audio&channel=0',
-    liveMjpgParams: 'action=live-mjpg&channel=0',
-    playbackParams: 'action=playback-audio&channel=0',
-    playbackMjpgParams: 'action=playback-mjpg&channel=0',
+    deviceName: 'cannon_85317409_1',
+    xp2pInfo: 'XP2PkNm8QUONDYGpwc2kuNhIRQ==%2.4.32',
     options: {
-      needMjpg: true,
       intercomType: 'Pusher',
     },
   },
-  test_lock: {
+  test_mjpglock: {
     showInHomePageBtn: true,
-    productName: 'Lock',
-    productId: '9L1S66FZ3Q',
-    deviceName: 'z_83326880_1',
-    xp2pInfo: 'XP2P9b3HzHKvNSbg9GvqI9JuyQ==%2.4.31',
-    liveParams: 'action=live&channel=0',
-    playbackParams: 'action=playback&channel=0',
+    isMjpgDevice: true,
+    productName: 'MjpgLock',
+    productId: '65HUY1C739',
+    deviceName: 'yzlock_84641797_1',
+    xp2pInfo: 'XP2PfLGXhL7HQJszsfxiO6Y5eA==%2.4.33m',
     options: {
       intercomType: 'Pusher',
     },
   },
 };
 
+// 补充默认值
 Object.values(devices).forEach((device) => {
-  device.liveParams = device.liveParams || 'action=live&channel=0&quality=standard';
-  device.playbackParams = device.playbackParams || 'action=playback&channel=0';
+  device.isMjpgDevice = typeof device.isMjpgDevice === 'boolean' ? device.isMjpgDevice : false;
+  device.liveQuality = device.liveQuality || 'standard';
 });
 
-export default devices;
+export const presetDevices = devices;
+
+export const isDeviceCfgValid = cfgInfo => (
+  cfgInfo && typeof cfgInfo.isMjpgDevice === 'boolean'
+    && cfgInfo.productId
+    && cfgInfo.deviceName
+    && cfgInfo.xp2pInfo
+);

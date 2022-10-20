@@ -150,6 +150,9 @@ class Xp2pManager {
       playerPlugin.initHttp && playerPlugin.initHttp({
         errorCallback: this._localHttpErrorHandler.bind(this),
       });
+      playerPlugin.initRtmp && playerPlugin.initRtmp({
+        errorCallback: this._localRtmpErrorHandler.bind(this),
+      });
     }
     console.log('Xp2pManager: P2PPlayerVersion', this.P2PPlayerVersion);
 
@@ -233,24 +236,14 @@ class Xp2pManager {
     console.log('Xp2pManager: resetLocalServer');
     this._needResetLocalServer = false;
 
-    try {
-      playerPlugin.reset();
-    } catch (err) {
-      // 低版本插件没有 reset，保护一下
-      console.error('playerPlugin.reset error', err);
-    }
+    return playerPlugin.reset();
   }
 
   resetLocalRtmpServer() {
     console.log('Xp2pManager: resetLocalRtmpServer');
     this._needResetLocalRtmpServer = false;
 
-    try {
-      playerPlugin.resetRtmp();
-    } catch (err) {
-      // 低版本插件没有 reset，保护一下
-      console.error('playerPlugin.resetRtmp error', err);
-    }
+    return playerPlugin.resetRtmp();
   }
 
   initModule() {
@@ -592,6 +585,11 @@ class Xp2pManager {
         }
         // 仅记录
         this._networkChanged = { detail, timestamp };
+        if (detail?.errcode === 103 && /Software caused connection abort/.test(detail?.errmsg)) {
+          // 不知道为啥出现，但是出现之后本地server就连不上了
+          this._needResetLocalServer = true;
+          this._needResetLocalRtmpServer = true;
+        }
         break;
     }
   }
@@ -606,6 +604,21 @@ class Xp2pManager {
       }
       // 仅记录，再次触发播放时会reset
       this._networkChanged = { detail: err, timestamp };
+      this._needResetLocalServer = true;
+    }
+  }
+
+  _localRtmpErrorHandler(err) {
+    console.warn('Xp2pManager: _localRtmpErrorHandler', err);
+    const timestamp = Date.now();
+    if (err?.errNum === 53) {
+      // ios 退后台一段时间后，如果没有网络传输，系统会中断网络服务，xp2p插件未通知出来，player插件能通过 TCPServer 检测到，errNum 53
+      if (this._appHideTimestamp) {
+        console.log(`Xp2pManager: rtmp errNum ${err?.errNum} after appHide ${timestamp - this._appHideTimestamp}`);
+      }
+      // 仅记录，再次触发播放时会reset
+      this._networkChanged = { detail: err, timestamp };
+      this._needResetLocalRtmpServer = true;
     }
   }
 

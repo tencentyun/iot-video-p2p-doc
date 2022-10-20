@@ -41,7 +41,6 @@ Component({
   },
   data: {
     innerId: '',
-    isDetached: false,
 
     // 语音对讲
     needPusher: false, // attached 时根据 intercomType 设置
@@ -53,7 +52,7 @@ Component({
     voiceOp: VoiceOpEnum.None, // none/mute/pause，attached 时根据 intercomType 设置初始值
 
     // 这些是控制pusher的
-    pusherId: 'iot-p2p-common-pusher',
+    pusherId: '',
     // pusher: null, // 移到 userData
     pusherReady: false,
     pusherError: null,
@@ -62,6 +61,7 @@ Component({
       enableAgc: true,
       enableAns: true,
       highQuality: false,
+      ignoreEmptyAudioTag: false,
     },
     pusherPropChecks: [
       {
@@ -89,6 +89,7 @@ Component({
   },
   observers: {
     voiceState(val) {
+      console.log(`[${this.data.innerId}] voiceState changed ${val}`);
       if (val) {
         const now = Date.now();
         if (!this.userData.timestamps) {
@@ -154,6 +155,7 @@ Component({
 
       // 渲染无关，不放在data里，以免影响性能
       this.userData = {
+        isDetached: false,
         timestamps: null,
         steps: null,
         pusher: null,
@@ -176,9 +178,8 @@ Component({
         needDuplex: voiceConfig.needDuplex,
         voiceOp: voiceConfig.voiceOp || VoiceOpEnum.None,
       });
-      if (voiceConfig.needPusher) {
-        this.getPusherComp();
-      }
+
+      // 触发对讲时再创建pusher
     },
     ready() {
       console.log(`[${this.data.innerId}]`, 'ready');
@@ -186,26 +187,26 @@ Component({
     },
     detached() {
       console.log(`[${this.data.innerId}]`, '==== detached');
-      this.setData({ isDetached: true });
+      this.userData.isDetached = true;
       this.stopVoice();
       console.log(`[${this.data.innerId}]`, '==== detached end');
     },
   },
   export() {
     return {
-      start: this.startVoice.bind(this),
-      stop: this.stopVoice.bind(this),
+      startVoice: this.startVoice.bind(this),
+      stopVoice: this.stopVoice.bind(this),
     };
   },
   methods: {
     showToast(content) {
-      !this.data.isDetached && wx.showToast({
+      !this.userData.isDetached && wx.showToast({
         title: content,
         icon: 'none',
       });
     },
     showModal(params) {
-      !this.data.isDetached && wx.showModal(params);
+      !this.userData.isDetached && wx.showModal(params);
     },
     getPusherComp() {
       const pusher = this.selectComponent(`#${this.data.pusherId}`);
@@ -224,7 +225,8 @@ Component({
       }
       this.setData({ pusherReady });
       if (this.data.voiceState === VoiceStateEnum.creating && pusherReady) {
-        // 重试时触发的创建，创建成功直接继续
+        // 已经触发了对接，创建成功直接继续
+        console.log(`[${this.data.innerId}]`, 'pusherReady in voiceState', this.data.voiceState);
         this.doStartVoice();
       }
     },
@@ -324,13 +326,13 @@ Component({
       });
     },
     async startVoice(e) {
-      if (this.data.isDetached) {
+      if (this.userData.isDetached) {
         return;
       }
 
-      console.log(`[${this.data.innerId}]`, 'startVoice');
+      console.log(`[${this.data.innerId}] startVoice in voiceState ${this.data.voiceState}`);
       if (this.data.voiceState) {
-        console.log(`[${this.data.innerId}]`, `can not start voice in voiceState ${this.data.voiceState}`);
+        console.log(`[${this.data.innerId}] can not start voice in voiceState ${this.data.voiceState}`);
         return;
       }
 
@@ -338,8 +340,16 @@ Component({
       this.userData.voiceTriggerDataset = e?.currentTarget?.dataset;
 
       if (this.data.needPusher && !this.data.pusherReady) {
-        console.log(`[${this.data.innerId}]`, 'needPusher but pusher not ready', this.data.pusherError);
-        if (this.data.pusherError) {
+        console.log(`[${this.data.innerId}] needPusher but pusher not ready, pusherCreated ${!!this.data.pusherId}, pusherError`, this.data.pusherError);
+        if (!this.data.pusherId) {
+          // 还没有创建，先创建
+          this.setData({
+            pusherId: 'iot-p2p-common-pusher',
+            voiceState: VoiceStateEnum.creating,
+          }, () => {
+            this.getPusherComp();
+          });
+        } else if (this.data.pusherError) {
           // 出错重试
           // const { errMsg, errDetail } = this.data.pusherError;
           // this.showModal({
@@ -361,7 +371,7 @@ Component({
             });
           });
         } else {
-          this.showToast('pusher not ready');
+          // 等待
         }
         return;
       }
@@ -369,12 +379,12 @@ Component({
       this.doStartVoice();
     },
     async doStartVoice() {
-      if (this.data.isDetached) {
+      if (this.userData.isDetached) {
         return;
       }
 
       const dataset = this.userData.voiceTriggerDataset;
-      console.log(`[${this.data.innerId}]`, 'doStartVoice', dataset);
+      console.log(`[${this.data.innerId}] doStartVoice in voiceState ${this.data.voiceState}, dataset`, dataset);
 
       if (this.data.needDuplex) {
         // 是双向音视频，在demo里省略呼叫应答功能，直接发起
@@ -418,7 +428,7 @@ Component({
         return;
       }
 
-      if (this.data.isDetached || !this.data.voiceState) {
+      if (this.userData.isDetached || !this.data.voiceState) {
         // 已经stop了
         return;
       }
@@ -573,17 +583,17 @@ Component({
         });
     },
     stopVoice() {
-      if (this.data.isDetached) {
+      if (this.userData.isDetached) {
         return;
       }
 
-      console.log(`[${this.data.innerId}]`, 'stopVoice');
+      console.log(`[${this.data.innerId}] stopVoice in voiceState ${this.data.voiceState}`);
       if (!this.data.voiceState) {
         console.log(`[${this.data.innerId}]`, 'not voicing');
         return;
       }
 
-      console.log(`[${this.data.innerId}]`, 'do stopVoice', this.properties.targetId, this.data.voiceState);
+      console.log(`[${this.data.innerId}]`, 'doStopVoice', this.properties.targetId);
 
       const { voiceFileObj } = this.userData;
       this.userData.voiceFileObj = null;

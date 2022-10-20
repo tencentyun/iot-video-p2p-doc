@@ -20,8 +20,8 @@
       <view>
         <text class="left-btn" wx:if="{{item.showPlay}}" bindtap="playRecord" data-index="{{index}}">播放</text>
         <!-- <text class="right-btn" bindtap="removeFile" data-index="{{index}}">删除</text> -->
-        <text class="right-btn" wx:if="{{!isDevTools}}" bindtap="sendFile" data-index="{{index}}">发送</text>
-        <text class="right-btn" wx:if="{{isDevTools}}" bindtap="saveFileInDevTools" data-index="{{index}}">保存</text>
+        <text class="right-btn" wx:if="{{showSendFile}}" bindtap="sendFile" data-index="{{index}}">发送</text>
+        <text class="right-btn" wx:if="{{showSaveFile}}" bindtap="saveFileInDevTools" data-index="{{index}}">保存</text>
         <text class="right-btn" wx:if="{{item.showSave}}" bindtap="saveToAlbum" data-index="{{index}}">保存到相册</text>
         <!-- <text class="right-btn" wx:if="{{!item.isMP4}}" bindtap="renameMP4" data-index="{{index}}">重命名为mp4</text> -->
       </view>

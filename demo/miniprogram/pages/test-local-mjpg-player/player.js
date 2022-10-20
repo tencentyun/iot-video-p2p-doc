@@ -15,12 +15,13 @@ Page({
     playStatus: '', // '' | 'playing'
     log: '',
   },
-  onLoad(query) {
+  async onLoad(query) {
     this.userData = {
       // 渲染无关的尽量放这里
       playerCtx: null,
       recordManager: null,
       mjpgPath: '',
+      aacPath: '',
     };
 
     const systemInfo = wx.getSystemInfoSync() || {};
@@ -33,6 +34,14 @@ Page({
       const recordManager = getRecordManager(query.dirname);
       this.userData.recordManager = recordManager;
       this.userData.mjpgPath = `${recordManager.baseDir}/${query.filename}`;
+
+      try {
+        const aacName = query.filename.replace(/\.mjpg$/, '.aac');
+        const aacInfo = await recordManager.getFileInfo(aacName);
+        if (aacInfo?.size > 0) {
+          this.userData.aacPath = `${recordManager.baseDir}/${aacName}`;
+        }
+      } catch (err) {}
 
       // 指定了录像的，自动创建
       this.bindCreatePlayer();
@@ -47,6 +56,10 @@ Page({
       icon: 'none',
     });
   },
+  addBothLog(str) {
+    console.log(str);
+    this.addLog(str);
+  },
   addLog(str) {
     this.setData({ log: `${this.data.log}${Date.now()} - ${str}\n` });
   },
@@ -60,7 +73,11 @@ Page({
     this.setData({
       playerReady: true,
       playerSrc: this.userData.mjpgPath,
+      playerAudioSrc: this.userData.aacPath,
     });
+
+    // 自动播放
+    this.userData.mjpgPath && this.bindPlay({ type: 'autoplay' });
   },
   onPlayerError({ detail }) {
     console.error('==== onPlayerError', detail);
@@ -70,6 +87,7 @@ Page({
     this.setData({
       playerReady: false,
       playerSrc: '',
+      playerAudioSrc: '',
       playStatus: '',
     });
     this.bindDestroyPlayer();
@@ -178,47 +196,47 @@ Page({
       playerAudioSrc: '',
     });
   },
-  bindPlay({ currentTarget }) {
+  bindPlay({ type, currentTarget } = {}) {
     if (!this.userData.playerCtx) {
-      console.log('player not ready');
+      console.log('start play but player not ready');
       return;
     }
     if (!this.data.playerSrc) {
-      console.log('not set src');
+      console.log('start play but not set src');
       return;
     }
-    this.addLog(`play ${this.data.playerSrc}`);
+    this.addBothLog(`start play, type ${type}, src ${this.data.playerSrc}`);
     this.setData({
-      playerLoop: parseInt(currentTarget.dataset.loop, 10),
+      playerLoop: parseInt(currentTarget?.dataset?.loop, 10),
       playStatus: 'playing',
     });
     this.userData.playerCtx?.play();
   },
   bindStop() {
     if (!this.userData.playerCtx) {
-      console.log('player not ready');
+      console.log('stop play but player not ready');
       return;
     }
     if (!this.data.playerSrc) {
-      console.log('not set src');
+      console.log('stop play but not set src');
       return;
     }
-    this.addLog('stop');
-    this.userData.playerCtx.stop();
+    this.addBothLog('stop play');
     this.setData({
       playStatus: '',
     });
+    this.userData.playerCtx.stop();
   },
   bindPause() {
     if (!this.userData.playerCtx) {
-      console.log('player not ready');
+      console.log('pause play but player not ready');
       return;
     }
     this.userData.playerCtx?.pause();
   },
   bindResume() {
     if (!this.userData.playerCtx) {
-      console.log('player not ready');
+      console.log('resume play but player not ready');
       return;
     }
     this.userData.playerCtx?.resume();

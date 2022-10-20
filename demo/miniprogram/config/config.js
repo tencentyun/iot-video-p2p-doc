@@ -1,6 +1,6 @@
 /* eslint-disable camelcase, @typescript-eslint/naming-convention */
-import devices from './devices';
-import serverStreams from './streams';
+import { presetDevices, isDeviceCfgValid } from './devices';
+import { presetServerStreams } from './streams';
 
 // 这些是和设备无关的配置
 const config = {
@@ -11,31 +11,35 @@ const config = {
     appSecretKey: 'b62XcOoDcvJOgnibM8iKFVgVsXcdxNda',
     appPackage: 'ios.test.com',
   },
+  presetDevices,
+  presetServerStreams,
 };
 
 // 方便测试用的预置数据
 const totalData = {};
 
-// ipc设备都加进去
-for (const key in devices) {
-  totalData[key] = {
-    p2pMode: 'ipc',
-    targetId: key,
-    ...devices[key],
-  };
-}
 // 最近查看的ipc设备
 const recentIPC = wx.getStorageSync('recentIPC');
-if (recentIPC) {
+if (recentIPC && isDeviceCfgValid(recentIPC)) {
+  console.log('get recentIPC', recentIPC);
   totalData.recentIPC = recentIPC;
 }
 
+// ipc设备都加进去
+for (const key in presetDevices) {
+  totalData[key] = {
+    p2pMode: 'ipc',
+    targetId: key,
+    ...presetDevices[key],
+  };
+}
+
 // server流都加进去
-for (const key in serverStreams) {
+for (const key in presetServerStreams) {
   totalData[key] = {
     p2pMode: 'server',
     targetId: key,
-    ...serverStreams[key],
+    ...presetServerStreams[key],
   };
 }
 

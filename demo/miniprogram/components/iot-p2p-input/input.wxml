@@ -1,17 +1,21 @@
 <view class="component">
   <view class="component-section" wx:if="{{p2pMode === 'ipc'}}">
     <view class="component-section-title">
-      P2P模式: 1v1
-      <view style="float: right">
+      【1v1-{{isMjpgDevice ? '图片流设备' : '视频流设备'}}】
+      <view class="float-right">
         <radio-group bindchange="changeSceneRadio">
           <label wx:for="{{sceneList}}" wx:key="value" class="scene-label"><radio value="{{item.value}}" checked="{{item.checked}}"/>{{item.text}}</label>
         </radio-group>
       </view>
     </view>
     <view class="control-info">
+      <view>
+        <view>设备信息:<text class="text-btn font-small" bindtap="importXp2pInfo">从剪贴板导入</text></view>
+        <view class="small-tip">（productId、deviceName、xp2pInfo 各1行）</view>
+      </view>
       <view class="info-inputs">
         <view wx:for="{{simpleInputs}}" wx:key="field" class="input-item {{item.scene && item.scene !== scene ? 'hide' : ''}}">
-          <view>{{item.text}}:</view>
+          <view wx:if="{{item.text}}">{{item.text}}:</view>
           <view class="weui-cells weui-cells_after-title">
             <view class="weui-cell weui-cell_input">
               <input class="weui-input" type="text" placeholder-class="placeholder"
@@ -28,7 +32,7 @@
           <label><switch type="checkbox" checked="{{item.checked}}" data-field="{{item.field}}" data-index="{{index}}" bindchange="switchSimpleCheck"/>{{item.text}}</label>
         </view>
         <view class="input-item" wx:if="{{scene === 'live'}}">
-          <view>对讲方式:</view>
+          <view>对讲方式:<text class="text-btn font-small" bindtap="copyDocUrl" data-doc="https://mp.weixin.qq.com/wxopen/plugindevdoc?appid=wx1319af22356934bf#6-">查看详细说明</text></view>
           <radio-group bindchange="changeIntercomTypeRadio">
             <label wx:for="{{intercomTypeList}}" wx:key="value">
               <view class="intercom-type-item">
@@ -45,7 +49,7 @@
     </view>
   </view>
   <view class="component-section" wx:if="{{p2pMode === 'server'}}">
-    <view class="component-section-title">P2P模式: 1v多</view>
+    <view class="component-section-title">【1v多】</view>
     <view class="control-info">
       <view class="info-inputs">
         <view class="input-item">
@@ -59,12 +63,12 @@
       </view>
     </view>
   </view>
-  <view class="component-section">
+  <view class="component-section" wx:if="{{isDevTools}}">
     <view class="component-section-title">调试用</view>
     <view class="input-item">
       <label><switch type="checkbox" checked="{{playStreamChecked.flv}}" data-stream="flv" bindchange="switchPlayStream"/>播放flv（取消勾选则只拉数据不播放）</label>
     </view>
-    <view class="input-item">
+    <view class="input-item {{isMjpgDevice ? '' : 'hide'}}">
       <label><switch type="checkbox" checked="{{playStreamChecked.mjpg}}" data-stream="mjpg" bindchange="switchPlayStream"/>播放mjpg（取消勾选则只拉数据不播放）</label>
     </view>
   </view>

@@ -1,13 +1,11 @@
 import config from '../../config/config';
-import { adjustXp2pInfo, compareVersion } from '../../utils';
+import { adjustXp2pInfo, compareVersion, isDevTools } from '../../utils';
 import { getXp2pManager } from '../../lib/xp2pManager';
 
 const xp2pManager = getXp2pManager();
 const { XP2PVersion } = xp2pManager;
 
 const { totalData } = config;
-
-const isDevTools = wx.getSystemInfoSync().platform === 'devtools';
 
 Component({
   behaviors: ['wx://component-export'],
@@ -21,6 +19,7 @@ Component({
     // 这是onLoad时就固定的
     p2pMode: '',
     cfgTargetId: '',
+    isMjpgDevice: false,
 
     // 场景
     scene: 'live',
@@ -41,42 +40,24 @@ Component({
     simpleInputs: [
       {
         field: 'productId',
-        text: 'productId',
+        // text: 'productId',
         value: '',
       },
       {
         field: 'deviceName',
-        text: 'deviceName',
+        // text: 'deviceName',
         value: '',
       },
       {
         field: 'xp2pInfo',
-        text: 'xp2pInfo',
+        // text: 'xp2pInfo',
         value: '',
       },
       {
-        field: 'liveParams',
-        text: 'liveParams',
+        field: 'liveQuality',
+        text: 'liveQuality',
         value: '',
         scene: 'live',
-      },
-      {
-        field: 'liveMjpgParams',
-        text: 'liveMjpgParams',
-        value: '',
-        scene: 'live',
-      },
-      {
-        field: 'playbackParams',
-        text: 'playbackParams',
-        value: '',
-        scene: 'playback',
-      },
-      {
-        field: 'playbackMjpgParams',
-        text: 'playbackMjpgParams',
-        value: '',
-        scene: 'playback',
       },
       {
         field: 'liveStreamDomain',
@@ -90,11 +71,6 @@ Component({
       {
         field: 'needCheckStream',
         text: '播放前先检查能否拉流',
-        checked: false,
-      },
-      {
-        field: 'needMjpg',
-        text: '播放图片流',
         checked: false,
       },
       {
@@ -137,8 +113,11 @@ Component({
 
     // 这些是p2p状态
     targetId: '',
-    flvUrl: '',
+    // 1v1用
+    flvFile: '',
     mjpgFile: '',
+    // 1v多用
+    flvUrl: '',
   },
   lifetimes: {
     created() {
@@ -180,6 +159,7 @@ Component({
         {
           p2pMode: data.p2pMode,
           cfgTargetId: data.targetId || '',
+          isMjpgDevice: typeof data.isMjpgDevice === 'boolean' ? data.isMjpgDevice : false,
           // 1v1用
           simpleInputs,
           simpleChecks,
@@ -222,6 +202,53 @@ Component({
         scene: e.detail.value,
         sceneList,
       });
+    },
+    async importXp2pInfo() {
+      try {
+        const res = await wx.getClipboardData();
+        const errMsg = '格式错误';
+        if (typeof res.data !== 'string') {
+          this.showToast(errMsg);
+          return;
+        }
+        const arr = res.data.split(/\s+/).filter(str => str.length)
+          .map(str => str.replace(/^(productId|deviceName|xp2pInfo):/i, ''));
+        if (arr.length < 3) {
+          this.showToast(errMsg);
+          return;
+        }
+        const [productId, deviceName, xp2pInfo] = arr;
+        console.log('try importXp2pInfo', productId, deviceName, xp2pInfo);
+        if (!/^\w+$/.test(productId)) {
+          this.showToast('productId 格式错误');
+          return;
+        }
+        if (!/^\w+$/.test(deviceName)) {
+          this.showToast('deviceName 格式错误');
+          return;
+        }
+        if (!/^XP2P/.test(xp2pInfo)) {
+          this.showToast('xp2pInfo 格式错误');
+          return;
+        }
+        const newData = {
+          productId,
+          deviceName,
+          xp2pInfo,
+        };
+        const { simpleInputs } = this.data;
+        simpleInputs.forEach(item => {
+          if (item.field in newData) {
+            item.value = newData[item.field];
+          }
+        });
+        this.setData({
+          simpleInputs,
+        });
+        this.showToast('已导入');
+      } catch (err) {
+        this.showToast(err.errMsg);
+      }
     },
     inputSimpleInput(e) {
       const { index } = e.currentTarget.dataset;
@@ -283,15 +310,7 @@ Component({
           return;
         }
         if (sceneType === 'live') {
-          if (!inputValues.liveParams) {
-            this.showToast('please input live params');
-            return;
-          }
-          if (options.needMjpg && !inputValues.liveMjpgParams) {
-            this.showToast('please input live mjpg params');
-            return;
-          }
-          if (options.needMjpg && inputValues.liveStreamDomain) {
+          if (this.data.isMjpgDevice && inputValues.liveStreamDomain) {
             this.showToast('图片流不支持`1v1转1vn`');
             return;
           }
@@ -301,12 +320,8 @@ Component({
           }
         }
         if (sceneType === 'playback') {
-          if (!inputValues.playbackParams) {
-            this.showToast('please input playback params');
-            return;
-          }
-          if (options.needMjpg && !inputValues.playbackMjpgParams) {
-            this.showToast('please input playback mjpg params');
+          if (this.data.isMjpgDevice) {
+            this.showToast('图片流不支持回放');
             return;
           }
         }
@@ -326,20 +341,25 @@ Component({
         }
       }
 
-      let flvUrl = '';
+      let flvFile = '';
       let mjpgFile = '';
+      let flvUrl = '';
       if (this.data.p2pMode === 'ipc') {
-        let flvParams = '';
-        let mjpgParams = '';
-        if (sceneType === 'live') {
-          flvParams = inputValues.liveParams;
-          mjpgParams = inputValues.liveMjpgParams;
-        } else if (sceneType === 'playback') {
-          flvParams = inputValues.playbackParams;
-          mjpgParams = inputValues.playbackMjpgParams;
+        if (this.data.isMjpgDevice) {
+          if (sceneType === 'live') {
+            flvFile = 'ipc.flv?action=live-audio&channel=0';
+            mjpgFile = 'ipc.flv?action=live-mjpg&channel=0';
+          } else if (sceneType === 'playback') {
+            flvFile = 'ipc.flv?action=playback-audio&channel=0';
+            mjpgFile = 'ipc.flv?action=playback-mjpg&channel=0';
+          }
+        } else {
+          if (sceneType === 'live') {
+            flvFile = `ipc.flv?action=live&channel=0&quality=${inputValues.liveQuality || ''}`;
+          } else if (sceneType === 'playback') {
+            flvFile = 'ipc.flv?action=playback&channel=0';
+          }
         }
-        flvUrl = `http://XP2P_INFO.xnet/ipc.p2p.com/ipc.flv?${flvParams}`;
-        mjpgFile = `ipc.flv?${mjpgParams}`;
       } else {
         flvUrl = this.data.inputUrl;
       }
@@ -350,8 +370,9 @@ Component({
         deviceName: inputValues.deviceName,
         xp2pInfo: adjustXp2pInfo(inputValues.xp2pInfo), // 兼容直接填 peername 的情况
         liveStreamDomain: inputValues.liveStreamDomain,
-        flvUrl,
+        flvFile,
         mjpgFile,
+        flvUrl,
       };
     },
     startPlayer() {
@@ -381,9 +402,11 @@ Component({
         const recentIPC = {
           p2pMode: 'ipc',
           targetId: 'recentIPC',
+          isMjpgDevice: this.data.isMjpgDevice,
           ...inputValues,
           options,
         };
+        console.log(`[${this.id}]`, 'set recentIPC', recentIPC);
         totalData.recentIPC = recentIPC;
         wx.setStorageSync('recentIPC', recentIPC);
       }
@@ -397,6 +420,16 @@ Component({
         options,
         onlyp2pMap,
       });
+    },
+    async copyDocUrl(e) {
+      const { doc } = e.currentTarget.dataset;
+      if (!doc) {
+        return;
+      }
+      await wx.setClipboardData({
+        data: doc,
+      });
+      wx.showToast({ title: '文档地址已复制到剪贴板', icon: 'none' });
     },
   },
 });

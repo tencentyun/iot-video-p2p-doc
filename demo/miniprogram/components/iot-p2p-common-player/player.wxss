@@ -26,28 +26,32 @@
   color: white;
 }
 
-.player-container .player-controls-container.left {
+.player-container .player-controls-container {
+  box-sizing: border-box;
   position: absolute;
-  left: 20rpx;
-  bottom: 20rpx;
-}
-.player-container .player-controls-container.right {
-  position: absolute;
-  right: 20rpx;
-  bottom: 20rpx;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20rpx;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
 }
 .player-container .player-controls-container .player-controls {
   display: flex;
+}
+.player-container .player-controls-container .player-controls.left {
+  flex: 1;
 }
 .player-container .player-controls-container .player-controls .player-control-item {
   position: inline-block;
   vertical-align: bottom;
   color: white;
 }
-.player-container .player-controls-container.left .player-controls .player-control-item {
+.player-container .player-controls-container .player-controls.left .player-control-item {
   margin-right: 20rpx;
 }
-.player-container .player-controls-container.right .player-controls .player-control-item {
+.player-container .player-controls-container .player-controls.right .player-control-item {
   margin-left: 20rpx;
 }
 
