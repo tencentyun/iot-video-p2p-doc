@@ -457,7 +457,10 @@ Component({
 
       console.log(`[${this.data.innerId}] pusherCtx.start`);
       this.userData.pusherCtx.start({
-        success,
+        success: (res) => {
+          console.log(`[${this.data.innerId}] pusherCtx.start success`, res);
+          success && success(res);
+        },
         fail: (err) => {
           console.log(`[${this.data.innerId}] pusherCtx.start fail`, err);
           this.userData.writer = null;

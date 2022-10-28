@@ -1,5 +1,5 @@
 import config from '../../config/config';
-import { adjustXp2pInfo, compareVersion, isDevTools } from '../../utils';
+import { adjustXp2pInfo, compareVersion, getDeviceFlags, isDevTools } from '../../utils';
 import { getXp2pManager } from '../../lib/xp2pManager';
 
 const xp2pManager = getXp2pManager();
@@ -341,11 +341,20 @@ Component({
         }
       }
 
+      let xp2pInfo = '';
       let flvFile = '';
       let mjpgFile = '';
       let flvUrl = '';
       if (this.data.p2pMode === 'ipc') {
+        xp2pInfo = adjustXp2pInfo(inputValues.xp2pInfo); // 兼容直接填 peername 的情况
+        const flags = getDeviceFlags(xp2pInfo);
+        console.log(`[${this.id}] device flags`, flags);
         if (this.data.isMjpgDevice) {
+          if (!flags?.mjpg) {
+            // 图片流设备，但是 xp2pInfo 没有 mjpg 标记
+            this.showToast('xp2pInfof flag mismatch, check device type');
+            return;
+          }
           if (sceneType === 'live') {
             flvFile = 'ipc.flv?action=live-audio&channel=0';
             mjpgFile = 'ipc.flv?action=live-mjpg&channel=0';
@@ -354,6 +363,11 @@ Component({
             mjpgFile = 'ipc.flv?action=playback-mjpg&channel=0';
           }
         } else {
+          if (flags?.mjpg) {
+            // 非图片流设备，但是 xp2pInfo 有 mjpg 标记
+            this.showToast('xp2pInfof flag mismatch, check device type');
+            return;
+          }
           if (sceneType === 'live') {
             flvFile = `ipc.flv?action=live&channel=0&quality=${inputValues.liveQuality || ''}`;
           } else if (sceneType === 'playback') {
@@ -368,8 +382,8 @@ Component({
         targetId: this.data.cfgTargetId,
         productId: inputValues.productId,
         deviceName: inputValues.deviceName,
-        xp2pInfo: adjustXp2pInfo(inputValues.xp2pInfo), // 兼容直接填 peername 的情况
         liveStreamDomain: inputValues.liveStreamDomain,
+        xp2pInfo,
         flvFile,
         mjpgFile,
         flvUrl,

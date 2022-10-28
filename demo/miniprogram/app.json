@@ -18,7 +18,7 @@
       "export": "exportForPlugin.js"
     },
     "xp2p": {
-      "version": "3.1.6",
+      "version": "3.1.7",
       "provider": "wx1319af22356934bf"
     }
   },
