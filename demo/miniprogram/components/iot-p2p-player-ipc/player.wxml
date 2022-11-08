@@ -3,20 +3,23 @@
     <iot-p2p-common-player
       wx:if="{{innerOptions}}"
       id="{{playerId}}"
-      playerClass="{{playerClass}} {{isMjpgDevice ? 'hide' : ''}}"
+      class="{{isMjpgDevice ? 'player-only-debug-info' : ''}}"
+      playerClass="{{playerClass}}"
       p2pMode="ipc"
       mode="{{innerOptions.playerRTC ? 'RTC' : 'live'}}"
       muted="{{muted}}"
       targetId="{{targetId}}"
       flvUrl="{{flvUrl}}"
-      autoReplay="{{sceneType === 'live'}}"
       superMuted="{{superMuted}}"
       showControlRightBtns="{{!isMjpgDevice && innerOptions.playerShowControlRightBtns}}"
       productId="{{productId}}"
       deviceName="{{deviceName}}"
       xp2pInfo="{{xp2pInfo}}"
+      sceneType="{{sceneType}}"
       liveStreamDomain="{{liveStreamDomain}}"
       checkFunctions="{{checkFunctions}}"
+      onlyDebugInfo="{{isMjpgDevice}}"
+      showDebugInfo="{{showPlayerDebugInfo}}"
       onlyp2p="{{onlyp2pMap && onlyp2pMap.flv}}"
       bind:playerStateChange="onPlayerStateChange"
       bind:p2pStateChange="onP2PStateChange"
@@ -34,12 +37,17 @@
       mainStreamState="{{streamState}}"
       mainStreamErrMsg="{{playErrMsg}}"
       mjpgFile="{{mjpgFile}}"
+      muted="{{muted}}"
       showControlRightBtns="{{innerOptions.playerShowControlRightBtns}}"
       onlyp2p="{{onlyp2pMap && onlyp2pMap.mjpg}}"
       bind:playerStateChange="onMjpgPlayerStateChange"
       bind:playError="onMjpgPlayError"
       bind:clickRetry="onMjpgClickRetry"
+      bind:changeMuted="onMjpgChangeMuted"
     />
+    <view wx:if="{{innerOptions && isMjpgDevice}}" class="debug-info-switch-container">
+      <view class="debug-info-switch" bindtap="togglePlayerDebugInfo">Audio调试信息</view>
+    </view>
   </view>
   <view class="sections-wrap">
     <view wx:if="{{sceneType === 'live'}}">

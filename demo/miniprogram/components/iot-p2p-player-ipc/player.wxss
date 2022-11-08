@@ -14,6 +14,23 @@
   height: 420rpx;
 }
 
+.player-wrap .player-only-debug-info {
+  position: absolute;
+  width: 100%;
+  bottom: 60rpx;
+}
+.player-wrap .debug-info-switch-container {
+  position: absolute;
+  left: 20rpx;
+  bottom: 80rpx;
+}
+.player-wrap .debug-info-switch-container .debug-info-switch {
+  position: inline-block;
+  vertical-align: bottom;
+  color: white;
+  margin-right: 20rpx;
+}
+
 .sections-wrap {
   box-sizing: border-box;
   position: relative;

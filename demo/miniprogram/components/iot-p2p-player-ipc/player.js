@@ -122,6 +122,9 @@ Component({
 
     playerPaused: false,
 
+    // 图片流设备，也可以显示音频流的调试面板
+    showPlayerDebugInfo: false,
+
     // 这些是控制mjpgPlayer的
     mjpgPlayerId: 'iot-p2p-mjpg-player',
     mjpgPlayer: null,
@@ -204,6 +207,10 @@ Component({
       if (isMjpgDevice) {
         // 图片流设备不支持切换 quality
         innerSections.quality = false;
+      }
+      if (!innerOptions.supportPTZ) {
+        // 设备不支持 ptz
+        innerSections.ptz = false;
       }
       console.log(`[${this.data.innerId}]`, 'innerSections', innerSections);
 
@@ -435,6 +442,14 @@ Component({
       console.log(`[${this.data.innerId}]`, 'call retry');
       this.data.player.retry();
     },
+    onMjpgChangeMuted(e) {
+      console.log(`[${this.data.innerId}]`, 'onMjpgChangeMuted', e.detail);
+      if (!this.data.player) {
+        console.log(`[${this.data.innerId}]`, 'no player');
+        return;
+      }
+      this.setData({ muted: e.detail.muted });
+    },
     // 以下是 voice 的事件
     onVoiceStateChange(e) {
       console.log(`[${this.data.innerId}]`, 'onVoiceStateChange', e.detail.voiceState);
@@ -474,6 +489,9 @@ Component({
       });
     },
     // 以下是用户交互
+    togglePlayerDebugInfo() {
+      this.setData({ showPlayerDebugInfo: !this.data.showPlayerDebugInfo });
+    },
     changeQuality(e) {
       console.log(`[${this.data.innerId}]`, 'changeQuality');
       if (!this.data.p2pReady) {

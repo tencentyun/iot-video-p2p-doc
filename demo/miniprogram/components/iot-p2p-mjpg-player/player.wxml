@@ -22,6 +22,7 @@
     <view wx:if="{{showControlRightBtns}}" class="player-controls-container">
       <view class="player-controls left"></view>
       <view class="player-controls right">
+        <view class="player-control-item" bindtap="changeMuted">{{muted ? 'VOLx' : 'VOL'}}</view>
         <view class="player-control-item" bindtap="snapshotAndSave">Snapshot</view>
       </view>
     </view>

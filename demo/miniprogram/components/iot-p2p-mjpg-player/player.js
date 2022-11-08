@@ -68,6 +68,10 @@ Component({
       type: String,
       value: '',
     },
+    muted: {
+      type: Boolean,
+      value: false,
+    },
     showControlRightBtns: {
       type: Boolean,
       value: true,
@@ -533,6 +537,10 @@ Component({
       this.triggerEvent('clickRetry');
     },
     // 以下是播放器控件相关的
+    changeMuted() {
+      // 要通知外部
+      this.triggerEvent('changeMuted', { muted: !this.data.muted });
+    },
     snapshotAndSave() {
       console.log(`[${this.data.innerId}]`, 'snapshotAndSave');
       snapshotAndSave({
