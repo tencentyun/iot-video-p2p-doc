@@ -10,10 +10,12 @@
  * deviceName: string 摄像头的 deviceName
  * xp2pInfo: string 摄像头的 xp2pInfo
  * liveStreamDomain: string 1v1连接过多时自动转到1v多模式的server域名
- * liveQuality: string 直播清晰度，非必填，standard | high | super，视频流设备默认 standard
+ * liveQuality: string 直播清晰度，非必填，standard | high | super，视频流设备默认 high
  * options:
  *   needCheckStream: boolean 播放前先检查能否拉流，默认 false
+ *   playerRTC: boolean 播放使用RTC模式，需要设备出流采样率16k以上，默认 false
  *   intercomType: 'Recorder' | 'Pusher' 对讲类型，默认 Recorder
+ *   supportPTZ: boolean 是否支持PTZ，默认 false
  */
 
 // 这些是预置的ipc设备
@@ -23,8 +25,9 @@ const devices = {
     productName: 'IPC',
     productId: 'SO1Z9Y787A',
     deviceName: 'cannon_85317409_1',
-    xp2pInfo: 'XP2PkNm8QUONDYGpwc2kuNhIRQ==%2.4.32',
+    xp2pInfo: 'XP2PkNm8QUONDYGr5+fNm+1SUA==%2.4.32',
     options: {
+      playerRTC: true,
       intercomType: 'Pusher',
     },
   },
@@ -34,7 +37,7 @@ const devices = {
     productName: 'MjpgLock',
     productId: '65HUY1C739',
     deviceName: 'yzlock_84641797_1',
-    xp2pInfo: 'XP2PfLGXhL7HQJszsfxiO6Y5eA==%2.4.33m',
+    xp2pInfo: 'XP2PfLGXhL7HQJsBtf9CNaBsKQ==%2.4.33m',
     options: {
       intercomType: 'Pusher',
     },
@@ -44,7 +47,7 @@ const devices = {
 // 补充默认值
 Object.values(devices).forEach((device) => {
   device.isMjpgDevice = typeof device.isMjpgDevice === 'boolean' ? device.isMjpgDevice : false;
-  device.liveQuality = device.liveQuality || 'standard';
+  device.liveQuality = device.liveQuality || 'high';
 });
 
 export const presetDevices = devices;

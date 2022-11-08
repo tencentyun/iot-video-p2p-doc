@@ -9,9 +9,8 @@
       </view>
     </view>
     <view class="control-info">
-      <view>
-        <view>设备信息:<text class="text-btn font-small" bindtap="importXp2pInfo">从剪贴板导入</text></view>
-        <view class="small-tip">（productId、deviceName、xp2pInfo 各1行）</view>
+      <view style="margin-bottom:20rpx">
+        设备信息:<text class="text-btn font-small" bindtap="importXp2pInfo">从剪贴板导入</text>
       </view>
       <view class="info-inputs">
         <view wx:for="{{simpleInputs}}" wx:key="field" class="input-item {{item.scene && item.scene !== scene ? 'hide' : ''}}">

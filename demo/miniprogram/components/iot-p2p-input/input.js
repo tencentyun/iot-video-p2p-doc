@@ -78,6 +78,11 @@ Component({
         text: '播放使用RTC模式',
         checked: true,
       },
+      {
+        field: 'supportPTZ',
+        text: '设备支持PTZ',
+        checked: false,
+      },
     ],
     intercomType: 'Recorder',
     intercomTypeList: [
@@ -211,26 +216,36 @@ Component({
           this.showToast(errMsg);
           return;
         }
-        const arr = res.data.split(/\s+/).filter(str => str.length)
-          .map(str => str.replace(/^(productId|deviceName|xp2pInfo):/i, ''));
-        if (arr.length < 3) {
-          this.showToast(errMsg);
+        const arr = res.data.replace(/[^\w/=%.]/g, ' ').split(/\s+/)
+          .filter(str => str.length >= 10); // 这3个数据的长度都 >= 10
+        let productId;
+        let deviceName;
+        let xp2pInfo;
+        arr.forEach((str) => {
+          if (/^[A-Z0-9]+$/.test(str)) {
+            // 匹配 productId 规则
+            productId = str;
+          } else if (/^[A-Za-z0-9]+_\d+_\d+$/.test(str)) {
+            // 匹配 deviceName 规则
+            deviceName = str;
+          } else if (/^XP2P/.test(str)) {
+            // 匹配 xp2pInfo 规则
+            xp2pInfo = str;
+          }
+        });
+        if (!productId) {
+          this.showToast('未找到有效的 productId');
           return;
         }
-        const [productId, deviceName, xp2pInfo] = arr;
-        console.log('try importXp2pInfo', productId, deviceName, xp2pInfo);
-        if (!/^\w+$/.test(productId)) {
-          this.showToast('productId 格式错误');
+        if (!deviceName) {
+          this.showToast('未找到有效的 deviceName');
           return;
         }
-        if (!/^\w+$/.test(deviceName)) {
-          this.showToast('deviceName 格式错误');
+        if (!xp2pInfo) {
+          this.showToast('未找到有效的 xp2pInfo');
           return;
         }
-        if (!/^XP2P/.test(xp2pInfo)) {
-          this.showToast('xp2pInfo 格式错误');
-          return;
-        }
+        console.log('importXp2pInfo', productId, deviceName, xp2pInfo);
         const newData = {
           productId,
           deviceName,

@@ -18,8 +18,8 @@
     />
   </view>
   <view class="page-section" wx:if="{{recentIPCItem}}">
-    <view class="page-section-title">最近查看设备</view>
-    <view class="small-tip">（V: 视频流设备，M: 图片流设备）</view>
+    <view class="page-section-title">【最近查看设备】</view>
+    <view class="small-tip">设备类型：{{recentIPCItem.isMjpgDevice ? '图片流设备' : '视频流设备'}}</view>
     <button type="primary" class="page-body-button"
       bindtap="gotoPage"
       data-url="/pages/xp2p-demo-1vN/demo?cfg={{recentIPCItem.cfg}}"
@@ -28,7 +28,7 @@
     </button>
   </view>
   <view class="page-section">
-    <view class="page-section-title">1v1-视频流设备</view>
+    <view class="page-section-title">【1v1-视频流设备】</view>
     <button wx:for="{{listVideoDevices}}" wx:key="cfg" type="primary" class="page-body-button"
       bindtap="gotoPage"
       data-url="/pages/xp2p-demo-1vN/demo?cfg={{item.cfg}}"
@@ -37,7 +37,7 @@
     </button>
   </view>
   <view class="page-section">
-    <view class="page-section-title">1v1-图片流设备</view>
+    <view class="page-section-title">【1v1-图片流设备】</view>
     <button wx:for="{{listMjpgDevices}}" wx:key="cfg" type="primary" class="page-body-button"
       bindtap="gotoPage"
       data-url="/pages/xp2p-demo-1vN/demo?cfg={{item.cfg}}"
@@ -46,7 +46,7 @@
     </button>
   </view>
   <view class="page-section">
-    <view class="page-section-title">1v多</view>
+    <view class="page-section-title">【1v多】</view>
     <button wx:for="{{listServerStreams}}" wx:key="cfg" type="primary" class="page-body-button"
       bindtap="gotoPage"
       data-url="/pages/xp2p-demo-1vN/demo?cfg={{item.cfg}}"

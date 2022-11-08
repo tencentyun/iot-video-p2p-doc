@@ -90,7 +90,7 @@ Page({
       recentIPCItem: cfg ? {
         p2pMode: 'ipc',
         cfg: 'recentIPC',
-        title: `${cfg.isMjpgDevice ? 'M' : 'V'}: ${cfg.productId}/${cfg.deviceName}`,
+        title: `${cfg.productId}/${cfg.deviceName}`,
         ...cfg,
       } : null,
     });
