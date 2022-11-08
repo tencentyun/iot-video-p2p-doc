@@ -1,5 +1,5 @@
 <view class="component iot-player {{playerClass}}">
-  <view class="player-container">
+  <view class="player-container" style="{{onlyDebugInfo ? 'display: none' : ''}}">
     <p2p-player
       wx:if="{{playerId && canUseP2P && needPlayer && hasPlayer}}"
       id="{{playerId}}"

@@ -2,7 +2,7 @@
 import { canUseP2PIPCMode, canUseP2PServerMode, getParamValue, snapshotAndSave } from '../../utils';
 import { getXp2pManager } from '../../lib/xp2pManager';
 import { getRecordManager, MAX_FILE_SIZE_IN_M } from '../../lib/recordManager';
-import { PlayerStateEnum, P2PStateEnum, StreamStateEnum, totalMsgMap, httpStatusErrorMsgMap, isLocalServerError } from './common';
+import { PlayerStateEnum, P2PStateEnum, StreamStateEnum, totalMsgMap, httpStatusErrorMsgMap, isLocalServerError, isCloseByLivePlayer } from './common';
 import { PlayStepEnum, PlayStat } from './stat';
 
 // 覆盖 console
@@ -60,10 +60,6 @@ Component({
       type: String,
       value: '',
     },
-    autoReplay: {
-      type: Boolean,
-      value: false,
-    },
     cacheThreshold: {
       type: Number,
       value: 0,
@@ -97,6 +93,10 @@ Component({
       type: String,
       value: '',
     },
+    sceneType: {
+      type: String,
+      value: 'live',
+    },
     // 以下 server 模式用
     codeUrl: {
       type: String,
@@ -114,6 +114,14 @@ Component({
       value: {},
     },
     // 以下仅供调试，正式组件不需要
+    onlyDebugInfo: {
+      type: Boolean,
+      value: false,
+    },
+    showDebugInfo: {
+      type: Boolean,
+      value: false,
+    },
     onlyp2p: {
       type: Boolean,
       value: false,
@@ -124,9 +132,6 @@ Component({
     p2pPlayerVersion: xp2pManager.P2PPlayerVersion,
     xp2pVersion: xp2pManager.XP2PVersion,
     xp2pUUID: xp2pManager.uuid,
-
-    // page相关
-    pageHideTimestamp: 0,
 
     // 这是attached时就固定的
     streamExInfo: null,
@@ -172,7 +177,6 @@ Component({
     livePlayerInfoStr: '',
 
     // debug用
-    showDebugInfo: false,
     isSlow: false,
     isRecording: false,
 
@@ -208,20 +212,22 @@ Component({
         }
       }
     },
+    showDebugInfo(val) {
+      if (val) {
+        // 显示调试面板，把 livePlayerInfoStr 更新到最新
+        this.refreshLivePlayerInfoStr();
+      }
+    },
   },
   pageLifetimes: {
     show() {
-      const hideTime = this.data.pageHideTimestamp ? Date.now() - this.data.pageHideTimestamp : 0;
+      const hideTime = this.userData.pageHideTimestamp ? Date.now() - this.userData.pageHideTimestamp : 0;
       this.console.log(`[${this.data.innerId}]`, '==== page show, hideTime', hideTime);
-      this.setData({
-        pageHideTimestamp: 0,
-      });
+      this.userData.pageHideTimestamp = 0;
     },
     hide() {
       this.console.log(`[${this.data.innerId}]`, '==== page hide');
-      this.setData({
-        pageHideTimestamp: Date.now(),
-      });
+      this.userData.pageHideTimestamp = Date.now();
     },
   },
   lifetimes: {
@@ -233,6 +239,7 @@ Component({
       // 渲染无关，不放在data里，以免影响性能
       this.userData = {
         isDetached: false,
+        pageHideTimestamp: 0,
         playerComp: null,
         playerCtx: null,
         chunkTime: 0,
@@ -543,8 +550,9 @@ Component({
       this.console.log(`[${this.data.innerId}]`, `==== onPlayerClose in p2pState ${this.data.p2pState}, playerPaused ${this.data.playerPaused}, needPauseStream ${this.data.needPauseStream}`, detail);
 
       let newStreamState = StreamStateEnum.StreamIdle;
-      const code = detail?.error?.code;
-      if (code === 'LIVE_PLAYER_CLOSED' && !this.data.playerPaused && !this.data.pageHideTimestamp) {
+
+      const isLivePlayerClose = isCloseByLivePlayer(detail);
+      if (isLivePlayerClose && !this.data.playerPaused && !this.userData.pageHideTimestamp) {
         // live-player 断开请求，不是暂停也不是隐藏，可能是数据缓存太多播放器开始调控了
         const { livePlayerInfo } = this.userData;
         const cache = Math.max(livePlayerInfo?.videoCache || 0, livePlayerInfo?.audioCache || 0);
@@ -710,19 +718,7 @@ Component({
       const cache = Math.max(livePlayerInfo?.videoCache || 0, livePlayerInfo?.audioCache || 0);
       if (this.properties.cacheThreshold > 0 && cache > this.properties.cacheThreshold) {
         // cache太多了，停止播放
-        this.stopStream();
-        this.tryStopPlayer({
-          success: () => {
-            if (!this.properties.autoReplay) {
-              return;
-            }
-            this.changeState({
-              streamState: StreamStateEnum.StreamWaitPull,
-            });
-            this.console.log(`[${this.data.innerId}]`, 'trigger replay');
-            this.userData.playerCtx.play();
-          },
-        });
+        this.stopStreamAndReplay();
       }
     },
     onFullScreenChange({ detail }) {
@@ -1210,16 +1206,21 @@ Component({
         this.dataCallback(firstChunkDataInPaused);
       }
     },
-    tryStopPlayer(params) {
+    tryStopPlayer() {
       this.setData({
         playerPaused: false,
         needPauseStream: false,
       });
-      if (this.userData.playerCtx) {
-        try {
-          this.userData.playerCtx.stop(params);
-        } catch (err) {}
+      if (!this.userData.playerCtx) {
+        return Promise.resolve({});
       }
+      return new Promise((resolve, reject) => {
+        this.console.log(`[${this.data.innerId}] playerCtx.stop`);
+        this.userData.playerCtx.stop({
+          success: res => resolve(res),
+          fail: err => reject(err),
+        });
+      });
     },
     tryTriggerPlay(reason) {
       this.console.log(
@@ -1330,25 +1331,26 @@ Component({
       }
       return true;
     },
+    async stopStreamAndReplay(newStreamState) {
+      this.stopStream(newStreamState);
+
+      await this.tryStopPlayer();
+
+      this.changeState({
+        streamState: StreamStateEnum.StreamWaitPull,
+      });
+      this.console.log(`[${this.data.innerId}]`, 'trigger replay');
+      this.userData.playerCtx.play();
+    },
     // 自动replay
-    checkNetworkAndReplay(newStreamState) {
+    async checkNetworkAndReplay(newStreamState) {
       if (!this.checkCanRetry()) {
         return;
       }
 
       // 自动重新开始
       this.console.log(`[${this.data.innerId}]`, 'auto replay');
-      this.stopStream(newStreamState);
-
-      this.tryStopPlayer({
-        success: () => {
-          this.changeState({
-            streamState: StreamStateEnum.StreamWaitPull,
-          });
-          this.console.log(`[${this.data.innerId}]`, 'trigger replay');
-          this.userData.playerCtx.play();
-        },
-      });
+      this.stopStreamAndReplay(newStreamState);
     },
     // 手动retry
     onClickRetry() {
@@ -1400,19 +1402,19 @@ Component({
         this.console.log(`[${this.data.innerId}]`, `keep waiting in p2pState ${this.data.p2pState}`);
       }
     },
-    // 处理播放错误，detail: { msg: string }
-    handlePlayError(type, detail) {
-      this.console.log(`[${this.data.innerId}] handlePlayError`, type);
+    // 处理播放错误
+    handlePlayError(type, { msg, detail, isFatalError } = {}) {
       if (this.userData.isDetached) {
         this.console.info(`[${this.data.innerId}] handlePlayError after detached, ignore`);
         return;
       }
 
+      this.console.error(`[${this.data.innerId}] handlePlayError`, type);
+
       if (!this.checkCanRetry()) {
         return;
       }
 
-      const isFatalError = detail?.isFatalError;
       if (isFatalError) {
         // 不可恢复错误，断开p2p连接
         if (!this.isP2PInErrorState(this.data.p2pState)) {
@@ -1429,23 +1431,38 @@ Component({
       this.triggerEvent('playError', {
         errType: type,
         errMsg: totalMsgMap[type] || '播放失败',
-        errDetail: detail,
+        errDetail: { msg, detail, isFatalError },
         isFatalError,
       });
     },
     // 处理播放结束
-    handlePlayEnd(newStreamState) {
-      this.console.log(`[${this.data.innerId}] handlePlayEnd`, newStreamState);
+    async handlePlayEnd(newStreamState, { msg, detail } = {}) {
       if (this.userData.isDetached) {
         this.console.info(`[${this.data.innerId}] handlePlayEnd after detached, ignore`);
         return;
       }
 
-      if (this.properties.autoReplay) {
+      this.console.info(`[${this.data.innerId}] handlePlayEnd`, newStreamState);
+
+      this.stopStream(newStreamState);
+      await this.tryStopPlayer();
+
+      if (newStreamState === StreamStateEnum.StreamDataEnd) {
+        // 推流结束
+        this.triggerEvent('playEnd', {
+          errType: newStreamState,
+          errMsg: totalMsgMap[newStreamState] || '播放结束',
+          errDetail: { msg, detail },
+        });
+        return;
+      }
+
+      if (this.properties.sceneType === 'live' && !this.userData.pageHideTimestamp) {
+        // 自动重试
         this.checkNetworkAndReplay(newStreamState);
       } else {
-        this.stopStream(newStreamState);
-        this.tryStopPlayer();
+        // 不自动重试的才抛出错误
+        this.handlePlayError(newStreamState, { msg, detail });
       }
     },
     onP2PServiceMessage(targetId, event, subtype, detail) {
@@ -1668,12 +1685,7 @@ Component({
     },
     // 以下是调试面板相关的
     toggleDebugInfo() {
-      const newVal = !this.data.showDebugInfo;
-      if (newVal) {
-        // 显示调试面板，把 livePlayerInfoStr 更新到最新
-        this.refreshLivePlayerInfoStr();
-      }
-      this.setData({ showDebugInfo: newVal });
+      this.setData({ showDebugInfo: !this.data.showDebugInfo });
     },
     toggleSlow() {
       this.setData({ isSlow: !this.data.isSlow });

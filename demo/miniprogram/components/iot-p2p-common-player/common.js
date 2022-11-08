@@ -76,7 +76,7 @@ export const totalMsgMap = {
   [StreamStateEnum.StreamHttpStatusError]: '拉流失败',
   [StreamStateEnum.StreamDataReceived]: '',
   [StreamStateEnum.StreamDataPause]: '',
-  [StreamStateEnum.StreamDataEnd]: '播放中断或结束',
+  [StreamStateEnum.StreamDataEnd]: '播放结束',
   [StreamStateEnum.StreamError]: '播放失败',
 };
 
@@ -105,3 +105,12 @@ export const isStreamError = (streamState) => [
 ].indexOf(streamState) >= 0;
 
 export const isLocalServerError = detail => /errCode:-1004(\D|$)/.test(detail?.message) || /Failed to connect to/.test(detail?.message);
+
+export const isCloseByLivePlayer = (detail) => {
+  if (detail?.error?.code === 'LIVE_PLAYER_CLOSED') {
+    return true;
+  }
+  if (detail?.error?.code === 'TRANSMISSION_ERROR') {
+    return detail?.error?.errDetail.errcode === 2;
+  }
+};
