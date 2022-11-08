@@ -1,5 +1,5 @@
 <view class="component iot-pusher">
-  <view class="pusher-container">
+  <view class="pusher-container" style="{{onlyDebugInfo ? 'display: none' : ''}}">
     <p2p-pusher
       wx:if="{{hasPusher}}"
       id="{{pusherId}}"
@@ -22,7 +22,7 @@
       bind:netstatus="onLivePusherNetStatus"
     />
     <view class="pusher-message">{{pusherMsg}}</view>
-    <view class="pusher-controls-container right">
+    <view wx:if="{{showControlRightBtns}}" class="pusher-controls-container right">
       <view class="pusher-controls">
         <view class="pusher-control-item" bindtap="changeEnableCamera">{{enableCamera ? 'enableCamera' : 'disableCamera'}}</view>
         <view class="pusher-control-item" bindtap="changeEnableMic">{{enableMic ? 'enableMic' : 'disableMic'}}</view>

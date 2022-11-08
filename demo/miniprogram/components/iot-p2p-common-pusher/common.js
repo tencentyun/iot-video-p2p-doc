@@ -5,6 +5,7 @@ export const PusherStateEnum = {
   PusherReady: 'PusherReady',
   PusherError: 'PusherError',
   LivePusherError: 'LivePusherError',
+  LivePusherStartError: 'LivePusherStartError',
   LivePusherStateError: 'LivePusherStateError',
   LocalServerError: 'LocalServerError',
 };
@@ -14,6 +15,7 @@ export const totalMsgMap = {
   [PusherStateEnum.PusherReady]: '创建Pusher成功',
   [PusherStateEnum.PusherError]: '创建Pusher失败',
   [PusherStateEnum.LivePusherError]: 'LivePusher错误',
+  [PusherStateEnum.LivePusherStartError]: '启动推流失败',
   [PusherStateEnum.LivePusherStateError]: '推流失败',
   [PusherStateEnum.LocalServerError]: '本地RtmpServer错误',
   PusherPushing: '推流中...',

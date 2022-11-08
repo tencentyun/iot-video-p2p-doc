@@ -11,6 +11,9 @@
       bind:pushError="onPusherPushError"
     />
     <view>intercomType: {{intercomType}}</view>
+    <view>needCrypto: {{needCrypto}}
+      <text class="text-btn float-right margin-left {{voiceState ? 'disabled' : ''}}" bindtap="toggleCrypto">{{needCrypto ? '关闭加密' : '开启加密'}}</text>
+    </view>
     <view>voiceState: {{voiceState}}</view>
     <view class="group-button-area">
       <button bindtap="startVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState && voiceState !== 'error')}}">
@@ -22,6 +25,9 @@
     </view>
   </view>
   <view wx:elif="{{needPusher}}">
+    <view>
+      Pusher组件对讲 <text class="text-btn {{(pusherId && !isModifyPusher) ? '' : 'disabled'}}" bindtap="togglePusherDebugInfo">调试信息</text>
+    </view>
     <iot-p2p-common-pusher
       wx:if="{{pusherId && !isModifyPusher}}"
       id="{{pusherId}}"
@@ -31,18 +37,23 @@
       enableAgc="{{pusherProps.enableAgc}}"
       enableAns="{{pusherProps.enableAns}}"
       audioQuality="{{pusherProps.highQuality ? 'high' : 'low'}}"
+      minBitrate="{{100}}"
+      maxBitrate="{{200}}"
       ignoreEmptyAudioTag="{{pusherProps.ignoreEmptyAudioTag}}"
-      bind:pusherStateChange="onPusherStateChange"
+      fillAudioTag="{{pusherProps.fillAudioTag}}"
+      onlyDebugInfo
+      showDebugInfo="{{showPusherDebugInfo}}"
       bind:pusherStartPush="onPusherStartPush"
       bind:pusherClose="onPusherClose"
       bind:pushError="onPusherPushError"
-      style="display: none"
     />
     <view>intercomType: {{intercomType}}</view>
+    <view>needCrypto: {{needCrypto}}
+      <text class="text-btn float-right margin-left {{voiceState ? 'disabled' : ''}}" bindtap="toggleCrypto">{{needCrypto ? '关闭加密' : '开启加密'}}</text>
+    </view>
     <view>voiceState: {{voiceState}}</view>
-    <view>pusherReady: {{pusherReady}}</view>
     <view>pusherProps:
-      <text class="text-btn float-right" bindtap="toggleModifyPusher">{{!isModifyPusher ? '修改 pusher 属性' : '修改完成'}}</text>
+      <text class="text-btn float-right margin-left" bindtap="toggleModifyPusher">{{!isModifyPusher ? '修改 pusher 属性' : '修改完成'}}</text>
     </view>
     <view wx:for="{{pusherPropChecks}}" wx:key="field" class="prop-item">
       <label>
@@ -57,10 +68,10 @@
       </label>
     </view>
     <view class="group-button-area">
-      <button bindtap="startVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState && voiceState !== 'error')}}">
+      <button bindtap="startVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState && voiceState !== 'error') || isModifyPusher}}">
         对讲
       </button>
-      <button bindtap="startVoice" data-need-record="1" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState && voiceState !== 'error')}}">
+      <button bindtap="startVoice" data-need-record="1" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState && voiceState !== 'error') || isModifyPusher}}">
         对讲+录制
       </button>
       <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !voiceState || voiceState === 'error'}}">
@@ -68,9 +79,30 @@
       </button>
       <text class="text-btn float-right margin-left" bindtap="goRecordList">录音管理</text>
     </view>
+    <view>
+      语音文件模拟对讲
+      <text class="text-btn margin-left" bindtap="chooseVoiceFile">{{ voiceDataFileSize > 0 ? (voiceDataFileSize + ' B'): '选择语音文件'}}</text>
+    </view>
+    <view class="group-button-area">
+      <button bindtap="startVoice" data-from-file="1" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || (voiceState && voiceState !== 'error') || isModifyPusher}}">
+        对讲
+      </button>
+      <button bindtap="startWriteVoiceData" class="group-button" type="primary" size="mini" disabled="{{!useVoiceFile || voiceState !== 'starting'}}">
+        发送
+      </button>
+      <button bindtap="startWriteVoiceData" data-quick="1" class="group-button" type="primary" size="mini" disabled="{{!useVoiceFile || voiceState !== 'starting'}}">
+        发送-快
+      </button>
+      <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!p2pReady || !voiceState || voiceState === 'error'}}">
+        挂断
+      </button>
+    </view>
   </view>
   <view wx:else>
     <view>intercomType: {{intercomType}}</view>
+    <view>needCrypto: {{needCrypto}}
+      <text class="text-btn float-right margin-left {{voiceState ? 'disabled' : ''}}" bindtap="toggleCrypto">{{needCrypto ? '关闭加密' : '开启加密'}}</text>
+    </view>
     <view>voiceState: {{voiceState}}</view>
     <view>对讲期间:</view>
     <view>

@@ -19,6 +19,79 @@ const printBuffer = (buffer) => {
   }
 };
 
+// TagType(1B) + DataSize(3B) + Timestamp(3B) + TimestampExtended(1B) + StreamID(3B) + TagData + PreviousTagSize(4B)
+const fixTagTime = (detail, { startClock, startTime } = {}) => {
+  const uint8Array = new Uint8Array(detail.data);
+  const now = Date.now();
+  let tagTime = now;
+  if (startClock && startTime) {
+    const tagClockAfterStart = detail.clock - startClock;
+    const localTimeAfterStart = now - startTime;
+    if (tagClockAfterStart < localTimeAfterStart) {
+      tagTime = startTime + tagClockAfterStart;
+    }
+  }
+  uint8Array[4] = (tagTime & 0x00FF0000) >> 16;
+  uint8Array[5] = (tagTime & 0x0000FF00) >> 8;
+  uint8Array[6] = (tagTime & 0x000000FF);
+  uint8Array[7] = (tagTime & 0xFF000000) >> 24;
+  detail.data = uint8Array.buffer;
+  return detail;
+};
+
+const AUDIO_TAG_RAW_DATA_MIN_SIZE = 770;
+const fillTagData = (detail, minSize = 0) => {
+  const oldBuffer = detail.data;
+  const oldTagDataSize = oldBuffer.byteLength - 15; // 15 = 开头tagHeader 11B + 结尾tagSize 4B
+  if (oldTagDataSize >= minSize) {
+    // 数据足够
+    return detail;
+  }
+
+  const newTagDataSize = minSize;
+  const newBuffer = new ArrayBuffer(newTagDataSize + 15); // 15 = 开头tagHeader 11B + 结尾tagSize 4B
+  const dstUint8Array = new Uint8Array(newBuffer);
+
+  dstUint8Array[0] = 0x08; // audioTag
+  dstUint8Array[1] = (newTagDataSize & 0xFF0000) >> 16;
+  dstUint8Array[2] = (newTagDataSize & 0x00FF00) >> 8;
+  dstUint8Array[3] = (newTagDataSize & 0x0000FF);
+
+  const srcUint8Array = new Uint8Array(oldBuffer).slice(4, 11 + oldTagDataSize); // Timestamp ... TagData
+  dstUint8Array.set(srcUint8Array, 4);
+
+  const newTagSize = 11 + newTagDataSize;
+  dstUint8Array[dstUint8Array.length - 4] = (newTagSize & 0xFF000000) >> 24;
+  dstUint8Array[dstUint8Array.length - 3] = (newTagSize & 0x00FF0000) >> 16;
+  dstUint8Array[dstUint8Array.length - 2] = (newTagSize & 0x0000FF00) >> 8;
+  dstUint8Array[dstUint8Array.length - 1] = (newTagSize & 0x000000FF);
+
+  detail.data = newBuffer;
+
+  return detail;
+};
+
+// test start
+// const testFillTagData = () => {
+//   console.log('==== testFillTagData');
+//   const oldBuffer0 = new Uint8Array([
+//     0x08, 0x00, 0x00, 0x04, 0xd7, 0xae, 0xbb, 0x50, 0x00, 0x00, 0x00,
+//     0xAF, 0x00, 0x14, 0x08,
+//     0x00, 0x00, 0x00, 0x0F,
+//   ]);
+//   const oldBuffer1 = new Uint8Array([
+//     0x08, 0x00, 0x00, 0x04, 0xd7, 0xae, 0xbb, 0x50, 0x00, 0x00, 0x00,
+//     0xAF, 0x01, 0x11, 0x22, 0x33, 0x44,
+//     0x00, 0x00, 0x00, 0x11,
+//   ]);
+//   const newDetail0 = fillTagData({ data: oldBuffer0, params: { aacPacketType: 0 } }, AUDIO_TAG_RAW_DATA_MIN_SIZE);
+//   printBuffer(newDetail0.data);
+//   const newDetail1 = fillTagData({ data: oldBuffer1 }, AUDIO_TAG_RAW_DATA_MIN_SIZE);
+//   printBuffer(newDetail1.data);
+// };
+// testFillTagData();
+// test end
+
 let pusherSeq = 0;
 
 Component({
@@ -55,7 +128,24 @@ Component({
       value: false,
     },
     // 以下是自己的属性
+    fillAudioTag: {
+      type: Boolean,
+      value: false,
+    },
     needLivePusherInfo: {
+      type: Boolean,
+      value: true,
+    },
+    showControlRightBtns: {
+      type: Boolean,
+      value: true,
+    },
+    // 以下仅供调试，正式组件不需要
+    onlyDebugInfo: {
+      type: Boolean,
+      value: false,
+    },
+    showDebugInfo: {
       type: Boolean,
       value: false,
     },
@@ -114,7 +204,6 @@ Component({
 
       const pusherId = `${this.data.innerId}-pusher`; // 这是 p2p-pusher 组件的id，不是自己的id
       this.setData({
-        hasPusher: true,
         pusherId,
         acceptLivePusherEvents: {
           ...this.data.acceptLivePusherEvents,
@@ -122,7 +211,9 @@ Component({
         },
         flvFunctions: {
           onFlvHeader: this.handleFlvHeader.bind(this), // 不直接用 handleFlvChunk 是为了打个log
-          onFlvAudioTag: detail => this.handleFlvTag(detail, 'audioTag'),
+          onFlvAudioTag: this.properties.fillAudioTag
+            ? detail => this.fillAndHandleAudioTag(detail)
+            : detail => this.handleFlvTag(detail, 'audioTag'),
           onFlvVideoTag: detail => this.handleFlvTag(detail, 'videoTag'),
           onFlvDataTag: detail => this.handleFlvTag(detail, 'dataTag'),
         },
@@ -139,6 +230,7 @@ Component({
   },
   export() {
     return {
+      prepare: this.prepare.bind(this),
       start: this.start.bind(this),
       stop: this.stop.bind(this),
     };
@@ -181,6 +273,7 @@ Component({
       }
 
       this.changeState({
+        hasPusher: true,
         pusherState: PusherStateEnum.PusherPreparing,
       });
     },
@@ -197,6 +290,11 @@ Component({
       this.changeState({
         pusherState: PusherStateEnum.PusherReady,
       });
+
+      if (this.userData.writer) {
+        // 已经触发对讲了
+        this.doStartPusher();
+      }
     },
     onPusherStartPush({ type, detail }) {
       console.log(`[${this.data.innerId}]`, '==== onPusherStartPush', detail);
@@ -225,35 +323,60 @@ Component({
     handleFlvHeader(detail) {
       const headerTime = Date.now();
       console.log(`[${this.data.innerId}] ==== handleFlvHeader, ${detail.data?.byteLength}B, headerTime ${headerTime}`);
-      printBuffer(detail.data);
-      if (this.userData.flvTagStat) {
-        this.userData.flvTagStat.headerTime = headerTime;
+
+      // 一开始流信息总是0，根据pusher参数修改一下
+      let flag = 0;
+      if (this.properties.enableCamera) {
+        flag |= 1;
       }
+      if (this.properties.enableMic) {
+        flag |= 4;
+      }
+      const uint8Arr = new Uint8Array(detail.data);
+      uint8Arr[4] = flag;
+      detail.data = uint8Arr.buffer;
+
+      printBuffer(detail.data);
+
+      this.userData.flvTagStat.headerTime = headerTime;
       this.handleFlvChunk(detail);
     },
-    handleFlvTag(detail, tagType) {
-      if (this.userData.flvTagStat) {
-        const { flvTagStat } = this.userData;
-        flvTagStat.tagCount++;
-        if (flvTagStat.tagCount === 1) {
-          flvTagStat.startClock = detail.clock;
-          flvTagStat.startTime = Date.now();
-          console.log(
-            `[${this.data.innerId}] ==== first tag, ${tagType} ${detail.data.byteLength}B,`,
-            `tagClock ${flvTagStat.startClock}, localTime ${flvTagStat.startTime}, afterHeader ${flvTagStat.startTime - flvTagStat.headerTime}`,
-            detail.params,
-          );
-        } else if (flvTagStat.tagCount <= 20 || flvTagStat.tagCount % 100 === 0) {
-          const date = new Date();
-          const tagClockAfterStart = detail.clock - flvTagStat.startClock;
-          const localTimeAfterStart = date.getTime() - flvTagStat.startTime;
-          const localDelay = localTimeAfterStart - tagClockAfterStart;
-          console.log(
-            `[${this.data.innerId}] ==== tag ${flvTagStat.tagCount}, ${tagType} ${detail.data.byteLength}B,`,
-            `tagClockAfterStart ${tagClockAfterStart}, localTimeAfterStart ${localTimeAfterStart}, diff ${localDelay}`,
-          );
+    fillAndHandleAudioTag(detail) {
+      if (detail?.params?.aacPacketType === 0) {
+        // 是 aac sequence header
+      } else {
+        // 是 aac raw
+        if (this.userData.flvTagStat.tagCount <= 20) {
+          console.log(`[${this.data.innerId}] fillTagData, audioTag ori ${detail.data.byteLength}B`);
         }
+        fillTagData(detail, AUDIO_TAG_RAW_DATA_MIN_SIZE);
       }
+      this.handleFlvTag(detail, 'audioTag');
+    },
+    handleFlvTag(detail, tagType) {
+      const { flvTagStat } = this.userData;
+      flvTagStat.tagCount++;
+      if (flvTagStat.tagCount === 1) {
+        // 第1个tag，记录起始信息
+        flvTagStat.startClock = detail.clock;
+        flvTagStat.startTime = Date.now();
+        console.log(
+          `[${this.data.innerId}] ==== first tag, ${tagType} ${detail.data.byteLength}B,`,
+          `tagClock ${flvTagStat.startClock}, localTime ${flvTagStat.startTime}, afterHeader ${flvTagStat.startTime - flvTagStat.headerTime}`,
+          detail.params,
+        );
+      } else if (flvTagStat.tagCount <= 20 || flvTagStat.tagCount % 100 === 0) {
+        // 调试用
+        const date = new Date();
+        const tagClockAfterStart = detail.clock - flvTagStat.startClock;
+        const localTimeAfterStart = date.getTime() - flvTagStat.startTime;
+        const localDelay = localTimeAfterStart - tagClockAfterStart;
+        console.log(
+          `[${this.data.innerId}] ==== tag ${flvTagStat.tagCount}, ${tagType} ${detail.data.byteLength}B,`,
+          `tagClockAfterStart ${tagClockAfterStart}, localTimeAfterStart ${localTimeAfterStart}, diff ${localDelay}`,
+        );
+      }
+      fixTagTime(detail, this.userData.flvTagStat);
       this.handleFlvChunk(detail);
     },
     handleFlvChunk(detail) {
@@ -272,17 +395,14 @@ Component({
       if (code === 'WECHAT_SERVER_ERROR') {
         pusherState = PusherStateEnum.LocalServerError;
         xp2pManager.needResetLocalRtmpServer = true;
-        this.stop();
-        this.changeState({
-          hasPusher: false,
-          pusherState,
-        });
-      } else {
-        this.changeState({
-          pusherState,
-        });
       }
-      this.handlePushError(pusherState, { msg: `p2pPusherError: ${code}` });
+      const hasStarted = !!this.userData.writer;
+      this.stop();
+      this.changeState({
+        hasPusher: false,
+        pusherState,
+      });
+      hasStarted && this.handlePushError(pusherState, { msg: `p2pPusherError: ${code}`, detail });
     },
     onLivePusherError({ detail }) {
       if (detail.errCode === 10003 || detail.errCode === 10004) {
@@ -293,12 +413,15 @@ Component({
       }
       console.error(`[${this.data.innerId}]`, '==== onLivePusherError', detail);
       const pusherState = PusherStateEnum.LivePusherError;
+      const hasStarted = !!this.userData.writer;
+      this.stop();
       this.changeState({
+        hasPusher: false,
         pusherState,
       });
       // 其他错误，比如没有开通live-pusher组件权限
       // 参考：https://developers.weixin.qq.com/miniprogram/dev/component/live-pusher.html
-      this.handlePushError(pusherState, { msg: livePusherErrMsgMap[detail.errCode] || `livePusherError: ${detail.errMsg}`, detail });
+      hasStarted && this.handlePushError(pusherState, { msg: livePusherErrMsgMap[detail.errCode] || `livePusherError: ${detail.errMsg}`, detail });
     },
     onLivePusherStateChange({ detail }) {
       if (!this.userData.writer) {
@@ -326,17 +449,23 @@ Component({
           });
           break;
         */
-        case -1307: // live-pusher断连，且经多次重连抢救无效，更多重试请自行重启推流
+        case -1307: {
+          // live-pusher断连，且经多次重连抢救无效，更多重试请自行重启推流
           // 到这里应该已经触发过 onPusherClose 了
           console.error(`[${this.data.innerId}]`, '==== onLivePusherStateChange', detail.code, detail.message);
+          const pusherState = xp2pManager.needResetLocalRtmpServer
+            ? PusherStateEnum.LocalServerError
+            : PusherStateEnum.LivePusherStateError;
+          this.stop();
           this.changeState({
-            pusherState: PusherStateEnum.LivePusherStateError,
+            pusherState,
           });
-          this.handlePushError(PusherStateEnum.LivePusherStateError, {
+          this.handlePushError(pusherState, {
             msg: `livePusherStateChange: ${detail.code} ${detail.message}`,
             detail,
           });
           break;
+        }
         default:
           // 这些不特别处理，打个log
           if ((detail.code >= 1101 && detail.code < 1200)
@@ -423,24 +552,32 @@ Component({
         errDetail: detail,
       });
     },
-    start({ writer, success, fail, complete } = {}) {
-      console.log(`[${this.data.innerId}] start, hasPusherCtx: ${!!this.userData.pusherCtx}, hasWriter: ${!!this.userData.writer}`);
-      if (!writer || !writer.addChunk) {
-        fail && fail({ errMsg: 'writer invalid' });
-        complete && complete();
-        return;
-      }
-      if (!this.userData.pusherCtx) {
-        fail && fail({ errMsg: 'pusher not ready' });
-        complete && complete();
+    prepare() {
+      console.log(`[${this.data.innerId}] prepare, pusherState: ${this.data.pusherState}`);
+      if ([PusherStateEnum.PusherPreparing, PusherStateEnum.PusherReady].includes(this.data.pusherState)) {
+        console.log(`[${this.data.innerId}] prepare, already ${this.data.pusherState}`);
         return;
       }
 
-      if (this.userData.writer) {
-        fail && fail({ errMsg: 'already started' });
-        complete && complete();
-        return;
+      this.setData({
+        hasPusher: false,
+        pusherState: PusherStateEnum.PusherIdle,
+      });
+      wx.nextTick(() => {
+        this.createPusher();
+      });
+    },
+    start({ writer } = {}) {
+      console.log(`[${this.data.innerId}] start, pusherState: ${this.data.pusherState}, hasPusherCtx: ${!!this.userData.pusherCtx}, hasWriter: ${!!this.userData.writer}`);
+      if (!writer || !writer.addChunk) {
+        throw { errMsg: 'writer invalid' };
       }
+
+      if (this.userData.writer) {
+        throw { errMsg: 'already started' };
+      }
+
+      this.clearStreamData();
 
       const addChunkInner = (data, _params) => {
         if (!data || !data.byteLength) {
@@ -450,38 +587,48 @@ Component({
         writer.addChunk(data);
       };
 
-      this.clearStreamData();
       this.userData.writer = writer;
       this.addChunkInner = addChunkInner;
       this.setData({ hasWriter: true });
 
+      if (!this.userData.pusherCtx) {
+        console.log(`[${this.data.innerId}] no pusherCtx, pusherState ${this.data.pusherState}`);
+        if (this.data.pusherState === PusherStateEnum.PusherPreparing) {
+          // 还在创建中，记下来，创建成功后开始推流
+        } else {
+          // pusher出错，前面已经调用过 handlePushError 了
+          this.userData.writer = null;
+          this.addChunkInner = null;
+          this.setData({ hasWriter: false });
+          throw { errMsg: 'pusher not ready' };
+        }
+        return;
+      }
+
+      this.doStartPusher();
+    },
+    doStartPusher() {
       console.log(`[${this.data.innerId}] pusherCtx.start`);
       this.userData.pusherCtx.start({
         success: (res) => {
           console.log(`[${this.data.innerId}] pusherCtx.start success`, res);
-          success && success(res);
         },
         fail: (err) => {
           console.log(`[${this.data.innerId}] pusherCtx.start fail`, err);
           this.userData.writer = null;
           this.addChunkInner = null;
           this.setData({ hasWriter: false });
-          fail && fail(err);
+
+          this.handlePushError(PusherStateEnum.LivePusherStartError, {
+            msg: 'pusherCtx.start fail',
+            detail: err,
+          });
         },
-        complete,
       });
     },
-    stop({ success, fail, complete } = {}) {
-      console.log(`[${this.data.innerId}] stop, hasPusherCtx: ${!!this.userData.pusherCtx}, hasWriter: ${!!this.userData.writer}`);
-      if (!this.userData.pusherCtx) {
-        fail && fail({ errMsg: 'pusher not ready' });
-        complete && complete();
-        return;
-      }
-
+    stop() {
+      console.log(`[${this.data.innerId}] stop, pusherState: ${this.data.pusherState}, hasPusherCtx: ${!!this.userData.pusherCtx}, hasWriter: ${!!this.userData.writer}`);
       if (!this.userData.writer) {
-        fail && fail({ errMsg: 'not started' });
-        complete && complete();
         return;
       }
 
@@ -490,15 +637,23 @@ Component({
       this.addChunkInner = null;
       this.setData({ hasWriter: false, isPushing: false });
 
-      this.tryStopPusher({ success, fail, complete });
-    },
-    tryStopPusher(params) {
-      if (this.userData.pusherCtx) {
-        try {
-          console.log(`[${this.data.innerId}] pusherCtx.stop`);
-          this.userData.pusherCtx.stop(params);
-        } catch (err) {}
+      if (!this.userData.pusherCtx) {
+        return;
       }
+
+      this.tryStopPusher();
+    },
+    tryStopPusher() {
+      if (!this.userData.pusherCtx) {
+        return Promise.resolve({});
+      }
+      return new Promise((resolve, reject) => {
+        console.log(`[${this.data.innerId}] pusherCtx.stop`);
+        this.userData.pusherCtx.stop({
+          success: res => resolve(res),
+          fail: err => reject(err),
+        });
+      });
     },
     // 以下是pusher控件相关的
     changeEnableCamera() {
