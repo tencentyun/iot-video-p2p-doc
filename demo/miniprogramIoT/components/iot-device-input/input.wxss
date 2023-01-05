@@ -1,0 +1,28 @@
+@import '../../common.wxss';
+@import '../../input.wxss';
+
+.scene-label {
+  margin-right: 20rpx;
+}
+
+.control-info {
+  position: relative;
+}
+
+.input-item {
+  margin-bottom: 10rpx;
+}
+
+.voice-type-item {
+  margin-bottom: 10rpx;
+}
+.voice-type-item-radio {
+  float: left;
+}
+.voice-type-item-text {
+  padding-left: 60rpx;
+}
+
+.primary-button {
+  margin-bottom: 30rpx;
+}

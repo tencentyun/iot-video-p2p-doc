@@ -1,0 +1,28 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/user-files/files",
+    "pages/xp2p-demo-ipc/demo",
+    "pages/xp2p-demo-server/demo"
+  ],
+  "plugins": {
+    "wechat-p2p-player": {
+      "version": "1.3.1",
+      "provider": "wx9e8fbc98ceac2628",
+      "export": "exportForPlayerPlugin.js"
+    },
+    "xp2p": {
+      "version": "dev-60bd7d165d07ba3fba330c893beaee6a",
+      "provider": "wx1319af22356934bf",
+      "export": "exportForXp2pPlugin.js"
+    }
+  },
+  "usingComponents": {
+    "iot-device-input": "components/iot-device-input/input"
+  },
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents",
+  "useExtendedLib": {
+    "weui": true
+  }
+}

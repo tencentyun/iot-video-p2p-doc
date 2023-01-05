@@ -1,0 +1,57 @@
+<view class="page-body">
+  <view class="page-section page-section-gap">
+    <view class="notice-box">
+      <view>· 使用期间需保持设备在线，且 xp2pinfo 有效（对应设备物模型的 _sys_xp2p_info 属性）</view>
+      <view>· 如果遇到问题，可以查看<text class="text-btn" bindtap="copyDocUrl" data-doc="https://mp.weixin.qq.com/wxopen/plugindevdoc?appid=wx1319af22356934bf">插件开发文档</text>中的常见问题部分</view>
+      <view>· 如果仍未解决，可以打开<text class="text-btn" bindtap="gotoPage" data-url="/pages/user-files/files?name=logs">Log管理页</text>，发送最新log给我们</view>
+    </view>
+  </view>
+  <view class="page-section page-section-gap">
+    <view>hostInfo: {{hostInfo}}</view>
+    <view>wxVersion: wx {{wxVersion}} / sdk {{wxSDKVersion}}</view>
+    <view>pluginVersion: p2p-player {{playerVersion}} / xp2p {{xp2pVersion}}</view>
+    <view>xp2pUUID: <text user-select>{{xp2pUUID}}</text></view>
+  </view>
+  <view class="page-section" wx:if="{{recentIPCItem}}">
+    <view class="page-section-title">【最近查看设备】</view>
+    <view class="small-tip">设备类型：{{recentIPCItem.isMjpgDevice ? '图片流设备' : '视频流设备'}}</view>
+    <button type="primary" class="page-body-button"
+      bindtap="gotoPage"
+      data-url="/pages/xp2p-demo-ipc/demo?cfg={{recentIPCItem.cfg}}"
+    >
+      {{recentIPCItem.title}}
+    </button>
+  </view>
+  <view class="page-section">
+    <view class="page-section-title">【1v1-视频流设备】</view>
+    <button wx:for="{{listVideoDevices}}" wx:key="cfg" type="primary" class="page-body-button"
+      bindtap="gotoPage"
+      data-url="/pages/xp2p-demo-ipc/demo?cfg={{item.cfg}}"
+    >
+      {{item.title}}
+    </button>
+  </view>
+  <view class="page-section">
+    <view class="page-section-title">【1v1-图片流设备】</view>
+    <button wx:for="{{listMjpgDevices}}" wx:key="cfg" type="primary" class="page-body-button"
+      bindtap="gotoPage"
+      data-url="/pages/xp2p-demo-ipc/demo?cfg={{item.cfg}}"
+    >
+      {{item.title}}
+    </button>
+  </view>
+  <view class="page-section">
+    <view class="page-section-title">【1v多】</view>
+    <button wx:for="{{listServerStreams}}" wx:key="cfg" type="primary" class="page-body-button"
+      bindtap="gotoPage"
+      data-url="/pages/xp2p-demo-server/demo?cfg={{item.cfg}}"
+    >
+      {{item.title}}
+    </button>
+  </view>
+  <navigator url="/pages/user-files/files?name=logs" hover-class="navigator-hover">跳转到 Log 管理页</navigator>
+  <navigator url="/pages/user-files/files?name=records" hover-class="navigator-hover">跳转到 录像管理页</navigator>
+  <navigator url="/pages/user-files/files?name=voices" hover-class="navigator-hover">跳转到 语音管理页</navigator>
+  <navigator url="/pages/user-files/files?name=downloads" hover-class="navigator-hover">跳转到 下载管理页</navigator>
+</view>
+

@@ -1,0 +1,48 @@
+<view wx:if="{{cfg}}">
+  <view wx:if="{{!deviceInfo}}" class="page-body page-body-padding">
+    <iot-device-input
+      cfg="{{cfg}}"
+      bind:startPlayer="onStartPlayer"
+    />
+  </view>
+  <view wx:elif="{{p2pMode !== 'server'}}">not for p2pMode {{p2pMode}}</view>
+  <view wx:elif="{{sceneType !== 'live'}}">not for sceneType {{sceneType}}</view>
+  <view wx:else class="page-body">
+    <iot-p2p-common-player
+      wx:if="{{p2pMode === 'server'}}"
+      id="{{playerId}}"
+      p2pMode="{{p2pMode}}"
+      deviceInfo="{{deviceInfo}}"
+      flvUrl="{{flvUrl}}"
+      mode="{{options.playerRTC ? 'RTC' : 'live'}}"
+      muted="{{muted}}"
+      showLog="{{showLog}}"
+      showDebugInfo="{{showDebugInfo}}"
+      onlyp2p="{{onlyp2pMap && onlyp2pMap.flv}}"
+      bind:playerStateChange="onPlayerEvent"
+      bind:streamStateChange="onPlayerEvent"
+      bind:playError="onPlayError"
+      bind:playEnd="onPlayEnd"
+      bind:fullscreenchange="onFullScreenChange"
+    >
+      <view slot="inner" class="player-controls-container">
+        <view class="player-controls left">
+        </view>
+        <view class="player-controls right">
+          <view class="player-control-item" bindtap="changeMuted">
+            <mp-icon icon="{{muted ? 'volume-off' : 'volume-up'}}" size="{{iconSize}}" color="white"></mp-icon>
+          </view>
+          <view class="player-control-item" bindtap="changeFullScreen">
+            <mp-icon icon="{{fullScreen ? 'previous' : 'max-window'}}" size="{{iconSize}}" color="white"></mp-icon>
+          </view>
+          <view class="player-control-item" bindtap="snapshotAndSave">
+            <mp-icon icon="camera" size="{{iconSize}}" color="white"></mp-icon>
+          </view>
+        </view>
+      </view>
+      <view slot="after" class="debug-info-switch-container">
+        <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
+      </view>
+    </iot-p2p-common-player>
+  </view>
+</view>

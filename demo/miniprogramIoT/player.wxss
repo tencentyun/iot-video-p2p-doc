@@ -1,0 +1,59 @@
+/* 覆盖组件的 wxss */
+.iot-common-player .player-container {
+  height: 420rpx;
+}
+
+.iot-common-player .player-container live-player {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.iot-mjpg-player .player-container {
+  height: 420rpx;
+}
+
+.iot-mjpg-player .player-container image {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* 自己的 */
+.player-controls-container {
+  box-sizing: border-box;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20rpx;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+}
+.player-controls-container .player-controls {
+  display: flex;
+}
+.player-controls-container .player-controls.left {
+  flex: 1;
+}
+.player-controls-container .player-controls .player-control-item {
+  position: inline-block;
+  vertical-align: bottom;
+  color: white;
+}
+.player-controls-container .player-controls.left .player-control-item {
+  margin-right: 20rpx;
+}
+.player-controls-container .player-controls.right .player-control-item {
+  margin-left: 20rpx;
+}
+
+.debug-info-switch-container {
+  box-sizing: border-box;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+.debug-info-switch-container .debug-info-switch {
+  color: white;
+  padding: 20rpx;
+}

@@ -1,0 +1,26 @@
+<view class="page-body">
+  <view wx:if="{{isVideoDir}}" class="page-section">
+    <view class="notice-box">
+      <view>· mp4文件可以保存到相册</view>
+      <view>· flv文件在Android系统可以保存到相册，但是iOS系统不支持</view>
+    </view>
+  </view>
+  <view wx:if="{{baseDir}}" class="page-section">
+    <view>baseDir: {{baseDir}}</view>
+    <view class="group-button-area">
+      <button bindtap="getRecordList" class="group-button" type="primary" size="mini" disabled="{{isRefreshing}}">刷新列表</button>
+      <button bindtap="removeAllRecords" class="group-button" type="primary" size="mini" disabled="{{isRefreshing}}">清空</button>
+    </view>
+  </view>
+  <view wx:if="{{recordList}}" class="page-section">
+    <view>共 {{recordList.length}} 个文件，{{totalBytes}} Bytes</view>
+    <view wx:for="{{recordList}}" wx:key="fileName" class="record-item">
+      {{item.fileName}} <text class="info">{{item.size}}B</text>
+      <view>
+        <text class="right-btn" wx:if="{{showSendFile}}" bindtap="sendFile" data-index="{{index}}">发送</text>
+        <text class="right-btn" wx:if="{{showSaveFile}}" bindtap="saveFileInDevTool" data-index="{{index}}">保存</text>
+        <text class="right-btn" wx:if="{{item.showSave}}" bindtap="saveToAlbum" data-index="{{index}}">保存到相册</text>
+      </view>
+    </view>
+  </view>
+</view>
