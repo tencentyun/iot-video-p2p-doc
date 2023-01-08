@@ -76,7 +76,7 @@ Page({
       const navItem = {
         p2pMode: 'server',
         cfg: key,
-        title: `1vN: ${item.serverName}/${getShortFlvName(item.flvFile)}`,
+        title: `${item.serverName}/${getShortFlvName(item.flvFile)}`,
         ...item,
       };
       if (item.showInHomePageBtn) {

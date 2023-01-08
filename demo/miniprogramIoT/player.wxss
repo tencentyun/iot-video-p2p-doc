@@ -37,7 +37,9 @@
 }
 .player-controls-container .player-controls .player-control-item {
   position: inline-block;
-  vertical-align: bottom;
+  vertical-align: center;
+  height: 50rpx;
+  line-height: 50rpx;
   color: white;
 }
 .player-controls-container .player-controls.left .player-control-item {

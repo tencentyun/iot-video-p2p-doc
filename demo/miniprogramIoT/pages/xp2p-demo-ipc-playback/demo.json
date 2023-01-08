@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "IPC Playback",
+  "usingComponents": {
+   "iot-p2p-playback-player": "plugin://xp2p/iot-p2p-playback-player",
+   "mp-icon": "weui-miniprogram/icon/icon"
+  }
+}

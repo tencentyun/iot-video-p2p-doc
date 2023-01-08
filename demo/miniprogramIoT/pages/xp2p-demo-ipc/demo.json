@@ -1,6 +1,5 @@
 {
-  "navigationBarTitleText": "X-P2P Demo",
-  "backgroundColor": "#f5f5f5",
+  "navigationBarTitleText": "IPC Live",
   "usingComponents": {
    "iot-p2p-player-with-mjpg": "plugin://xp2p/iot-p2p-player-with-mjpg",
    "iot-p2p-voice": "plugin://xp2p/iot-p2p-voice",

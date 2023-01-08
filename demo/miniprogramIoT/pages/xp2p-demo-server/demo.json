@@ -1,6 +1,5 @@
 {
-  "navigationBarTitleText": "X-P2P Demo",
-  "backgroundColor": "#f5f5f5",
+  "navigationBarTitleText": "Server",
   "usingComponents": {
     "iot-p2p-common-player": "plugin://xp2p/iot-p2p-common-player",
     "mp-icon": "weui-miniprogram/icon/icon"

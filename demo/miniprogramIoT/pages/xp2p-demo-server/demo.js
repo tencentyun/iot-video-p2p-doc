@@ -137,12 +137,9 @@ Page({
       showCancel: false,
     });
   },
-  onPlayEnd({ detail }) {
-    console.log('demo: onPlayEnd', detail);
-  },
   onFullScreenChange({ detail }) {
     console.log('demo: onFullScreenChange', detail);
-    this.setData({ fullScreen: e.detail.fullScreen });
+    this.setData({ fullScreen: detail.fullScreen });
   },
   // player控制
   changeMuted() {

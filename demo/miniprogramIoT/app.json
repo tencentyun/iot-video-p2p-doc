@@ -2,7 +2,9 @@
   "pages": [
     "pages/index/index",
     "pages/user-files/files",
+    "pages/empty/empty",
     "pages/xp2p-demo-ipc/demo",
+    "pages/xp2p-demo-ipc-playback/demo",
     "pages/xp2p-demo-server/demo"
   ],
   "plugins": {
@@ -12,7 +14,7 @@
       "export": "exportForPlayerPlugin.js"
     },
     "xp2p": {
-      "version": "dev-60bd7d165d07ba3fba330c893beaee6a",
+      "version": "dev-84e36a99dd4d1d14fc354bfb847ee266",
       "provider": "wx1319af22356934bf",
       "export": "exportForXp2pPlugin.js"
     }

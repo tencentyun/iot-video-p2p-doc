@@ -21,11 +21,21 @@
       showLog="{{showLog}}"
       showDebugInfo="{{showDebugInfo}}"
       onlyp2pMap="{{onlyp2pMap}}"
-      bind:playerStateChange="onPlayerEvent"
-      bind:streamStateChange="onPlayerEvent"
-      bind:playError="onPlayError"
-      bind:playEnd="onPlayEnd"
+      bind:playerstatechange="onPlayerEvent"
+      bind:streamstatechange="onPlayerEvent"
+      bind:playstart="onPlayStateEvent"
+      bind:playsuccess="onPlayStateEvent"
+      bind:playstop="onPlayStateEvent"
+      bind:playend="onPlayStateEvent"
+      bind:playerror="onPlayError"
       bind:fullscreenchange="onFullScreenChange"
+      bind:mjpgplayerstatechange="onMjpgPlayerEvent"
+      bind:mjpgstreamstatechange="onMjpgPlayerEvent"
+      bind:mjpgplaystart="onMjpgPlayStateEvent"
+      bind:mjpgplaysuccess="onMjpgPlayStateEvent"
+      bind:mjpgplaystop="onMjpgPlayStateEvent"
+      bind:mjpgplayend="onMjpgPlayStateEvent"
+      bind:mjpgplayerror="onMjpgPlayStateEvent"
     >
       <view wx:if="{{!deviceInfo.isMjpgDevice}}" slot="flvInner" class="player-controls-container">
         <view class="player-controls left">
@@ -34,6 +44,9 @@
           </view>
         </view>
         <view class="player-controls right">
+          <view class="player-control-item" bindtap="changeQuality">
+            {{qualityMap[streamQuality] || streamQuality}}
+          </view>
           <view class="player-control-item" bindtap="changeMuted">
             <mp-icon icon="{{muted ? 'volume-off' : 'volume-up'}}" size="{{iconSize}}" color="white"></mp-icon>
           </view>
@@ -52,6 +65,9 @@
           </view>
         </view>
         <view class="player-controls right">
+          <view class="player-control-item" bindtap="changeQuality">
+            {{qualityMap[streamQuality] || streamQuality}}
+          </view>
           <view class="player-control-item" bindtap="changeMuted">
             <mp-icon icon="{{muted ? 'volume-off' : 'volume-up'}}" size="{{iconSize}}" color="white"></mp-icon>
           </view>
@@ -65,15 +81,18 @@
         <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
       </view>
     </iot-p2p-player-with-mjpg>
-    <view>
+    <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（触发 live-player 暂停）</navigator>
+    <view class="page-section">
       <iot-p2p-voice
         id="{{voiceId}}"
         style="display:none"
         deviceInfo="{{deviceInfo}}"
         voiceType="{{options.voiceType}}"
         showLog="{{showLog}}"
-        bind:voiceStateChange="onVoiceStateChange"
-        bind:voiceError="onVoiceError"
+        bind:voicestatechange="onVoiceStateChange"
+        bind:voicestart="onVoiceProcess"
+        bind:voicesuccess="onVoiceProcess"
+        bind:voiceerror="onVoiceError"
       />
       <view class="group-button-area">
         <button bindtap="startVoice" class="group-button" type="primary" size="mini" disabled="{{!voiceState || voiceState !== 'VoiceIdle'}}">

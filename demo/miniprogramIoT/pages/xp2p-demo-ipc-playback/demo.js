@@ -1,3 +1,4 @@
+import { pad, toMonthString, toDateTimeString, toTimeString } from '../../utils';
 import { getXp2pManager } from '../../lib/xp2pManager';
 
 // 覆盖 console
@@ -7,16 +8,7 @@ const console = app.logger || oriConsole;
 
 let xp2pManager;
 
-const qualityList = [
-  { value: 'standard', text: '标清' },
-  { value: 'high', text: '高清' },
-];
-const qualityMap = {};
-qualityList.forEach(({ value, text}) => {
-  qualityMap[value] = text;
-});
-
-const pageName = 'demo-page-ipc';
+const pageName = 'demo-page-ipc-playback';
 let pageSeq = 0;
 
 Page({
@@ -33,9 +25,8 @@ Page({
     p2pMode: '',
     sceneType: '',
 
-    // 清晰度
-    streamQuality: '',
-    qualityMap,
+    // 回放参数
+    streamParams: '',
 
     // 播放器控制
     iconSize: 25,
@@ -47,9 +38,17 @@ Page({
     showLog: true,
     showDebugInfo: false,
 
-    // 对讲
-    voiceId: 'iot-voice',
-    voiceState: '',
+    // 回放日期
+    calendarMonth: toMonthString(new Date()),
+    validDates: null,
+
+    recordDate: '',
+    recordVideos: null,
+
+    // 回放状态
+    showTogglePlayIcon: false,
+    isPlaying: false, // 播放器状态，不一定播放成功
+    currentSecStr: '',
   },
   onLoad(query) {
     pageSeq++;
@@ -64,7 +63,8 @@ Page({
       pageId,
       deviceId: '',
       player: null,
-      voice: null,
+      currentVideo: null,
+      playState: null, // { supportProgress: boolean; currentTime: number }
     };
 
     console.log('demo: checkReset when enter');
@@ -105,7 +105,7 @@ Page({
   },
   onStartPlayer({ detail }) {
     console.log('demo: onStartPlayer', detail);
-    if (detail.p2pMode !== 'ipc' || detail.sceneType !== 'live') {
+    if (detail.p2pMode !== 'ipc' || detail.sceneType !== 'playback') {
       // p2pMode 不匹配
       console.log('demo: info error');
       this.setData({
@@ -126,9 +126,16 @@ Page({
         p2pMode: detail.p2pMode,
         deviceInfo: detail.deviceInfo,
         xp2pInfo: detail.xp2pInfo,
-        liveStreamDomain: detail.liveStreamDomain,
         caller: this.userData.pageId,
-      }).catch(() => undefined); // 只是提前连接，不用处理错误
+      })
+        .then((res) => {
+          console.log('demo: startP2PService res', res);
+          if (res !== 0) {
+            return;
+          }
+          this.getRecordDatesInMonth();
+        })
+        .catch(() => undefined); // 只是提前连接，不用处理错误
     } catch (err) {
       console.error('demo: startP2PService err', err);
     }
@@ -142,16 +149,6 @@ Page({
       } else {
         console.error('demo: create player error');
       }
-      const voice = this.selectComponent(`#${this.data.voiceId}`);
-      if (voice) {
-        console.log('demo: create voice success');
-        this.userData.voice = voice;
-        this.setData({
-          voiceState: 'VoiceIdle',
-        });
-      } else {
-        console.error('demo: create voice error');
-      }
     });
   },
   // player事件
@@ -160,6 +157,22 @@ Page({
   },
   onPlayStateEvent({ type, detail }) {
     console.log('demo: onPlayStateEvent', type, detail);
+    switch (type) {
+      case 'playstart': // 开始
+      case 'playresume': // 续播
+        this.setData({
+          isPlaying: true,
+        });
+        break;
+      case 'playpause': // 暂停
+      case 'playstop': // 停止
+      case 'playend': // 结束
+      case 'playerror': // 出错
+        this.setData({
+          isPlaying: false,
+        });
+        break;
+    }
   },
   onPlayError({ type, detail }) {
     this.onPlayStateEvent({ type, detail });
@@ -175,25 +188,47 @@ Page({
     console.log('demo: onFullScreenChange', detail);
     this.setData({ fullScreen: detail.fullScreen });
   },
-  onMjpgPlayerEvent({ type, detail }) {
-    console.log('demo: onMjpgPlayerEvent', type, detail);
+  onSupportProgressChange({ detail }) {
+    console.log('demo: onSupportProgressChange', detail);
+    if (!this.userData.currentVideo) {
+      return;
+    }
+    this.userData.playState.supportProgress = detail.supportProgress;
+    this.setData({
+      supportProgress: detail.supportProgress,
+    });
   },
-  onMjpgPlayStateEvent({ type, detail }) {
-    console.log('demo: onMjpgPlayStateEvent', type, detail);
+  onTimeUpdate({ detail }) {
+    if (!this.userData.currentVideo) {
+      return;
+    }
+    // 收到这个说明支持暂停/续播
+    if (!this.data.showTogglePlayIcon) {
+      this.setData({
+        showTogglePlayIcon: true,
+      });
+    }
+    // 录像内播放时长
+    this.userData.playState.currentTime = detail.currentTime;
+    // 转换成时间点
+    const currentSec = this.userData.currentVideo.start_time + Math.round(detail.currentTime);
+    const currentSecStr = toTimeString(new Date(currentSec * 1000));
+    if (currentSecStr !== this.data.currentSecStr) {
+      this.setData({ currentSecStr });
+    }
   },
   // player控制
-  changeQuality() {
-    wx.showActionSheet({
-      itemList: qualityList.map(item => item.text),
-      success: ({ tapIndex }) => {
-        const item = qualityList[tapIndex];
-        if (item.value === this.data.streamQuality) {
-          return;
-        }
-        console.log('demo: changeQuality', item.value);
-        this.setData({ streamQuality: item.value });
-      },
-    });
+  togglePlay() {
+    console.log('demo: togglePlay');
+    if (!this.userData.player) {
+      console.error('demo: togglePlay but no player component');
+      return;
+    }
+    if (this.data.isPlaying) {
+      this.userData.player.pause();
+    } else {
+      this.userData.player.resume();
+    }
   },
   changeMuted() {
     console.log('demo: changeMuted');
@@ -251,53 +286,70 @@ Page({
     console.log('demo: toggleDebugInfo');
     this.setData({ showDebugInfo: !this.data.showDebugInfo });
   },
-  // voice事件
-  onVoiceStateChange({ detail }) {
-    console.log('demo: onVoiceStateChange', detail);
+  // 录像数据
+  async getRecordDatesInMonth() {
+    if (!this.data.calendarMonth) {
+      return;
+    }
+    console.log('demo: getRecordDatesInMonth', this.userData.deviceId, this.data.calendarMonth);
+    const res = await xp2pManager.getRecordDatesInMonth(
+      this.userData.deviceId,
+      { month: this.data.calendarMonth },
+    );
+    console.log('demo: getRecordDatesInMonth res', res);
     this.setData({
-      voiceState: detail.voiceState,
+      validDates: res.date_list.map(date => ({ month: res.month, date })),
     });
   },
-  onVoiceProcess({ type, detail }) {
-    console.log('demo: onVoiceProcess', type, detail);
-  },
-  onVoiceError({ detail }) {
-    console.error('demo: onVoiceError', detail);
-    wx.showToast({
-      title: detail.errMsg || '启动对讲失败',
-      icon: 'none',
-    });
-  },
-  // voice控制
-  toggleVoice() {
-    console.log('demo: toggleVoice');
-    if (this.data.voiceState === 'VoiceIdle') {
-      this.startVoice();
-    } else if (this.data.voiceState === 'VoiceSending') {
-      this.stopVoice();
-    }
-  },
-  startVoice(e) {
-    const needRecord = parseInt(e?.currentTarget?.dataset?.needRecord, 10) > 0;
-    console.log('demo: startVoice, needRecord', needRecord);
-
-    if (!this.userData.voice) {
-      console.error('demo: startVoice but no voice component');
+  async getRecordVideosInDate() {
+    if (!this.data.recordDate) {
       return;
     }
-
-    this.userData.voice.startVoice({
-      needRecord,
+    console.log('demo: getRecordVideosInDate', this.userData.deviceId, this.data.recordDate);
+    const res = await xp2pManager.getRecordVideosInDate(
+      this.userData.deviceId,
+      { date: this.data.recordDate },
+    );
+    console.log('demo: getRecordVideosInDate res', res);
+    const nextDateSec = new Date(this.data.recordDate.replace(/-/g, '/')).getTime() / 1000 + 3600 * 24;
+    const getTimeStr = (time) => {
+      if (time < nextDateSec) {
+        return toTimeString(new Date(time * 1000));
+      }
+      return toDateTimeString(new Date(time * 1000));
+    };
+    this.setData({
+      recordVideos: res.video_list.map(item => ({
+        text: `${getTimeStr(item.start_time)} - ${getTimeStr(item.end_time)}`,
+        ...item,
+      })),
     });
   },
-  stopVoice() {
-    console.log('demo: stopVoice');
-
-    if (!this.userData.voice) {
-      console.error('demo: stopVoice but no voice component');
-      return;
-    }
-
-    this.userData.voice.stopVoice();
+  changeMonth({ detail }) {
+    console.log('demo: changeMonth', detail.value);
+    this.setData({
+      calendarMonth: detail.value,
+      validDates: null,
+    }, () => {
+      this.getRecordDatesInMonth();
+    });
+  },
+  changeDate({ currentTarget: { dataset } }) {
+    console.log('demo: changeDate', dataset);
+    this.setData({
+      recordDate: `${dataset.month}-${pad(dataset.date, 2)}`,
+      recordVideos: null,
+    }, () => {
+      this.getRecordVideosInDate();
+    });
+  },
+  changeVideo({ currentTarget: { dataset } }) {
+    const video = this.data.recordVideos[dataset.index];
+    console.log('demo: changeVideo', video);
+    this.userData.currentVideo = video;
+    this.userData.playState = {};
+    this.setData({
+      streamParams: `start_time=${video.start_time}&end_time=${video.end_time}`,
+    });
   },
 });

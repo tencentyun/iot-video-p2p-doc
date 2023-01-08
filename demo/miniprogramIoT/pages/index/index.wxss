@@ -6,3 +6,13 @@ navigator {
 .navigator-hover {
   color:blue;
 }
+
+.item-info {
+  box-sizing: border-box;
+  position: relative;
+  /* display: flex;
+  justify-content: space-between; */
+}
+.item-info .item-btns {
+  text-align: right;
+}

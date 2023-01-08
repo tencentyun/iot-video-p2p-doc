@@ -8,6 +8,10 @@ Component({
       type: String,
       value: '',
     },
+    scene: {
+      type: String,
+      value: 'live',
+    },
     showCancel: {
       type: Boolean,
       value: false,
@@ -20,19 +24,17 @@ Component({
     isMjpgDevice: false,
 
     // 场景
-    scene: 'live',
     sceneList: [
       {
         value: 'live',
         text: '直播',
         checked: true,
       },
-      // 这里不显示回放入口，需要从监控页跳回放页
-      // {
-      //   value: 'playback',
-      //   text: '回放',
-      //   checked: false,
-      // },
+      {
+        value: 'playback',
+        text: '回放',
+        checked: false,
+      },
     ],
 
     // 1v1用
@@ -81,6 +83,7 @@ Component({
         field: 'supportPTZ',
         text: '设备支持PTZ',
         checked: false,
+        scene: 'live',
       },
     ],
     voiceType: 'Recorder',
@@ -168,6 +171,8 @@ Component({
         // 1v多用
         inputUrl: data.flvUrl || '',
       });
+
+      this.changeSceneRadio({ detail: { value: this.properties.scene }});
     },
     detached() {
       // 在组件实例被从页面节点树移除时执行

@@ -3,11 +3,11 @@
     <view class="component-section-title">
       【1v1-{{isMjpgDevice ? '图片流设备' : '视频流设备'}}】
       <text wx:if="{{showCancel}}" class="text-btn float-right margin-left" bindtap="cancel">取消</text>
-      <view wx:if="{{sceneList.length > 1}}" class="float-right">
+      <!-- <view wx:if="{{sceneList.length > 1}}" class="float-right">
         <radio-group bindchange="changeSceneRadio">
           <label wx:for="{{sceneList}}" wx:key="value" class="scene-label"><radio value="{{item.value}}" checked="{{item.checked}}"/>{{item.text}}</label>
         </radio-group>
-      </view>
+      </view> -->
     </view>
     <view class="control-info">
       <view style="margin-bottom:20rpx">

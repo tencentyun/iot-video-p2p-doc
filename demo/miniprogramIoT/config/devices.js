@@ -37,7 +37,7 @@ const devices = {
     productName: 'MjpgLock',
     productId: '65HUY1C739',
     deviceName: 'yzlock_84641797_1',
-    xp2pInfo: 'XP2PfLGXhL7HQ5stwvs8OtAxDw==%2.4.34m',
+    xp2pInfo: 'XP2PfLHmh6GXLZ0PvdsyB9E9Hw==%2.4.34m',
     options: {
       playerRTC: true,
       voiceType: 'Pusher',

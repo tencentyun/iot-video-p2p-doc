@@ -14,40 +14,87 @@
   </view>
   <view class="page-section" wx:if="{{recentIPCItem}}">
     <view class="page-section-title">【最近查看设备】</view>
-    <view class="small-tip">设备类型：{{recentIPCItem.isMjpgDevice ? '图片流设备' : '视频流设备'}}</view>
-    <button type="primary" class="page-body-button"
-      bindtap="gotoPage"
-      data-url="/pages/xp2p-demo-ipc/demo?cfg={{recentIPCItem.cfg}}"
-    >
-      {{recentIPCItem.title}}
-    </button>
+    <view class="margin-left">
+      <view class="small-tip">设备类型：{{recentIPCItem.isMjpgDevice ? '图片流设备' : '视频流设备'}}</view>
+      <view class="item-info">
+        <view class="item-title">{{recentIPCItem.title}}</view>
+        <view class="item-btns group-button-area">
+          <button type="primary" class="group-button" size="mini"
+            bindtap="gotoPage"
+            data-url="/pages/xp2p-demo-ipc/demo?cfg={{recentIPCItem.cfg}}"
+          >
+            监控
+          </button>
+          <button type="primary" class="group-button {{recentIPCItem.isMjpgDevice ? 'disabled' : ''}}" size="mini"
+            disabled="{{recentIPCItem.isMjpgDevice}}"
+            bindtap="gotoPage"
+            data-url="/pages/xp2p-demo-ipc-playback/demo?cfg={{recentIPCItem.cfg}}"
+          >
+            回放
+          </button>
+        </view>
+      </view>
+    </view>
   </view>
   <view class="page-section">
     <view class="page-section-title">【1v1-视频流设备】</view>
-    <button wx:for="{{listVideoDevices}}" wx:key="cfg" type="primary" class="page-body-button"
-      bindtap="gotoPage"
-      data-url="/pages/xp2p-demo-ipc/demo?cfg={{item.cfg}}"
-    >
-      {{item.title}}
-    </button>
+    <view class="margin-left">
+      <view wx:for="{{listVideoDevices}}" wx:key="cfg" class="item-info">
+        <view class="item-title">{{item.title}}</view>
+        <view class="item-btns group-button-area">
+          <button type="primary" class="group-button" size="mini"
+            bindtap="gotoPage"
+            data-url="/pages/xp2p-demo-ipc/demo?cfg={{item.cfg}}"
+          >
+            监控
+          </button>
+          <button type="primary" class="group-button" size="mini"
+            bindtap="gotoPage"
+            data-url="/pages/xp2p-demo-ipc-playback/demo?cfg={{item.cfg}}"
+          >
+            回放
+          </button>
+        </view>
+      </view>
+    </view>
   </view>
   <view class="page-section">
     <view class="page-section-title">【1v1-图片流设备】</view>
-    <button wx:for="{{listMjpgDevices}}" wx:key="cfg" type="primary" class="page-body-button"
-      bindtap="gotoPage"
-      data-url="/pages/xp2p-demo-ipc/demo?cfg={{item.cfg}}"
-    >
-      {{item.title}}
-    </button>
+    <view class="margin-left">
+      <view wx:for="{{listMjpgDevices}}" wx:key="cfg" class="item-info">
+        <view class="item-title">{{item.title}}</view>
+        <view class="item-btns group-button-area">
+          <button type="primary" class="group-button" size="mini"
+            bindtap="gotoPage"
+            data-url="/pages/xp2p-demo-ipc/demo?cfg={{item.cfg}}"
+          >
+            监控
+          </button>
+          <button type="primary" class="group-button disabled" size="mini" disabled>
+            回放
+          </button>
+        </view>
+      </view>
+    </view>
   </view>
   <view class="page-section">
     <view class="page-section-title">【1v多】</view>
-    <button wx:for="{{listServerStreams}}" wx:key="cfg" type="primary" class="page-body-button"
-      bindtap="gotoPage"
-      data-url="/pages/xp2p-demo-server/demo?cfg={{item.cfg}}"
-    >
-      {{item.title}}
-    </button>
+    <view class="margin-left">
+      <view wx:for="{{listServerStreams}}" wx:key="cfg" class="item-info">
+        <view class="item-title">{{item.title}}</view>
+        <view class="item-btns group-button-area">
+          <button type="primary" class="group-button" size="mini"
+            bindtap="gotoPage"
+            data-url="/pages/xp2p-demo-server/demo?cfg={{item.cfg}}"
+          >
+            监控
+          </button>
+          <button type="primary" class="group-button disabled" size="mini" disabled>
+            回放
+          </button>
+        </view>
+      </view>
+    </view>
   </view>
   <navigator url="/pages/user-files/files?name=logs" hover-class="navigator-hover">跳转到 Log 管理页</navigator>
   <navigator url="/pages/user-files/files?name=records" hover-class="navigator-hover">跳转到 录像管理页</navigator>

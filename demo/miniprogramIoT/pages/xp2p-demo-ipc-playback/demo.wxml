@@ -1,0 +1,104 @@
+<view wx:if="{{cfg}}">
+  <view wx:if="{{!deviceInfo}}" class="page-body page-body-padding">
+    <iot-device-input
+      cfg="{{cfg}}"
+      scene="playback"
+      bind:startPlayer="onStartPlayer"
+    />
+  </view>
+  <view wx:elif="{{p2pMode !== 'ipc'}}">not for p2pMode {{p2pMode}}</view>
+  <view wx:elif="{{sceneType !== 'playback'}}">not for sceneType {{sceneType}}</view>
+  <view wx:else class="page-body">
+    <iot-p2p-playback-player
+      id="{{playerId}}"
+      deviceInfo="{{deviceInfo}}"
+      xp2pInfo="{{xp2pInfo}}"
+      streamParams="{{streamParams}}"
+      needCheckStream="{{options.needCheckStream}}"
+      mode="{{options.playerRTC ? 'RTC' : 'live'}}"
+      muted="{{muted}}"
+      showLog="{{showLog}}"
+      showDebugInfo="{{showDebugInfo}}"
+      onlyp2p="{{onlyp2pMap && onlyp2pMap.flv}}"
+      bind:playerstatechange="onPlayerEvent"
+      bind:streamstatechange="onPlayerEvent"
+      bind:playstart="onPlayStateEvent"
+      bind:playsuccess="onPlayStateEvent"
+      bind:playpause="onPlayStateEvent"
+      bind:playresume="onPlayStateEvent"
+      bind:playstop="onPlayStateEvent"
+      bind:playend="onPlayStateEvent"
+      bind:playerror="onPlayError"
+      bind:fullscreenchange="onFullScreenChange"
+      bind:supportprogresschange="onSupportProgressChange"
+      bind:timeupdate="onTimeUpdate"
+    >
+      <view slot="inner" class="player-controls-container">
+        <view class="player-controls left">
+          <view wx:if="{{showTogglePlayIcon}}" class="player-control-item" bindtap="togglePlay">
+            <mp-icon icon="{{isPlaying ? 'pause' : 'play'}}" size="{{iconSize}}" color="white" type="field"></mp-icon>
+          </view>
+          <view class="player-control-item">
+            {{currentSecStr}}
+          </view>
+        </view>
+        <view class="player-controls right">
+          <view class="player-control-item" bindtap="changeMuted">
+            <mp-icon icon="{{muted ? 'volume-off' : 'volume-up'}}" size="{{iconSize}}" color="white"></mp-icon>
+          </view>
+          <view class="player-control-item" bindtap="changeFullScreen">
+            <mp-icon icon="{{fullScreen ? 'previous' : 'max-window'}}" size="{{iconSize}}" color="white"></mp-icon>
+          </view>
+          <view class="player-control-item" bindtap="snapshotAndSave">
+            <mp-icon icon="camera" size="{{iconSize}}" color="white"></mp-icon>
+          </view>
+        </view>
+      </view>
+      <view slot="after" class="debug-info-switch-container">
+        <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
+      </view>
+    </iot-p2p-playback-player>
+    <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（触发 live-player 暂停）</navigator>
+    <view class="page-section" style="padding: 20rpx">
+      <view>
+        <picker class="weui-input" mode="date" fields="month" value="{{calendarMonth}}" bindchange="changeMonth">
+          <view class="weui-input">
+            选择月份：{{calendarMonth}}
+          </view>
+        </picker>
+      </view>
+      <view>
+        <view>有效日期：</view>
+        <view class="group-button-area" style="min-height: 100rpx">
+          <button wx:for="{{validDates}}" wx:key="index" class="group-button" size="mini"
+            data-month="{{item.month}}"
+            data-date="{{item.date}}"
+            bindtap="changeDate"
+          >
+            {{item.date}}
+          </button>
+          <view wx:if="{{validDates && validDates.length === 0}}">
+            暂无录像
+          </view>
+        </view>
+      </view>
+      <view>
+        <view>当前日期：{{recordDate}}</view>
+      </view>
+      <view>
+        <view>录像列表：</view>
+        <view class="group-button-area">
+          <button wx:for="{{recordVideos}}" wx:key="index" class="group-button" size="mini"
+            data-index="{{index}}"
+            bindtap="changeVideo"
+          >
+            {{item.text}}
+          </button>
+          <view wx:if="{{recordVideos && recordVideos.length === 0}}">
+            暂无录像
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

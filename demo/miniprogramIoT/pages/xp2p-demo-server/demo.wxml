@@ -19,10 +19,13 @@
       showLog="{{showLog}}"
       showDebugInfo="{{showDebugInfo}}"
       onlyp2p="{{onlyp2pMap && onlyp2pMap.flv}}"
-      bind:playerStateChange="onPlayerEvent"
-      bind:streamStateChange="onPlayerEvent"
-      bind:playError="onPlayError"
-      bind:playEnd="onPlayEnd"
+      bind:playerstatechange="onPlayerEvent"
+      bind:streamstatechange="onPlayerEvent"
+      bind:playstart="onPlayerEvent"
+      bind:playsuccess="onPlayerEvent"
+      bind:playstop="onPlayerEvent"
+      bind:playend="onPlayerEvent"
+      bind:playerror="onPlayError"
       bind:fullscreenchange="onFullScreenChange"
     >
       <view slot="inner" class="player-controls-container">

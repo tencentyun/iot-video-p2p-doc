@@ -10,7 +10,7 @@ export const getParamValue = (params, key) => {
   return null;
 };
 
-function pad(v, l) {
+export function pad(v, l) {
   let val = String(v);
   const len = l || 2;
   while (val.length < len) {
@@ -18,17 +18,13 @@ function pad(v, l) {
   }
   return val;
 }
+export const toMonthString = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}`;
 export const toDateString = (date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 export const toTimeString = (date) => `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 export const toTimeMsString = (date) => `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}:${pad(date.getMilliseconds(), 3)}`;
 export const toDateTimeString = (date) => `${toDateString(date)} ${toTimeString(date)}`;
 export const toDateTimeMsString = (date) => `${toDateString(date)} ${toTimeMsString(date)}`;
 export const toDateTimeFilename = (date) => `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
-
-export const getClockTime = () => {
-  const date = new Date();
-  return toDateTimeMsString(date);
-};
 
 export const isPeername = (xp2pInfo) => /^\w+$/.test(xp2pInfo) && !/^XP2P/.test(xp2pInfo);
 
@@ -118,7 +114,7 @@ export async function snapshotAndSave({ snapshot }) {
     console.log('snapshot checkAuthorize fail', err);
     const modalRes = await wx.showModal({
       title: '',
-      content: '拍照需要您授权小程序访问相册',
+      content: '截图需要您授权小程序访问相册',
       confirmText: '去授权',
     });
     if (modalRes.confirm) {
@@ -140,12 +136,12 @@ export async function snapshotAndSave({ snapshot }) {
   timer = setTimeout(() => {
     console.error('snapshot timeout');
     endSnapshot({
-      title: '拍照超时',
+      title: '截图超时',
     });
   }, 5000);
 
   wx.showLoading({
-    title: '拍照中',
+    title: '截图中',
   });
 
   console.log('do snapshot');
@@ -156,7 +152,7 @@ export async function snapshotAndSave({ snapshot }) {
   } catch (err) {
     console.error('snapshot fail', err);
     endSnapshot({
-      title: '拍照失败',
+      title: '截图失败',
       content: err.errMsg,
     });
     return;
