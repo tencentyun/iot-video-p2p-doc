@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "IPC Playback",
+  "navigationBarTitleText": "1v1 回放",
   "usingComponents": {
    "iot-p2p-playback-player": "plugin://xp2p/iot-p2p-playback-player",
    "mp-icon": "weui-miniprogram/icon/icon"

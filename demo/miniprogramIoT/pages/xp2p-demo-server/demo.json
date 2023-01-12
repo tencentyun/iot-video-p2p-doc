@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "Server",
+  "navigationBarTitleText": "1v多 监控",
   "usingComponents": {
     "iot-p2p-common-player": "plugin://xp2p/iot-p2p-common-player",
     "mp-icon": "weui-miniprogram/icon/icon"

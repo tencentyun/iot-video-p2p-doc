@@ -43,6 +43,9 @@ Page({
     orientation: 'vertical',
     fullScreen: false,
 
+    // 播放错误
+    isPlayError: false,
+
     // 调试
     showLog: true,
     showDebugInfo: false,
@@ -85,11 +88,16 @@ Page({
     console.log('demo: onUnload');
     this.hasExited = true;
 
-    // 监控页关掉player就好，不用销毁 p2p 模块
+    // 停止播放
     if (this.userData.player) {
       console.log('demo: player.stopAll');
       this.userData.player.stopAll();
       this.userData.player = null;
+    }
+
+    // 停止对讲
+    if (this.data.voiceState !== 'VoiceIdle') {
+      this.stopVoice();
     }
 
     // 断开连接
@@ -121,17 +129,20 @@ Page({
 
     // 开始连接
     console.log('demo: startP2PService', this.userData.deviceId);
-    try {
-      xp2pManager.startP2PService({
-        p2pMode: detail.p2pMode,
-        deviceInfo: detail.deviceInfo,
-        xp2pInfo: detail.xp2pInfo,
-        liveStreamDomain: detail.liveStreamDomain,
-        caller: this.userData.pageId,
-      }).catch(() => undefined); // 只是提前连接，不用处理错误
-    } catch (err) {
-      console.error('demo: startP2PService err', err);
-    }
+    xp2pManager.startP2PService({
+      p2pMode: detail.p2pMode,
+      deviceInfo: detail.deviceInfo,
+      xp2pInfo: detail.xp2pInfo,
+      liveStreamDomain: detail.liveStreamDomain,
+      caller: this.userData.pageId,
+    })
+      .then((res) => {
+        console.log('demo: startP2PService res', res);
+      })
+      .catch((err) => {
+        // 只是提前连接，不用特别处理
+        console.error('demo: startP2PService err', err);
+      });
 
     console.log('demo: create components');
     this.setData(detail, () => {
@@ -160,6 +171,14 @@ Page({
   },
   onPlayStateEvent({ type, detail }) {
     console.log('demo: onPlayStateEvent', type, detail);
+
+    const isPlayError = type === 'playerror';
+    if (isPlayError === this.data.isPlayError) {
+      return;
+    }
+    this.setData({
+      isPlayError,
+    });
   },
   onPlayError({ type, detail }) {
     this.onPlayStateEvent({ type, detail });
@@ -247,6 +266,14 @@ Page({
     }
     this.userData.player.snapshotAndSave();
   },
+  retryPlayer() {
+    console.log('demo: retryPlayer');
+    if (!this.userData.player) {
+      console.error('demo: retryPlayer but no player component');
+      return;
+    }
+    this.userData.player.retry();
+  },
   toggleDebugInfo() {
     console.log('demo: toggleDebugInfo');
     this.setData({ showDebugInfo: !this.data.showDebugInfo });
@@ -261,7 +288,9 @@ Page({
   onVoiceProcess({ type, detail }) {
     console.log('demo: onVoiceProcess', type, detail);
   },
-  onVoiceError({ detail }) {
+  onVoiceError({ type, detail }) {
+    this.onVoiceProcess({ type, detail });
+
     console.error('demo: onVoiceError', detail);
     wx.showToast({
       title: detail.errMsg || '启动对讲失败',

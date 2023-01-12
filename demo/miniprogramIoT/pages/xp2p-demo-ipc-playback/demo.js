@@ -1,5 +1,6 @@
-import { pad, toMonthString, toDateTimeString, toTimeString } from '../../utils';
+import { pad, toMonthString, toDateTimeString, toTimeString, toDateTimeFilename } from '../../utils';
 import { getXp2pManager } from '../../lib/xp2pManager';
+import { getRecordManager } from '../../lib/recordManager';
 
 // 覆盖 console
 const app = getApp();
@@ -7,6 +8,9 @@ const oriConsole = app.console;
 const console = app.logger || oriConsole;
 
 let xp2pManager;
+
+const downloadManager = getRecordManager('downloads');
+const fileSystemManager = wx.getFileSystemManager();
 
 const pageName = 'demo-page-ipc-playback';
 let pageSeq = 0;
@@ -44,11 +48,30 @@ Page({
 
     recordDate: '',
     recordVideos: null,
+    localFiles: null,
 
     // 回放状态
+    currentVideo: '', // 注意data、userData里都有
     showTogglePlayIcon: false,
     isPlaying: false, // 播放器状态，不一定播放成功
     currentSecStr: '',
+
+    // 下载状态
+    currentFile: '',  // 注意data、userData里都有
+    downloadBytesStr: '',
+
+    // tabs
+    tabs: [
+      {
+        key: 'video',
+        title: '录像',
+      },
+      {
+        key: 'file',
+        title: '文件',
+      },
+    ],
+    activeTab: 'video',
   },
   onLoad(query) {
     pageSeq++;
@@ -65,6 +88,8 @@ Page({
       player: null,
       currentVideo: null,
       playState: null, // { supportProgress: boolean; currentTime: number }
+      currentFile: null,
+      downloadState: null, // { stats: number; headers: any; chunkCount: number; totleBytes: number }
     };
 
     console.log('demo: checkReset when enter');
@@ -85,11 +110,16 @@ Page({
     console.log('demo: onUnload');
     this.hasExited = true;
 
-    // 监控页关掉player就好，不用销毁 p2p 模块
+    // 停止播放
     if (this.userData.player) {
       console.log('demo: player.stopAll');
       this.userData.player.stopAll();
       this.userData.player = null;
+    }
+
+    // 停止下载
+    if (this.userData.currentFile) {
+      this.stopDownloadFile();
     }
 
     // 断开连接
@@ -121,24 +151,20 @@ Page({
 
     // 开始连接
     console.log('demo: startP2PService', this.userData.deviceId);
-    try {
-      xp2pManager.startP2PService({
-        p2pMode: detail.p2pMode,
-        deviceInfo: detail.deviceInfo,
-        xp2pInfo: detail.xp2pInfo,
-        caller: this.userData.pageId,
+    xp2pManager.startP2PService({
+      p2pMode: detail.p2pMode,
+      deviceInfo: detail.deviceInfo,
+      xp2pInfo: detail.xp2pInfo,
+      caller: this.userData.pageId,
+    })
+      .then((res) => {
+        console.log('demo: startP2PService res', res);
+        this.getRecordDatesInMonth();
       })
-        .then((res) => {
-          console.log('demo: startP2PService res', res);
-          if (res !== 0) {
-            return;
-          }
-          this.getRecordDatesInMonth();
-        })
-        .catch(() => undefined); // 只是提前连接，不用处理错误
-    } catch (err) {
-      console.error('demo: startP2PService err', err);
-    }
+      .catch((err) => {
+        // 只是提前连接，不用特别处理
+        console.error('demo: startP2PService err', err);
+      });
 
     console.log('demo: create components');
     this.setData(detail, () => {
@@ -306,9 +332,10 @@ Page({
       return;
     }
     console.log('demo: getRecordVideosInDate', this.userData.deviceId, this.data.recordDate);
+    const date = this.data.recordDate;
     const res = await xp2pManager.getRecordVideosInDate(
       this.userData.deviceId,
-      { date: this.data.recordDate },
+      { date },
     );
     console.log('demo: getRecordVideosInDate res', res);
     const nextDateSec = new Date(this.data.recordDate.replace(/-/g, '/')).getTime() / 1000 + 3600 * 24;
@@ -320,7 +347,35 @@ Page({
     };
     this.setData({
       recordVideos: res.video_list.map(item => ({
+        date,
+        duration: item.end_time - item.start_time,
         text: `${getTimeStr(item.start_time)} - ${getTimeStr(item.end_time)}`,
+        ...item,
+      })),
+    });
+  },
+  async getFilesInDate() {
+    if (!this.data.recordDate) {
+      return;
+    }
+    console.log('demo: getFilesInDate', this.userData.deviceId, this.data.recordDate);
+    const date = this.data.recordDate;
+    const res = await xp2pManager.getFilesInDate(
+      this.userData.deviceId,
+      { date },
+    );
+    console.log('demo: getFilesInDate res', res);
+    const nextDateSec = new Date(this.data.recordDate.replace(/-/g, '/')).getTime() / 1000 + 3600 * 24;
+    const getTimeStr = (time) => {
+      if (time < nextDateSec) {
+        return toTimeString(new Date(time * 1000));
+      }
+      return toDateTimeString(new Date(time * 1000));
+    };
+    this.setData({
+      localFiles: res.file_list.map(item => ({
+        date,
+        text: `${item.file_name} ${getTimeStr(item.start_time)} - ${getTimeStr(item.end_time)}`,
         ...item,
       })),
     });
@@ -339,17 +394,183 @@ Page({
     this.setData({
       recordDate: `${dataset.month}-${pad(dataset.date, 2)}`,
       recordVideos: null,
+      localFiles: null,
     }, () => {
       this.getRecordVideosInDate();
+      this.getFilesInDate();
+    });
+  },
+  changeTab({ currentTarget: { dataset } }) {
+    const tab = this.data.tabs[dataset.index];
+    console.log('demo: changeTab', tab);
+    this.setData({
+      activeTab: tab.key,
     });
   },
   changeVideo({ currentTarget: { dataset } }) {
     const video = this.data.recordVideos[dataset.index];
     console.log('demo: changeVideo', video);
+    if (video === this.userData.currentVideo) {
+      wx.showToast({
+        title: '正在播放此录像',
+        icon: 'none',
+      });
+      return;
+    }
     this.userData.currentVideo = video;
     this.userData.playState = {};
     this.setData({
+      currentVideo: video,
+      showTogglePlayIcon: false,
+      isPlaying: false,
       streamParams: `start_time=${video.start_time}&end_time=${video.end_time}`,
+    });
+  },
+  seekVideo({ currentTarget: { dataset } }) {
+    if (!this.userData.currentVideo || !this.data.showTogglePlayIcon) {
+      return;
+    }
+    const change = parseInt(dataset.change, 10);
+    let toTime = this.userData.playState.currentTime + change;
+    toTime = Math.max(toTime, 0);
+    toTime = Math.min(toTime, this.userData.currentVideo.duration);
+    console.log('demo: seekVideo', this.userData.playState.currentTime, toTime);
+    this.userData.player.seek(toTime)
+      .then((res) => {
+        console.log('demo: seekVideo success', res);
+      })
+      .catch((err) => {
+        console.log('demo: seekVideo error', err);
+      });
+  },
+  downloadFile({ currentTarget: { dataset } }) {
+    const file = this.data.localFiles[dataset.index];
+    console.log('demo: downloadFile', file);
+    if (file === this.userData.currentFile) {
+      wx.showToast({
+        title: '正在下载此文件',
+        icon: 'none',
+      });
+      return;
+    }
+    if (this.userData.currentFile) {
+      wx.showToast({
+        title: '请等待下载完成后再开始新的下载',
+        icon: 'none',
+      });
+      return;
+    }
+
+    // 保存到用户文件
+    let fixedFilename = [
+      this.userData.deviceId,
+      toDateTimeFilename(new Date(file.start_time * 1000)),
+      file.file_name,
+    ].join('-');
+    const pos = fixedFilename.lastIndexOf('.');
+    if (pos < 0) {
+      fixedFilename = `${fixedFilename}.mp4`; // 默认mp4
+    }
+    console.log('demo: prepareFile', fixedFilename);
+    const filePath = downloadManager.prepareFile(fixedFilename);
+    console.log('demo: prepareFile res', filePath);
+
+    this.userData.currentFile = file;
+    this.userData.downloadState = {
+      filePath,
+      status: NaN,
+      headers: null,
+      chunkCount: 0,
+      downloadBytes: 0,
+    };
+    this.setData({
+      currentFile: file,
+      downloadBytesStr: '0',
+    });
+    xp2pManager.startDownloadFile(
+      this.userData.deviceId,
+      { file_name: file.file_name },
+      {
+        onHeadersReceived: this.onDownloadHeadersReceived.bind(this),
+        onChunkReceived: this.onDownloadChunkReceived.bind(this),
+        onSuccess: this.onDownloadSuccess.bind(this),
+        onFailure: this.onDownloadFailure.bind(this),
+        onError: this.onDownloadError.bind(this),
+      },
+    );
+  },
+  onDownloadHeadersReceived({ status, headers }) {
+    console.log('demo: onDownloadHeadersReceived', status, headers);
+    if (!this.userData.downloadState) {
+      return;
+    }
+    this.userData.downloadState.status = status;
+    this.userData.downloadState.headers = headers;
+  },
+  onDownloadChunkReceived(chunk) {
+    if (!this.userData.downloadState) {
+      return;
+    }
+    this.userData.downloadState.chunkCount++;
+    this.userData.downloadState.downloadBytes += chunk.byteLength;
+    if (this.userData.downloadState.chunkCount % 100 === 1) {
+      // 用timer比较好，这里简单处理
+      this.setData({
+        downloadBytesStr: String(this.userData.downloadState.downloadBytes),
+      });
+    }
+    // 将chunk包写入临时文件
+    try {
+      fileSystemManager.appendFileSync(this.userData.downloadState.filePath, chunk, 'binary');
+    } catch (err) {
+      console.error('demo: appendFileSync error', err);
+      this.stopDownloadFile();
+      wx.showModal({
+        title: '下载失败',
+        content: `${currentFile.file_name}\n${downloadState.downloadBytes}/${currentFile.file_size}\n写入文件失败`,
+        showCancel: false,
+      });
+    }
+  },
+  onDownloadSuccess(res) {
+    console.log('demo: onDownloadSuccess', res);
+    this.doDownloadComplete(res);
+  },
+  onDownloadFailure(res) {
+    console.log('demo: onDownloadFailure', res);
+    this.doDownloadComplete(res);
+  },
+  onDownloadError(res) {
+    console.log('demo: onDownloadError', res);
+    this.doDownloadComplete(res);
+  },
+  doDownloadComplete(res) {
+    if (!this.userData.currentFile) {
+      return;
+    }
+    const { currentFile, downloadState } = this.userData;
+    this.userData.currentFile = null;
+    this.userData.downloadState = null;
+    this.setData({
+      currentFile: null,
+      downloadBytesStr: '',
+    });
+    wx.showModal({
+      title: '下载结束',
+      content: `${currentFile.file_name}\n${downloadState.downloadBytes}/${currentFile.file_size}\nstatus: ${res?.status}, errcode: ${res?.errcode}, errmsg: ${res?.errmsg}`,
+      showCancel: false,
+    });
+  },
+  stopDownloadFile() {
+    if (!this.userData.currentFile) {
+      return;
+    }
+    console.log('demo: stopDownloadFile', this.userData.currentFile);
+    this.userData.currentFile = null;
+    this.userData.downloadState = null;
+    this.setData({
+      currentFile: null,
+      downloadBytesStr: '',
     });
   },
 });

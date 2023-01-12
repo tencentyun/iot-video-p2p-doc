@@ -81,7 +81,8 @@
         <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
       </view>
     </iot-p2p-player-with-mjpg>
-    <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（触发 live-player 暂停）</navigator>
+    <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（可能触发 live-player 暂停）</navigator>
+    <button bindtap="retryPlayer" disabled="{{!isPlayError}}" type="primary" size="mini">重试</button>
     <view class="page-section">
       <iot-p2p-voice
         id="{{voiceId}}"
@@ -92,6 +93,7 @@
         bind:voicestatechange="onVoiceStateChange"
         bind:voicestart="onVoiceProcess"
         bind:voicesuccess="onVoiceProcess"
+        bind:voicestop="onVoiceProcess"
         bind:voiceerror="onVoiceError"
       />
       <view class="group-button-area">

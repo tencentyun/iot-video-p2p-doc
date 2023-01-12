@@ -14,7 +14,7 @@
       "export": "exportForPlayerPlugin.js"
     },
     "xp2p": {
-      "version": "dev-84e36a99dd4d1d14fc354bfb847ee266",
+      "version": "dev-5888830f7df5c25c2574fa3bad31297b",
       "provider": "wx1319af22356934bf",
       "export": "exportForXp2pPlugin.js"
     }

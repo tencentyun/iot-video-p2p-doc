@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "IPC Live",
+  "navigationBarTitleText": "1v1 监控",
   "usingComponents": {
    "iot-p2p-player-with-mjpg": "plugin://xp2p/iot-p2p-player-with-mjpg",
    "iot-p2p-voice": "plugin://xp2p/iot-p2p-voice",

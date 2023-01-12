@@ -2,6 +2,16 @@ import { checkAuthorize } from '../utils';
 
 export const XP2P_BASE_DIR = `${wx.env.USER_DATA_PATH}/xp2p`;
 
+export const getSaveFormat = (fileName) => {
+  if (/\.mp4$/i.test(fileName) || /\.flv$/i.test(fileName) || /\.mjpg$/i.test(fileName)) {
+    return 'video';
+  }
+  if (/\.jpg$/i.test(fileName) || /\.jpeg$/i.test(fileName)) {
+    return 'image';
+  }
+  return '';
+};
+
 const fileSystem = wx.getFileSystemManager();
 const xp2pBaseDir = XP2P_BASE_DIR;
 
@@ -132,7 +142,7 @@ class RecordManager {
     if (!fileName) {
       return null;
     }
-    const filePath = `${this.baseDir}/${fileName.replace(/[^A-Za-z0-9\-.]/g, '-')}`;
+    const filePath = `${this.baseDir}/${fileName.replace(/[^A-Za-z0-9_\-.]/g, '-')}`;
     console.log('RecordManager: prepareFile', fileName, filePath);
 
     this.prepareDir();
@@ -168,13 +178,15 @@ class RecordManager {
     return null;
   }
 
+  // 保存到相册
   async saveToAlbum(fileName) {
     const filePath = `${this.baseDir}/${fileName}`;
 
+    const saveFormat = getSaveFormat(fileName);
     let api = '';
-    if (/\.mp4$/i.test(fileName) || /\.flv$/i.test(fileName) || /\.mjpg$/i.test(fileName)) {
+    if (saveFormat === 'video') {
       api = 'saveVideoToPhotosAlbum';
-    } else if (/\.jpg$/i.test(fileName) || /\.jpeg$/i.test(fileName)) {
+    } else if (saveFormat === 'image') {
       api = 'saveImageToPhotosAlbum';
     } else {
       console.log('RecordManager: saveToAlbum, invalid format');

@@ -103,16 +103,15 @@ Page({
 
     // 开始连接
     console.log('demo: startP2PService', this.userData.deviceId);
-    try {
-      xp2pManager.startP2PService({
-        p2pMode: detail.p2pMode,
-        deviceInfo: detail.deviceInfo,
-        flvUrl: detail.flvUrl,
-        caller: this.userData.pageId,
-      }).catch(() => undefined); // 只是提前连接，不用处理错误
-    } catch (err) {
+    xp2pManager.startP2PService({
+      p2pMode: detail.p2pMode,
+      deviceInfo: detail.deviceInfo,
+      flvUrl: detail.flvUrl,
+      caller: this.userData.pageId,
+    }).catch((err) => {
+      // 只是提前连接，不用特别处理
       console.error('demo: startP2PService err', err);
-    }
+    });
 
     console.log('demo: create components');
     this.setData(detail, () => {
@@ -129,7 +128,12 @@ Page({
   onPlayerEvent({ type, detail }) {
     console.log('demo: onPlayerEvent', type, detail);
   },
-  onPlayError({ detail }) {
+  onPlayStateEvent({ type, detail }) {
+    console.log('demo: onPlayStateEvent', type, detail);
+  },
+  onPlayError({ type, detail }) {
+    this.onPlayStateEvent({ type, detail });
+
     console.error('demo: onPlayError', detail);
     const { errMsg, errDetail } = detail;
     wx.showModal({

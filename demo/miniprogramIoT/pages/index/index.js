@@ -1,5 +1,5 @@
 import { presetDevices, presetServerStreams, totalData } from '../../config/config';
-import { getXp2pManager } from '../../lib/xp2pManager';
+import { getXp2pManager, Xp2pManagerEvent } from '../../lib/xp2pManager';
 
 const sysInfo = wx.getSystemInfoSync();
 const accountInfo = wx.getAccountInfoSync();
@@ -23,6 +23,7 @@ Page({
     playerVersion: '',
     xp2pVersion: '',
     xp2pUUID: '',
+    xp2pState: '',
 
     // 这些是监控页入口
     recentIPCItem: null,
@@ -38,13 +39,18 @@ Page({
   onLoad() {
     console.log('index: onLoad');
 
+    this.userData = {
+      xp2pStateChangeListener: this.onXp2pStateChange.bind(this),
+    };
     if (!xp2pManager) {
       xp2pManager = getXp2pManager();
+      xp2pManager.addEventListener(Xp2pManagerEvent.XP2P_STATE_CHANGE, this.userData.xp2pStateChangeListener);
     }
     this.setData({
       playerVersion: xp2pManager.P2PPlayerVersion,
       xp2pVersion: xp2pManager.XP2PVersion,
       xp2pUUID: xp2pManager.uuid,
+      xp2pState: xp2pManager.moduleState,
     });
 
     const listVideoDevices = [];
@@ -90,6 +96,11 @@ Page({
 
     this.refreshRecnetIPC();
   },
+  onUnload() {
+    if (xp2pManager) {
+      xp2pManager.removeEventListener(Xp2pManagerEvent.XP2P_STATE_CHANGE, this.userData.xp2pStateChangeListener);
+    }
+  },
   onShow() {
     this.refreshRecnetIPC();
   },
@@ -104,8 +115,9 @@ Page({
       } : null,
     });
   },
-  onP2PModuleStateChange({ detail }) {
-    console.log('index: onP2PModuleStateChange', detail);
+  onXp2pStateChange({ state }) {
+    console.log('index: onXp2pStateChange', state);
+    this.setData({ xp2pState: state });
   },
   gotoPage(e) {
     const { url } = e.currentTarget.dataset;

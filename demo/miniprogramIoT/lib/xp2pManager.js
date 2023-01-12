@@ -1,3 +1,7 @@
+export const Xp2pManagerEvent = {
+  XP2P_STATE_CHANGE: 'xp2pStateChange',
+};
+
 let xp2pManager = null;
 export const getXp2pManager = () => {
   if (!xp2pManager) {

@@ -1,7 +1,7 @@
 <view class="page-body">
   <view class="page-section page-section-gap">
     <view class="notice-box">
-      <view>· 使用期间需保持设备在线，且 xp2pinfo 有效（对应设备物模型的 _sys_xp2p_info 属性）</view>
+      <view>· 使用期间需保持设备在线且 xp2pinfo 有效，可以在<text class="text-btn" bindtap="copyDocUrl" data-doc="https://cloud.tencent.com/document/product/1131/52739">控制台云日志</text>查看设备 _sys_xp2p_info 属性</view>
       <view>· 如果遇到问题，可以查看<text class="text-btn" bindtap="copyDocUrl" data-doc="https://mp.weixin.qq.com/wxopen/plugindevdoc?appid=wx1319af22356934bf">插件开发文档</text>中的常见问题部分</view>
       <view>· 如果仍未解决，可以打开<text class="text-btn" bindtap="gotoPage" data-url="/pages/user-files/files?name=logs">Log管理页</text>，发送最新log给我们</view>
     </view>
@@ -11,6 +11,7 @@
     <view>wxVersion: wx {{wxVersion}} / sdk {{wxSDKVersion}}</view>
     <view>pluginVersion: p2p-player {{playerVersion}} / xp2p {{xp2pVersion}}</view>
     <view>xp2pUUID: <text user-select>{{xp2pUUID}}</text></view>
+    <view>xp2pState: {{xp2pState}}</view>
   </view>
   <view class="page-section" wx:if="{{recentIPCItem}}">
     <view class="page-section-title">【最近查看设备】</view>

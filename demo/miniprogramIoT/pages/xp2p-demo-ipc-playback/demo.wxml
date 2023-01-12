@@ -58,12 +58,26 @@
         <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
       </view>
     </iot-p2p-playback-player>
-    <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（触发 live-player 暂停）</navigator>
+    <view>
+      正在播放：{{currentVideo ? (currentVideo.date + ' ' + currentVideo.text) : ''}}
+    </view>
+    <view class="align-right">
+      <text class="text-btn {{currentVideo && showTogglePlayIcon && isPlaying ? '' : 'disabled'}}" data-change="-10" bindtap="seekVideo">-10s</text>
+      <text class="text-btn {{currentVideo && showTogglePlayIcon && isPlaying ? '' : 'disabled'}}" data-change="10" bindtap="seekVideo">+10s</text>
+    </view>
+    <view>
+      正在下载：{{currentFile ? (currentFile.date + ' ' + currentFile.file_name) : ''}}
+    </view>
+    <view class="align-right">
+      <text wx:if="{{currentFile && downloadBytesStr}}">{{downloadBytesStr}} / {{currentFile.file_size}}</text>
+      <text class="text-btn {{currentFile ? '' : 'disabled'}}" bindtap="stopDownloadFile">停止下载</text>
+    </view>
+    <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（可能触发 live-player 暂停）</navigator>
     <view class="page-section" style="padding: 20rpx">
       <view>
         <picker class="weui-input" mode="date" fields="month" value="{{calendarMonth}}" bindchange="changeMonth">
           <view class="weui-input">
-            选择月份：{{calendarMonth}}
+            当前选择月份：{{calendarMonth}}
           </view>
         </picker>
       </view>
@@ -83,19 +97,45 @@
         </view>
       </view>
       <view>
-        <view>当前日期：{{recordDate}}</view>
-      </view>
-      <view>
-        <view>录像列表：</view>
-        <view class="group-button-area">
-          <button wx:for="{{recordVideos}}" wx:key="index" class="group-button" size="mini"
+        <view>当前选择日期：{{recordDate}}</view>
+        <view class="tabs">
+          当前列表：
+          <view
+            wx:for="{{tabs}}"
+            wx:key="index"
+            class="tab {{activeTab === item.key ? 'active' : ''}}"
             data-index="{{index}}"
-            bindtap="changeVideo"
-          >
-            {{item.text}}
-          </button>
-          <view wx:if="{{recordVideos && recordVideos.length === 0}}">
-            暂无录像
+            bindtap="changeTab"
+          >{{item.title}}</view>
+        </view>
+        <view style="display: {{activeTab === 'video' ? '' : 'none'}}">
+          <view class="group-button-area">
+            <view wx:for="{{recordVideos}}" wx:key="index" >
+              <button size="mini"
+                data-index="{{index}}"
+                bindtap="changeVideo"
+              >
+                {{item.text}}
+              </button>
+            </view>
+            <view wx:if="{{recordVideos && recordVideos.length === 0}}">
+              暂无录像
+            </view>
+          </view>
+        </view>
+        <view style="display: {{activeTab === 'file' ? '' : 'none'}}">
+          <view class="group-button-area">
+            <view wx:for="{{localFiles}}" wx:key="index" >
+              <button size="mini"
+                data-index="{{index}}"
+                bindtap="downloadFile"
+              >
+                {{item.text}}
+              </button>
+            </view>
+            <view wx:if="{{localFiles && localFiles.length === 0}}">
+              暂无文件
+            </view>
           </view>
         </view>
       </view>

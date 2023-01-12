@@ -1,1 +1,12 @@
 @import '../../player.wxss';
+
+.tabs .tab {
+  display: inline-block;
+  padding: 0 20rpx;
+  font-size: small;
+}
+
+.tabs .tab.active {
+  font-size: medium;
+  font-weight: bold;
+}

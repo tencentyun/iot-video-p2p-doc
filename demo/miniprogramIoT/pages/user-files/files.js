@@ -1,19 +1,21 @@
 import { isDevTool } from '../../utils';
-import { getRecordManager } from '../../lib/recordManager';
+import { getRecordManager, getSaveFormat } from '../../lib/recordManager';
 
 const app = getApp();
 
 const isFLV = filename => /\.flv$/i.test(filename);
 const isMP4 = filename => /\.mp4$/i.test(filename);
 const isMJPG = filename => /\.mjpg$/i.test(filename);
+const isJPG = filename => /\.jpg$/i.test(filename) || /\.jpeg$/i.test(filename);
 const isLOG = filename => /\.log$/i.test(filename);
 const processFileItem = (item) => {
   if (item) {
     item.isMP4 = isMP4(item.fileName);
     item.isFLV = isFLV(item.fileName);
     item.isMJPG = isMJPG(item.fileName);
+    item.isJPG = isJPG(item.fileName);
     item.isLOG = isLOG(item.fileName);
-    item.showSave = item.isMP4 || item.isFLV || item.isMJPG;
+    item.showSave = !!getSaveFormat(item.fileName);
   }
   return item;
 };
