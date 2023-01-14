@@ -24,8 +24,8 @@ const devices = {
     showInHomePageBtn: true,
     productName: 'IPC',
     productId: 'SO1Z9Y787A',
-    deviceName: 'HS_88959786_1',
-    xp2pInfo: 'XP2P2EMi89Xld2IWsLr9r4J7Rw==%2.4.35',
+    deviceName: 'cannon_85317409_4',
+    xp2pInfo: 'XP2P4ZbW1lPiM5Jt6mw9spjB5g==%2.4.32',
     options: {
       playerRTC: true,
       voiceType: 'Pusher',

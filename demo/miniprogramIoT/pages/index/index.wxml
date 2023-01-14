@@ -97,9 +97,11 @@
       </view>
     </view>
   </view>
-  <navigator url="/pages/user-files/files?name=logs" hover-class="navigator-hover">跳转到 Log 管理页</navigator>
-  <navigator url="/pages/user-files/files?name=records" hover-class="navigator-hover">跳转到 录像管理页</navigator>
-  <navigator url="/pages/user-files/files?name=voices" hover-class="navigator-hover">跳转到 语音管理页</navigator>
-  <navigator url="/pages/user-files/files?name=downloads" hover-class="navigator-hover">跳转到 下载管理页</navigator>
+  <view class="page-section page-section-gap">
+    <navigator url="/pages/user-files/files?name=logs" hover-class="navigator-hover">跳转到 Log 管理页</navigator>
+    <navigator url="/pages/user-files/files?name=records" hover-class="navigator-hover">跳转到 录像管理页</navigator>
+    <navigator url="/pages/user-files/files?name=voices" hover-class="navigator-hover">跳转到 语音管理页</navigator>
+    <navigator url="/pages/user-files/files?name=downloads" hover-class="navigator-hover">跳转到 下载管理页</navigator>
+  </view>
 </view>
 

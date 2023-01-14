@@ -51,8 +51,18 @@ Page({
     showDebugInfo: false,
 
     // 对讲
-    voiceId: 'iot-voice',
+    voiceId: 'iot-p2p-voice',
     voiceState: '',
+
+    // PTZ
+    ptzBtns: [
+      { name: 'up', cmd: 'ptz_up_press' },
+      { name: 'down', cmd: 'ptz_down_press' },
+      { name: 'left', cmd: 'ptz_left_press' },
+      { name: 'right', cmd: 'ptz_right_press' },
+    ],
+    ptzCmd: '',
+    releasePTZTimer: null,
   },
   onLoad(query) {
     pageSeq++;
@@ -63,11 +73,13 @@ Page({
       xp2pManager = getXp2pManager();
     }
 
+    // 渲染无关的放这里
     this.userData = {
       pageId,
       deviceId: '',
       player: null,
       voice: null,
+      releasePTZTimer: null,
     };
 
     console.log('demo: checkReset when enter');
@@ -98,6 +110,11 @@ Page({
     // 停止对讲
     if (this.data.voiceState !== 'VoiceIdle') {
       this.stopVoice();
+    }
+
+    // 停止PTZ
+    if (this.data.ptzCmd || this.userData.releasePTZTimer) {
+      this.controlPTZ('ptz_release_pre');
     }
 
     // 断开连接
@@ -328,5 +345,49 @@ Page({
     }
 
     this.userData.voice.stopVoice();
+  },
+  // ptz控制
+  controlPTZ(e) {
+    const cmd = (typeof e === 'string') ? e : e?.currentTarget?.dataset?.cmd;
+    if (!cmd) {
+      return;
+    }
+
+    console.log('demo: controlPTZ', cmd);
+
+    if (this.userData.releasePTZTimer) {
+      clearTimeout(this.userData.releasePTZTimer);
+      this.userData.releasePTZTimer = null;
+    }
+
+    if (cmd !== 'ptz_release_pre') {
+      this.setData({ ptzCmd: cmd });
+    } else {
+      this.setData({ ptzCmd: '' });
+    }
+
+    xp2pManager.sendPTZCommand(this.userData.deviceId, { ptzCmd: cmd })
+      .then((res) => {
+        console.log(`demo: sendPTZCommand ${cmd} res`, res);
+      })
+      .catch((err) => {
+        console.error(`demo: sendPTZCommand ${cmd} error`, err);
+      });
+  },
+  releasePTZBtn() {
+    console.log('demo: releasePTZBtn');
+
+    // 先把cmd清了，恢复按钮状态
+    this.setData({ ptzCmd: '' });
+
+    if (this.userData.releasePTZTimer) {
+      clearTimeout(this.userData.releasePTZTimer);
+      this.userData.releasePTZTimer = null;
+    }
+
+    // 延迟发送release
+    this.userData.releasePTZTimer = setTimeout(() => {
+      this.controlPTZ('ptz_release_pre');
+    }, 500);
   },
 });

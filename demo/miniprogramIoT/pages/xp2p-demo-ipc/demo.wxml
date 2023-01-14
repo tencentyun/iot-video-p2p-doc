@@ -108,5 +108,27 @@
         </button>
       </view>
     </view>
+    <view wx:if="{{options.supportPTZ}}" class="page-section">
+      <view class="ptz-panel">
+        <view class="ptz-controls">
+          <view class="ptz-controls-top">
+            <view class="ptz-position">
+              <view wx:for="{{ptzBtns}}" wx:key="name" class="ptz-dir ptz-{{item.name}}">
+                <view class="ptz-btn"
+                  data-cmd="{{item.cmd}}"
+                  bind:touchstart="controlPTZ"
+                  bind:touchend="releasePTZBtn"
+                  bind:touchcancel="releasePTZBtn"
+                >
+                  <view class="ptz-icon arrow-{{item.name}} {{ptzCmd === item.cmd ? 'press' : ''}}"></view>
+                </view>
+              </view>
+              <view class="ptz-cricle">
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
   </view>
 </view>
