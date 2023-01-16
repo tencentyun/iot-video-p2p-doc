@@ -619,5 +619,6 @@ Page({
       currentFile: null,
       downloadBytesStr: '',
     });
+    xp2pManager.stopDownloadFile(this.userData.deviceId);
   },
 });

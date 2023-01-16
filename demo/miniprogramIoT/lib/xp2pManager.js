@@ -1,3 +1,5 @@
+// 接口参考 types/index.d.ts 里的 IXp2pManager
+
 export const Xp2pManagerEvent = {
   XP2P_STATE_CHANGE: 'xp2pStateChange',
 };
