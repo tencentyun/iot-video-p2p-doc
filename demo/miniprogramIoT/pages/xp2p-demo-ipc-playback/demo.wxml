@@ -17,6 +17,7 @@
       needCheckStream="{{options.needCheckStream}}"
       mode="{{options.playerRTC ? 'RTC' : 'live'}}"
       muted="{{muted}}"
+      orientation="{{orientation}}"
       showLog="{{showLog}}"
       showDebugInfo="{{showDebugInfo}}"
       onlyp2p="{{onlyp2pMap && onlyp2pMap.flv}}"
@@ -33,27 +34,28 @@
       bind:supportprogresschange="onSupportProgressChange"
       bind:timeupdate="onTimeUpdate"
     >
-      <view slot="inner" class="player-controls-container">
-        <view class="player-controls left">
-          <view wx:if="{{showTogglePlayIcon}}" class="player-control-item" bindtap="togglePlay">
-            <mp-icon icon="{{isPlaying ? 'pause' : 'play'}}" size="{{iconSize}}" color="white" type="field"></mp-icon>
-          </view>
-          <view class="player-control-item">
-            {{currentSecStr}}
-          </view>
+      <!--
+        注意要指定slot属性，因为组件设置了 multipleSlots
+        inner: 放在 live-player 内部，全屏时可见，随 live-player 销毁
+        after: 放在 live-player 后面，全屏时不可见，live-player 销毁后依然存在
+      -->
+      <iot-player-controls
+        id="{{controlsId}}"
+        slot="inner"
+        showIcons="{{showIcons}}"
+        iconSize="{{iconSize}}"
+        muted="{{muted}}"
+        orientation="{{orientation}}"
+        fullScreen="{{fullScreen}}"
+        bind:clickicon="clickControlIcon"
+      >
+        <view wx:if="{{showTogglePlayIcon}}" class="player-control-item" bindtap="togglePlay">
+          <mp-icon icon="{{isPlaying ? 'pause' : 'play'}}" size="{{iconSize}}" color="white" type="field"></mp-icon>
         </view>
-        <view class="player-controls right">
-          <view class="player-control-item" bindtap="changeMuted">
-            <mp-icon icon="{{muted ? 'volume-off' : 'volume-up'}}" size="{{iconSize}}" color="white"></mp-icon>
-          </view>
-          <view class="player-control-item" bindtap="changeFullScreen">
-            <mp-icon icon="{{fullScreen ? 'previous' : 'max-window'}}" size="{{iconSize}}" color="white"></mp-icon>
-          </view>
-          <view class="player-control-item" bindtap="snapshotAndSave">
-            <mp-icon icon="camera" size="{{iconSize}}" color="white"></mp-icon>
-          </view>
+        <view class="player-control-item">
+          {{currentSecStr}}
         </view>
-      </view>
+      </iot-player-controls>
       <view slot="after" class="debug-info-switch-container">
         <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
       </view>

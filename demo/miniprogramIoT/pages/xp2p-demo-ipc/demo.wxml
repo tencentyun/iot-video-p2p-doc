@@ -18,6 +18,7 @@
       needCheckStream="{{options.needCheckStream}}"
       mode="{{options.playerRTC ? 'RTC' : 'live'}}"
       muted="{{muted}}"
+      orientation="{{orientation}}"
       showLog="{{showLog}}"
       showDebugInfo="{{showDebugInfo}}"
       onlyp2pMap="{{onlyp2pMap}}"
@@ -37,46 +38,28 @@
       bind:mjpgplayend="onMjpgPlayStateEvent"
       bind:mjpgplayerror="onMjpgPlayStateEvent"
     >
-      <view wx:if="{{!deviceInfo.isMjpgDevice}}" slot="flvInner" class="player-controls-container">
-        <view class="player-controls left">
-          <view class="player-control-item" bindtap="toggleVoice">
-            <mp-icon icon="mike" size="{{iconSize}}" color="{{voiceState ? (voiceState === 'VoiceIdle' ? 'white' : 'orange') : 'grey'}}" type="{{voiceState === 'VoiceSending' ? 'field': 'outline'}}"></mp-icon>
-          </view>
+      <!--
+        注意要指定slot属性，因为组件设置了 multipleSlots
+        flvInner: 放在 live-player 内部，全屏时可见，随 live-player 销毁，视频流设备用
+        mjpgInner: 放在 image 后面，随 image 销毁，图片流设备用
+        after: 放在 live-player/image 后面，全屏时不可见，live-player/image 销毁后依然存在
+      -->
+      <iot-player-controls
+        id="{{controlsId}}"
+        slot="{{deviceInfo.isMjpgDevice ? 'mjpgInner' : 'flvInner'}}"
+        showIcons="{{showIcons}}"
+        iconSize="{{iconSize}}"
+        qualityMap="{{qualityMap}}"
+        quality="{{streamQuality}}"
+        muted="{{muted}}"
+        orientation="{{orientation}}"
+        fullScreen="{{fullScreen}}"
+        bind:clickicon="clickControlIcon"
+      >
+        <view class="player-control-item" bindtap="toggleVoice">
+          <mp-icon icon="mike" size="{{iconSize}}" color="{{voiceState ? (voiceState === 'VoiceIdle' ? 'white' : 'orange') : 'grey'}}" type="{{voiceState === 'VoiceSending' ? 'field': 'outline'}}"></mp-icon>
         </view>
-        <view class="player-controls right">
-          <view class="player-control-item" bindtap="changeQuality">
-            {{qualityMap[streamQuality] || streamQuality}}
-          </view>
-          <view class="player-control-item" bindtap="changeMuted">
-            <mp-icon icon="{{muted ? 'volume-off' : 'volume-up'}}" size="{{iconSize}}" color="white"></mp-icon>
-          </view>
-          <view class="player-control-item" bindtap="changeFullScreen">
-            <mp-icon icon="{{fullScreen ? 'previous' : 'max-window'}}" size="{{iconSize}}" color="white"></mp-icon>
-          </view>
-          <view class="player-control-item" bindtap="snapshotAndSave">
-            <mp-icon icon="camera" size="{{iconSize}}" color="white"></mp-icon>
-          </view>
-        </view>
-      </view>
-      <view wx:if="{{deviceInfo.isMjpgDevice}}" slot="mjpgInner" class="player-controls-container">
-        <view class="player-controls left">
-          <view class="player-control-item" bindtap="toggleVoice">
-            <mp-icon icon="mike" size="{{iconSize}}" color="{{voiceState ? (voiceState === 'VoiceIdle' ? 'white' : 'orange') : 'grey'}}" type="{{voiceState === 'VoiceSending' ? 'field': 'outline'}}"></mp-icon>
-          </view>
-        </view>
-        <view class="player-controls right">
-          <view class="player-control-item" bindtap="changeQuality">
-            {{qualityMap[streamQuality] || streamQuality}}
-          </view>
-          <view class="player-control-item" bindtap="changeMuted">
-            <mp-icon icon="{{muted ? 'volume-off' : 'volume-up'}}" size="{{iconSize}}" color="white"></mp-icon>
-          </view>
-          <!-- 图片流不支持全屏 -->
-          <view class="player-control-item" bindtap="snapshotAndSave">
-            <mp-icon icon="camera" size="{{iconSize}}" color="white"></mp-icon>
-          </view>
-        </view>
-      </view>
+      </iot-player-controls>
       <view slot="after" class="debug-info-switch-container">
         <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
       </view>

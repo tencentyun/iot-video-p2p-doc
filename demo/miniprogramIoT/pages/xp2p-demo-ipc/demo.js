@@ -38,10 +38,19 @@ Page({
     qualityMap,
 
     // 播放器控制
-    iconSize: 25,
     muted: false,
     orientation: 'vertical',
     fullScreen: false,
+
+    // 控件icon
+    controlsId: 'controls',
+    iconSize: 25,
+    showIcons: {
+      quality: true,
+      muted: true,
+      fullScreen: true,
+      snapshot: true,
+    },
 
     // 播放错误
     isPlayError: false,
@@ -108,7 +117,7 @@ Page({
     }
 
     // 停止对讲
-    if (this.data.voiceState !== 'VoiceIdle') {
+    if (this.userData.voice && this.data.voiceState !== 'VoiceIdle') {
       this.stopVoice();
     }
 
@@ -161,11 +170,24 @@ Page({
         console.error('demo: startP2PService err', err);
       });
 
+    // 图片流不支持 fullScreen
+    let { showIcons } = this.data;
+    if (detail.deviceInfo.isMjpgDevice) {
+      showIcons = {
+        ...showIcons,
+        fullScreen: false,
+      };
+    }
+
     console.log('demo: create components');
-    this.setData(detail, () => {
+    this.setData({
+      ...detail,
+      showIcons,
+    }, () => {
       const player = this.selectComponent(`#${this.data.playerId}`);
       if (player) {
         console.log('demo: create player success');
+        oriConsole.log('demo: player', player); // console 被覆盖了会写logger影响性能，查看组件用 oriConsole
         this.userData.player = player;
       } else {
         console.error('demo: create player error');
@@ -173,12 +195,20 @@ Page({
       const voice = this.selectComponent(`#${this.data.voiceId}`);
       if (voice) {
         console.log('demo: create voice success');
+        oriConsole.log('demo: voice', voice);
         this.userData.voice = voice;
         this.setData({
           voiceState: 'VoiceIdle',
         });
       } else {
         console.error('demo: create voice error');
+      }
+      const controls = this.selectComponent(`#${this.data.controlsId}`);
+      if (controls) {
+        console.log('demo: create controls success');
+        oriConsole.log('demo: controls', controls);
+      } else {
+        console.error('demo: create controls error');
       }
     });
   },
@@ -218,6 +248,27 @@ Page({
     console.log('demo: onMjpgPlayStateEvent', type, detail);
   },
   // player控制
+  clickControlIcon({ detail }) {
+    const { name } = detail;
+    console.log('demo: clickControlIcon', name);
+    switch (name) {
+      case 'quality':
+        this.changeQuality();
+        break;
+      case 'muted':
+        this.changeMuted();
+        break;
+      case 'orientation':
+        this.changeOrientation();
+        break;
+      case 'fullScreen':
+        this.changeFullScreen();
+        break;
+      case 'snapshot':
+        this.snapshotAndSave();
+        break;
+    }
+  },
   changeQuality() {
     wx.showActionSheet({
       itemList: qualityList.map(item => item.text),

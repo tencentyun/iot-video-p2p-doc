@@ -1,0 +1,22 @@
+<view class="player-controls-container">
+  <view class="player-controls left">
+    <slot></slot>
+  </view>
+  <view class="player-controls right">
+    <view wx:if="{{showIcons.quality}}" class="player-control-item" data-name="quality" bindtap="clickIcon">
+      {{qualityMap[quality] || quality}}
+    </view>
+    <view wx:if="{{showIcons.muted}}" class="player-control-item" data-name="muted" bindtap="clickIcon">
+      <mp-icon icon="{{muted ? 'volume-off' : 'volume-up'}}" size="{{iconSize}}" color="white"></mp-icon>
+    </view>
+    <view wx:if="{{showIcons.orientation}}" class="player-control-item" data-name="orientation" bindtap="clickIcon">
+      {{orientation === 'horizontal' ? 'H' : 'V'}}
+    </view>
+    <view wx:if="{{showIcons.fullScreen}}" class="player-control-item" data-name="fullScreen" bindtap="clickIcon">
+      <mp-icon icon="{{fullScreen ? 'previous' : 'max-window'}}" size="{{iconSize}}" color="white"></mp-icon>
+    </view>
+    <view wx:if="{{showIcons.snapshot}}" class="player-control-item" data-name="snapshot" bindtap="clickIcon">
+      <mp-icon icon="camera" size="{{iconSize}}" color="white"></mp-icon>
+    </view>
+  </view>
+</view>

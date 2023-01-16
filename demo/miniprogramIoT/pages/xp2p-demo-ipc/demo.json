@@ -3,6 +3,7 @@
   "usingComponents": {
    "iot-p2p-player-with-mjpg": "plugin://xp2p/iot-p2p-player-with-mjpg",
    "iot-p2p-voice": "plugin://xp2p/iot-p2p-voice",
-   "mp-icon": "weui-miniprogram/icon/icon"
+   "mp-icon": "weui-miniprogram/icon/icon",
+   "iot-player-controls": "../../components/iot-player-controls/controls"
   }
 }

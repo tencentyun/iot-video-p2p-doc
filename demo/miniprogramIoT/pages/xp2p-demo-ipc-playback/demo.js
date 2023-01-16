@@ -33,10 +33,19 @@ Page({
     streamParams: '',
 
     // 播放器控制
-    iconSize: 25,
     muted: false,
     orientation: 'vertical',
     fullScreen: false,
+
+    // 控件icon
+    controlsId: 'controls',
+    iconSize: 25,
+    showIcons: {
+      quality: false,
+      muted: true,
+      fullScreen: true,
+      snapshot: true,
+    },
 
     // 调试
     showLog: true,
@@ -166,14 +175,34 @@ Page({
         console.error('demo: startP2PService err', err);
       });
 
+    // 图片流不支持 fullScreen
+    let { showIcons } = this.data;
+    if (detail.deviceInfo.isMjpgDevice) {
+      showIcons = {
+        ...showIcons,
+        fullScreen: false,
+      };
+    }
+
     console.log('demo: create components');
-    this.setData(detail, () => {
+    this.setData({
+      ...detail,
+      showIcons,
+    }, () => {
       const player = this.selectComponent(`#${this.data.playerId}`);
       if (player) {
         console.log('demo: create player success');
+        oriConsole.log('demo: player', player); // console 被覆盖了会写logger影响性能，查看组件用 oriConsole
         this.userData.player = player;
       } else {
         console.error('demo: create player error');
+      }
+      const controls = this.selectComponent(`#${this.data.controlsId}`);
+      if (controls) {
+        console.log('demo: create controls success');
+        oriConsole.log('demo: controls', controls);
+      } else {
+        console.error('demo: create controls error');
       }
     });
   },
@@ -254,6 +283,24 @@ Page({
       this.userData.player.pause();
     } else {
       this.userData.player.resume();
+    }
+  },
+  clickControlIcon({ detail }) {
+    const { name } = detail;
+    console.log('demo: clickControlIcon', name);
+    switch (name) {
+      case 'muted':
+        this.changeMuted();
+        break;
+      case 'orientation':
+        this.changeOrientation();
+        break;
+      case 'fullScreen':
+        this.changeFullScreen();
+        break;
+      case 'snapshot':
+        this.snapshotAndSave();
+        break;
     }
   },
   changeMuted() {

@@ -2,6 +2,7 @@
   "navigationBarTitleText": "1v1 回放",
   "usingComponents": {
    "iot-p2p-playback-player": "plugin://xp2p/iot-p2p-playback-player",
-   "mp-icon": "weui-miniprogram/icon/icon"
+   "mp-icon": "weui-miniprogram/icon/icon",
+   "iot-player-controls": "../../components/iot-player-controls/controls"
   }
 }
