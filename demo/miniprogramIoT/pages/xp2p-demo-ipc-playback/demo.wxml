@@ -24,7 +24,7 @@
       bind:playerstatechange="onPlayerEvent"
       bind:streamstatechange="onPlayerEvent"
       bind:playstart="onPlayStateEvent"
-      bind:playsuccess="onPlayStateEvent"
+      bind:playsuccess="onPlaySuccess"
       bind:playpause="onPlayStateEvent"
       bind:playresume="onPlayStateEvent"
       bind:playstop="onPlayStateEvent"
@@ -60,22 +60,24 @@
         <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
       </view>
     </iot-p2p-playback-player>
-    <view>
-      正在播放：{{currentVideo ? (currentVideo.date + ' ' + currentVideo.text) : ''}}
+    <view class="page-section page-section-gap">
+      <view>
+        正在播放：{{currentVideo ? (currentVideo.date + ' ' + currentVideo.text) : ''}}
+      </view>
+      <view class="align-right">
+        <text class="text-btn {{currentVideo && showTogglePlayIcon && isPlaying ? '' : 'disabled'}}" data-change="-10" bindtap="seekVideo">-10s</text>
+        <text class="text-btn {{currentVideo && showTogglePlayIcon && isPlaying ? '' : 'disabled'}}" data-change="10" bindtap="seekVideo">+10s</text>
+      </view>
+      <view>
+        正在下载：{{currentFile ? (currentFile.date + ' ' + currentFile.file_name) : ''}}
+      </view>
+      <view class="align-right">
+        <text wx:if="{{currentFile && downloadBytesStr}}">{{downloadBytesStr}} / {{currentFile.file_size}}</text>
+        <text class="text-btn {{currentFile ? '' : 'disabled'}}" bindtap="stopDownloadFile">停止下载</text>
+      </view>
+      <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（可能触发 live-player 暂停）</navigator>
     </view>
-    <view class="align-right">
-      <text class="text-btn {{currentVideo && showTogglePlayIcon && isPlaying ? '' : 'disabled'}}" data-change="-10" bindtap="seekVideo">-10s</text>
-      <text class="text-btn {{currentVideo && showTogglePlayIcon && isPlaying ? '' : 'disabled'}}" data-change="10" bindtap="seekVideo">+10s</text>
-    </view>
-    <view>
-      正在下载：{{currentFile ? (currentFile.date + ' ' + currentFile.file_name) : ''}}
-    </view>
-    <view class="align-right">
-      <text wx:if="{{currentFile && downloadBytesStr}}">{{downloadBytesStr}} / {{currentFile.file_size}}</text>
-      <text class="text-btn {{currentFile ? '' : 'disabled'}}" bindtap="stopDownloadFile">停止下载</text>
-    </view>
-    <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（可能触发 live-player 暂停）</navigator>
-    <view class="page-section" style="padding: 20rpx">
+    <view class="page-section page-section-gap">
       <view>
         <picker class="weui-input" mode="date" fields="month" value="{{calendarMonth}}" bindchange="changeMonth">
           <view class="weui-input">
@@ -85,7 +87,7 @@
       </view>
       <view>
         <view>有效日期：</view>
-        <view class="group-button-area" style="min-height: 100rpx">
+        <view class="group-button-area" style="padding: 0 20rpx; min-height: 100rpx">
           <button wx:for="{{validDates}}" wx:key="index" class="group-button" size="mini"
             data-month="{{item.month}}"
             data-date="{{item.date}}"
@@ -110,7 +112,7 @@
             bindtap="changeTab"
           >{{item.title}}</view>
         </view>
-        <view style="display: {{activeTab === 'video' ? '' : 'none'}}">
+        <view style="padding: 0 20rpx; display: {{activeTab === 'video' ? '' : 'none'}}">
           <view class="group-button-area">
             <view wx:for="{{recordVideos}}" wx:key="index" >
               <button size="mini"
@@ -125,7 +127,7 @@
             </view>
           </view>
         </view>
-        <view style="display: {{activeTab === 'file' ? '' : 'none'}}">
+        <view style="padding: 0 20rpx; display: {{activeTab === 'file' ? '' : 'none'}}">
           <view class="group-button-area">
             <view wx:for="{{localFiles}}" wx:key="index" >
               <button size="mini"

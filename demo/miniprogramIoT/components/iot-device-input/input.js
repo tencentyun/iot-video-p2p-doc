@@ -301,44 +301,26 @@ Component({
         return;
       }
 
-      if (this.data.p2pMode === 'ipc') {
-        if (!inputValues.xp2pInfo) {
-          this.showToast('please input xp2pInfo');
-          return;
-        }
-        if (sceneType === 'live') {
-          if (this.data.isMjpgDevice && inputValues.liveStreamDomain) {
-            this.showToast('图片流不支持`1v1转1vn`');
-            return;
-          }
-          if (inputValues.liveStreamDomain && options.needCheckStream) {
-            this.showToast('开启`1v1转1vn`时需取消`播放前先检查能否拉流`');
-            return;
-          }
-        }
-        if (sceneType === 'playback') {
-          if (this.data.isMjpgDevice) {
-            this.showToast('图片流不支持回放');
-            return;
-          }
-        }
-      } else {
-        if (!this.data.inputUrl) {
-          this.showToast('please input stream url');
-          return;
-        }
-        if (!/^https:/.test(this.data.inputUrl)) {
-          this.showToast('only support https url');
-          return;
-        }
-      }
-
       let deviceInfo = null;
       let xp2pInfo = '';
       let liveStreamDomain = '';
       let streamQuality = '';
       let flvUrl = '';
       if (this.data.p2pMode === 'ipc') {
+        // deviceInfo
+        const deviceId = `${inputValues.productId}/${inputValues.deviceName}`;
+        deviceInfo = {
+          deviceId,
+          productId: inputValues.productId,
+          deviceName: inputValues.deviceName,
+          isMjpgDevice: this.data.isMjpgDevice,
+        };
+
+        // xp2pInfo
+        if (!inputValues.xp2pInfo) {
+          this.showToast('please input xp2pInfo');
+          return;
+        }
         xp2pInfo = adjustXp2pInfo(inputValues.xp2pInfo); // 兼容直接填 peername 的情况
         const flags = getDeviceFlags(xp2pInfo);
         console.log(`[${this.id}] device flags`, flags);
@@ -355,22 +337,44 @@ Component({
             return;
           }
         }
-        const deviceId = `${inputValues.productId}/${inputValues.deviceName}`;
-        deviceInfo = {
-          deviceId,
-          productId: inputValues.productId,
-          deviceName: inputValues.deviceName,
-          isMjpgDevice: this.data.isMjpgDevice,
-        };
+
         if (sceneType === 'live') {
+          if (this.data.isMjpgDevice && inputValues.liveStreamDomain) {
+            this.showToast('图片流不支持`1v1转1vn`');
+            return;
+          }
+          if (inputValues.liveStreamDomain && options.needCheckStream) {
+            this.showToast('开启`1v1转1vn`时需取消`播放前先检查能否拉流`');
+            return;
+          }
           liveStreamDomain = inputValues.liveStreamDomain || '';
           streamQuality = inputValues.liveQuality || '';
         }
-      } else {
+        if (sceneType === 'playback') {
+          if (this.data.isMjpgDevice) {
+            this.showToast('图片流不支持回放');
+            return;
+          }
+        }
+      } else if (this.data.p2pMode === 'server') {
+        // deviceInfo
         deviceInfo = {
           deviceId: this.data.cfgTargetId,
         };
+
+        // flvUrl
+        if (!this.data.inputUrl) {
+          this.showToast('please input stream url');
+          return;
+        }
+        if (!/^https:/.test(this.data.inputUrl)) {
+          this.showToast('only support https url');
+          return;
+        }
         flvUrl = this.data.inputUrl;
+      } else {
+        this.showToast(`unknown p2pMode ${this.data.p2pMode}`);
+        return;
       }
 
       return {

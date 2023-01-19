@@ -214,6 +214,7 @@ Page({
     console.log('demo: onPlayStateEvent', type, detail);
     switch (type) {
       case 'playstart': // 开始
+      case 'playsuccess': // 成功
       case 'playresume': // 续播
         this.setData({
           isPlaying: true,
@@ -228,6 +229,11 @@ Page({
         });
         break;
     }
+  },
+  onPlaySuccess({ type, detail }) {
+    this.onPlayStateEvent({ type, detail });
+
+    console.log('demo: onPlaySuccess', detail);
   },
   onPlayError({ type, detail }) {
     this.onPlayStateEvent({ type, detail });
@@ -274,6 +280,9 @@ Page({
   },
   // player控制
   togglePlay() {
+    if (!this.userData.currentVideo) {
+      return;
+    }
     console.log('demo: togglePlay');
     if (!this.userData.player) {
       console.error('demo: togglePlay but no player component');
