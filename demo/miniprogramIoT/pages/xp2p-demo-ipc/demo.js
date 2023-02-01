@@ -32,6 +32,8 @@ Page({
     deviceInfo: null,
     p2pMode: '',
     sceneType: '',
+    xp2pInfo: '',
+    liveStreamDomain: '',
 
     // 清晰度
     streamQuality: '',

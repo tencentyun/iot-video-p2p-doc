@@ -40,7 +40,7 @@ declare interface IXp2pManager {
 
   // 拉流和对讲封装在组件里，不用另外提供接口
 
-  // 下载，一个设备同时段只能下载一个文件
+  // 下载，一个连接同时段只能下载一个文件
   startDownloadFile: (
     deviceId: string,
     fileInfo: { channel?: number, file_name: string; offset?: number },

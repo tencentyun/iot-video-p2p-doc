@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "云存 MJPG 回放",
+  "usingComponents": {
+   "iot-cloud-mjpg-player": "plugin://xp2p/iot-cloud-mjpg-player",
+   "mp-icon": "weui-miniprogram/icon/icon",
+   "iot-player-controls": "../../components/iot-player-controls/controls"
+  }
+}

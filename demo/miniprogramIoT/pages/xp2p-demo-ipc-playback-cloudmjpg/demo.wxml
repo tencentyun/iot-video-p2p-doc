@@ -1,0 +1,76 @@
+<view wx:if="{{cfg}}">
+  <view wx:if="{{!deviceInfo}}" class="page-body page-body-padding">
+    {{deviceMsg}}
+  </view>
+  <view wx:elif="{{!deviceInfo.isMjpgDevice}}">only for mjpg device</view>
+  <view wx:else class="page-body">
+    <iot-cloud-mjpg-player
+      id="{{playerId}}"
+      deviceInfo="{{deviceInfo}}"
+      videoInfo="{{videoInfo}}"
+      muted="{{muted}}"
+      showLog="{{showLog}}"
+      showDebugInfo="{{showDebugInfo}}"
+      bind:playerstatechange="onPlayerEvent"
+      bind:streamstatechange="onPlayerEvent"
+      bind:playstart="onPlayStateEvent"
+      bind:playsuccess="onPlaySuccess"
+      bind:playpause="onPlayStateEvent"
+      bind:playresume="onPlayStateEvent"
+      bind:playstop="onPlayStateEvent"
+      bind:playend="onPlayStateEvent"
+      bind:playerror="onPlayError"
+      bind:timeupdate="onTimeUpdate"
+    >
+      <!--
+        注意要指定slot属性，因为组件设置了 multipleSlots
+        inner: 放在 canvas 后面，随 canvas 销毁
+        after: 放在 canvas 后面，canvas 销毁后依然存在
+      -->
+      <iot-player-controls
+        id="{{controlsId}}"
+        slot="inner"
+        showIcons="{{showIcons}}"
+        iconSize="{{iconSize}}"
+        muted="{{muted}}"
+        bind:clickicon="clickControlIcon"
+      >
+        <view class="player-control-item" bindtap="togglePlay">
+          <mp-icon icon="{{(isPlaying && !isPaused) ? 'pause' : 'play'}}" size="{{iconSize}}" color="white" type="field"></mp-icon>
+        </view>
+        <view class="player-control-item">
+          {{currentSecStr}}
+        </view>
+      </iot-player-controls>
+      <view slot="after" class="debug-info-switch-container">
+        <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
+      </view>
+    </iot-cloud-mjpg-player>
+    <view class="page-section page-section-gap">
+      <view>
+        正在播放
+        <view style="padding: 0 20rpx">{{currentVideo ? currentVideo.text : '-'}}</view>
+      </view>
+      <view class="align-right">
+        <text class="text-btn {{currentVideo ? '' : 'disabled'}}" bindtap="stopVideo">取消</text>
+      </view>
+    </view>
+    <view class="page-section page-section-gap">
+      <view>录像列表</view>
+      <view class="group-button-area" style="padding: 0 20rpx">
+        <view wx:for="{{recordVideos}}" wx:key="index" >
+          <button size="mini"
+            class="group-button {{currentVideo && currentVideo.startTime === item.startTime ? 'active' : ''}}"
+            data-index="{{index}}"
+            bindtap="changeVideo"
+          >
+            {{item.text || item.startTime}}
+          </button>
+        </view>
+        <view wx:if="{{recordVideos && recordVideos.length === 0}}">
+          暂无录像
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

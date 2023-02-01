@@ -28,9 +28,10 @@ Page({
     deviceInfo: null,
     p2pMode: '',
     sceneType: '',
+    xp2pInfo: '',
 
-    // 回放参数
-    streamParams: '',
+    // 录像信息
+    videoInfo: '',
 
     // 播放器控制
     muted: false,
@@ -60,13 +61,15 @@ Page({
     localFiles: null,
 
     // 回放状态
-    currentVideo: '', // 注意data、userData里都有
+    currentVideo: null, // 注意data、userData里都有
     showTogglePlayIcon: false,
     isPlaying: false, // 播放器状态，不一定播放成功
+    isPaused: false,
+    isPlayError: false,
     currentSecStr: '',
 
     // 下载状态
-    currentFile: '',  // 注意data、userData里都有
+    currentFile: null,  // 注意data、userData里都有
     downloadBytesStr: '',
 
     // tabs
@@ -215,17 +218,35 @@ Page({
     switch (type) {
       case 'playstart': // 开始
       case 'playsuccess': // 成功
-      case 'playresume': // 续播
         this.setData({
           isPlaying: true,
+          isPaused: false,
+          isPlayError: false,
         });
         break;
       case 'playpause': // 暂停
+        this.setData({
+          isPaused: true,
+        });
+        break;
+      case 'playresume': // 续播
+        this.setData({
+          isPaused: false,
+        });
+        break;
       case 'playstop': // 停止
       case 'playend': // 结束
+        this.setData({
+          isPlaying: false,
+          isPaused: false,
+          isPlayError: false,
+        });
+        break;
       case 'playerror': // 出错
         this.setData({
           isPlaying: false,
+          isPaused: false,
+          isPlayError: true,
         });
         break;
     }
@@ -289,9 +310,21 @@ Page({
       return;
     }
     if (this.data.isPlaying) {
-      this.userData.player.pause();
+      if (!this.data.isPaused) {
+        console.log('demo: call player.pause');
+        this.userData.player.pause();
+      } else {
+        console.log('demo: call player.resume');
+        this.userData.player.resume();
+      }
     } else {
-      this.userData.player.resume();
+      if (!this.data.isPlayError) {
+        console.log('demo: call player.play');
+        this.userData.player.play();
+      } else {
+        console.log('demo: call player.retry');
+        this.userData.player.retry();
+      }
     }
   },
   clickControlIcon({ detail }) {
@@ -479,11 +512,18 @@ Page({
       currentVideo: video,
       showTogglePlayIcon: false,
       isPlaying: false,
-      streamParams: `start_time=${video.start_time}&end_time=${video.end_time}`,
+      isPaused: false,
+      isPlayError: false,
+      currentSecStr: '',
+      // 不直接设为video，因为字段名可能不一样
+      videoInfo: {
+        startTime: video.start_time,
+        endTime: video.end_time,
+      },
     });
   },
   seekVideo({ currentTarget: { dataset } }) {
-    if (!this.userData.currentVideo || !this.data.showTogglePlayIcon) {
+    if (!this.userData.currentVideo || !this.data.showTogglePlayIcon || !this.data.isPlaying || this.data.isPaused) {
       return;
     }
     const change = parseInt(dataset.change, 10);
@@ -498,6 +538,25 @@ Page({
       .catch((err) => {
         console.log('demo: seekVideo error', err);
       });
+  },
+  stopVideo() {
+    if (!this.userData.currentVideo) {
+      return;
+    }
+    console.log('demo: stopVideo', this.userData.currentVideo);
+    this.userData.currentVideo = null;
+    this.userData.playState = null;
+    this.setData({
+      // 自己的
+      currentVideo: null,
+      showTogglePlayIcon: false,
+      isPlaying: false,
+      isPaused: false,
+      isPlayError: false,
+      currentSecStr: '',
+      // 传给组件的
+      videoInfo: null,
+    });
   },
   downloadFile({ currentTarget: { dataset } }) {
     const file = this.data.localFiles[dataset.index];

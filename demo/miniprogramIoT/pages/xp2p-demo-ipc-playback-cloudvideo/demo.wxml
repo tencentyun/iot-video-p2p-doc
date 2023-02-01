@@ -1,0 +1,9 @@
+<view wx:if="{{cfg}}">
+  <view wx:if="{{!deviceInfo}}" class="page-body page-body-padding">
+    {{deviceMsg}}
+  </view>
+  <view wx:elif="{{deviceInfo.isMjpgDevice}}">only for video device</view>
+  <view wx:else class="page-body">
+    直接用 video 组件播放
+  </view>
+</view>

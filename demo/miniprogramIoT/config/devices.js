@@ -37,11 +37,39 @@ const devices = {
     productName: 'MjpgLock',
     productId: '65HUY1C739',
     deviceName: 'yzlock_84641797_1',
-    xp2pInfo: 'XP2PfLHmh6GXLZ0PvdsyB9E9Hw==%2.4.34m',
+    xp2pInfo: 'XP2PfLGXhL7HQ5sFwtNTKt9Ycw==%2.4.34m',
     options: {
       playerRTC: true,
       voiceType: 'Pusher',
     },
+  },
+  test_mjpgcloud: {
+    showInHomePageBtn: true,
+    isMjpgDevice: true,
+    productName: 'MjpgLock',
+    productId: '68MMP0SV0R',
+    deviceName: 'lockdemo_89398890_1',
+    xp2pInfo: 'XP2PfLGXhL7HQ5sFwtNTKt9Ycw==%2.4.34m',
+    options: {
+      playerRTC: true,
+      voiceType: 'Pusher',
+    },
+    cloudRecords: [
+      {
+        startTime: 1674009852,
+        endTime: 1674009861,
+        // mjpgSrc: 'https://video-cv-1258344699.cos.ap-guangzhou.myqcloud.com/%2F100017589425/68MMP0SV0R/lockdemo_89398890_1/events/1674009852.mjpg?q-sign-algorithm=sha1&q-ak=AKIDvmfeZN2j7MQJCxQksrjRwQ1hE5lFbrme&q-sign-time=1674027091%3B1674030691&q-key-time=1674027091%3B1674030691&q-header-list=host&q-url-param-list=&q-signature=2dc7a7c4f31d33f2213b680555a0b673b7e4d6c2',
+        // audioSrc: 'https://video-cv-1258344699.cos.ap-guangzhou.myqcloud.com/%2F100017589425/68MMP0SV0R/lockdemo_89398890_1/events/1674009852.aac?q-sign-algorithm=sha1&q-ak=AKIDvmfeZN2j7MQJCxQksrjRwQ1hE5lFbrme&q-sign-time=1674027091%3B1674030691&q-key-time=1674027091%3B1674030691&q-header-list=host&q-url-param-list=&q-signature=52b2eddd93cf26799fb1e15bed995081004dca5e',
+        mjpgSrc: 'https://iot.gtimg.com/cdn/ad/xuanwang/1674009852.mjpg',
+        audioSrc: 'https://iot.gtimg.com/cdn/ad/xuanwang/1674009852.aac',
+      },
+      {
+        startTime: 1674009880,
+        endTime: 1674009889,
+        mjpgSrc: 'https://video-cv-1258344699.cos.ap-guangzhou.myqcloud.com/%2F100017589425/68MMP0SV0R/lockdemo_89398890_1/events/1674009880.mjpg?q-sign-algorithm=sha1&q-ak=AKIDvmfeZN2j7MQJCxQksrjRwQ1hE5lFbrme&q-sign-time=1674026978%3B1674030578&q-key-time=1674026978%3B1674030578&q-header-list=host&q-url-param-list=&q-signature=3d6ad82736f8badb0e6d21028b0dec87c34f77bc',
+        audioSrc: 'https://video-cv-1258344699.cos.ap-guangzhou.myqcloud.com/%2F100017589425/68MMP0SV0R/lockdemo_89398890_1/events/1674009880.aac?q-sign-algorithm=sha1&q-ak=AKIDvmfeZN2j7MQJCxQksrjRwQ1hE5lFbrme&q-sign-time=1674026978%3B1674030578&q-key-time=1674026978%3B1674030578&q-header-list=host&q-url-param-list=&q-signature=6fbc29e401fd93897527ba9aa45c6400594ae7c7',
+      },
+    ],
   },
 };
 

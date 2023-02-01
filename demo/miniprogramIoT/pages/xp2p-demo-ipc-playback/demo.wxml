@@ -13,7 +13,7 @@
       id="{{playerId}}"
       deviceInfo="{{deviceInfo}}"
       xp2pInfo="{{xp2pInfo}}"
-      streamParams="{{streamParams}}"
+      videoInfo="{{videoInfo}}"
       needCheckStream="{{options.needCheckStream}}"
       mode="{{options.playerRTC ? 'RTC' : 'live'}}"
       muted="{{muted}}"
@@ -50,7 +50,7 @@
         bind:clickicon="clickControlIcon"
       >
         <view wx:if="{{showTogglePlayIcon}}" class="player-control-item" bindtap="togglePlay">
-          <mp-icon icon="{{isPlaying ? 'pause' : 'play'}}" size="{{iconSize}}" color="white" type="field"></mp-icon>
+          <mp-icon icon="{{(isPlaying && !isPaused) ? 'pause' : 'play'}}" size="{{iconSize}}" color="white" type="field"></mp-icon>
         </view>
         <view class="player-control-item">
           {{currentSecStr}}
@@ -65,15 +65,16 @@
         正在播放：{{currentVideo ? (currentVideo.date + ' ' + currentVideo.text) : ''}}
       </view>
       <view class="align-right">
-        <text class="text-btn {{currentVideo && showTogglePlayIcon && isPlaying ? '' : 'disabled'}}" data-change="-10" bindtap="seekVideo">-10s</text>
-        <text class="text-btn {{currentVideo && showTogglePlayIcon && isPlaying ? '' : 'disabled'}}" data-change="10" bindtap="seekVideo">+10s</text>
+        <text class="text-btn {{currentVideo && showTogglePlayIcon && isPlaying && !isPaused ? '' : 'disabled'}}" data-change="-10" bindtap="seekVideo">-10s</text>
+        <text class="text-btn {{currentVideo && showTogglePlayIcon && isPlaying && !isPaused ? '' : 'disabled'}}" data-change="10" bindtap="seekVideo">+10s</text>
+        <text class="text-btn {{currentVideo ? '' : 'disabled'}}" bindtap="stopVideo">取消</text>
       </view>
       <view>
         正在下载：{{currentFile ? (currentFile.date + ' ' + currentFile.file_name) : ''}}
       </view>
       <view class="align-right">
         <text wx:if="{{currentFile && downloadBytesStr}}">{{downloadBytesStr}} / {{currentFile.file_size}}</text>
-        <text class="text-btn {{currentFile ? '' : 'disabled'}}" bindtap="stopDownloadFile">停止下载</text>
+        <text class="text-btn {{currentFile ? '' : 'disabled'}}" bindtap="stopDownloadFile">取消</text>
       </view>
       <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（可能触发 live-player 暂停）</navigator>
     </view>
@@ -116,6 +117,7 @@
           <view class="group-button-area">
             <view wx:for="{{recordVideos}}" wx:key="index" >
               <button size="mini"
+                class="group-button {{currentVideo && currentVideo.start_time === item.start_time ? 'active' : ''}}"
                 data-index="{{index}}"
                 bindtap="changeVideo"
               >
@@ -131,6 +133,7 @@
           <view class="group-button-area">
             <view wx:for="{{localFiles}}" wx:key="index" >
               <button size="mini"
+                class="group-button {{currentFile && currentFile.file_name === item.file_name ? 'active' : ''}}"
                 data-index="{{index}}"
                 bindtap="downloadFile"
               >

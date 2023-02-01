@@ -20,6 +20,9 @@
 .group-button-area .group-button {
   margin-right: 10rpx;
 }
+.group-button-area .group-button.active {
+  color: #0052d9;
+}
 
 .prop-item {
   margin-bottom: 10rpx;

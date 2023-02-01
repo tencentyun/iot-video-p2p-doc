@@ -16,6 +16,13 @@
         >
           P2P回放
         </button>
+        <button wx:if="{{item.targetId !== 'recentIPC'}}" type="primary" class="group-button {{(item.cloudRecords && item.cloudRecords.length) ? '' : 'disabled'}}" size="mini"
+          disabled="{{!(item.cloudRecords && item.cloudRecords.length)}}"
+          bindtap="gotoPage"
+          data-url="/pages/xp2p-demo-ipc-playback-{{item.isMjpgDevice ? 'cloudmjpg' : 'cloudvideo'}}/demo?cfg={{item.cfg}}"
+        >
+          {{(item.cloudRecords && item.cloudRecords.length) ? '云存回放' : '暂无录像'}}
+        </button>
       </block>
     </view>
   </view>

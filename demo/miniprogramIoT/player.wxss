@@ -17,6 +17,15 @@
   height: 100% !important;
 }
 
+.iot-cloud-mjpg-player .player-container {
+  height: 420rpx;
+}
+
+.iot-cloud-mjpg-player .player-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
 /* 自己的 */
 .player-controls-container {
   box-sizing: border-box;
