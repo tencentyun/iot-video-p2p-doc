@@ -1,29 +1,15 @@
 /* 覆盖组件的 wxss */
-.iot-p2p-common-player .player-container {
+
+/* 3.2.2 之后这么覆盖，注意给组件加class属性 */
+.my-player .iot-player {
+  width: 750rpx;
   height: 420rpx;
 }
 
-.iot-p2p-common-player .player-container live-player {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.iot-p2p-mjpg-player .player-container {
+/* 3.2.2 之前这么覆盖，注意给组件加class属性 */
+.my-player .player-container {
+  width: 750rpx;
   height: 420rpx;
-}
-
-.iot-p2p-mjpg-player .player-container image {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-.iot-cloud-mjpg-player .player-container {
-  height: 420rpx;
-}
-
-.iot-cloud-mjpg-player .player-container canvas {
-  width: 100% !important;
-  height: 100% !important;
 }
 
 /* 自己的 */
@@ -65,8 +51,10 @@
   position: absolute;
   right: 0;
   top: 0;
+  z-index: 101;
 }
 .debug-info-switch-container .debug-info-switch {
+  background-color: rgba(0, 0, 0, 0.3);
   color: white;
   padding: 20rpx;
 }

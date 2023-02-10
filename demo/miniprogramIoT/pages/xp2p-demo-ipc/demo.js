@@ -43,6 +43,13 @@ Page({
     muted: false,
     orientation: 'vertical',
     fullScreen: false,
+    fullScreenInfo: null,
+
+    // 要接收的事件，组件只会抛出设置过的，以免log太多
+    acceptPlayerEvents: {
+      // netstatus: true,
+      // mjpgnetstatus: true,
+    },
 
     // 控件icon
     controlsId: 'controls',
@@ -172,19 +179,9 @@ Page({
         console.error('demo: startP2PService err', err);
       });
 
-    // 图片流不支持 fullScreen
-    let { showIcons } = this.data;
-    if (detail.deviceInfo.isMjpgDevice) {
-      showIcons = {
-        ...showIcons,
-        fullScreen: false,
-      };
-    }
-
     console.log('demo: create components');
     this.setData({
       ...detail,
-      showIcons,
     }, () => {
       const player = this.selectComponent(`#${this.data.playerId}`);
       if (player) {
@@ -241,7 +238,11 @@ Page({
   },
   onFullScreenChange({ detail }) {
     console.log('demo: onFullScreenChange', detail);
-    this.setData({ fullScreen: detail.fullScreen });
+    const { fullScreen, ...others } = detail;
+    this.setData({
+      fullScreen: detail.fullScreen,
+      fullScreenInfo: detail.fullScreen ? others : null,
+    });
   },
   onMjpgPlayerEvent({ type, detail }) {
     console.log('demo: onMjpgPlayerEvent', type, detail);

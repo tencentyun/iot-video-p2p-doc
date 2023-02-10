@@ -6,6 +6,7 @@
   <view wx:else class="page-body">
     <iot-cloud-mjpg-player
       id="{{playerId}}"
+      class="my-player"
       deviceInfo="{{deviceInfo}}"
       videoInfo="{{videoInfo}}"
       muted="{{muted}}"

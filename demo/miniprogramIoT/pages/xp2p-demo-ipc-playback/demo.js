@@ -12,6 +12,11 @@ let xp2pManager;
 const downloadManager = getRecordManager('downloads');
 const fileSystemManager = wx.getFileSystemManager();
 
+// 微信限制单个文件最大 100M，这里限制一半
+const maxSizeInM = 50;
+const maxSize = maxSizeInM * 1024 * 1024;
+const writeBlockSize = 1 * 1024 * 1024;
+
 const pageName = 'demo-page-ipc-playback';
 let pageSeq = 0;
 
@@ -30,7 +35,7 @@ Page({
     sceneType: '',
     xp2pInfo: '',
 
-    // 录像信息
+    // 传给播放器的录像信息
     videoInfo: '',
 
     // 播放器控制
@@ -55,10 +60,13 @@ Page({
     // 回放日期
     calendarMonth: toMonthString(new Date()),
     validDates: null,
+    validDatesTip: '',
 
     recordDate: '',
     recordVideos: null,
+    recordVideosTip: '',
     localFiles: null,
+    localFilesTip: '',
 
     // 回放状态
     currentVideo: null, // 注意data、userData里都有
@@ -71,6 +79,7 @@ Page({
     // 下载状态
     currentFile: null,  // 注意data、userData里都有
     downloadBytesStr: '',
+    downloadSpeedStr: '',
 
     // tabs
     tabs: [
@@ -101,7 +110,7 @@ Page({
       currentVideo: null,
       playState: null, // { supportProgress: boolean; currentTime: number }
       currentFile: null,
-      downloadState: null, // { stats: number; headers: any; chunkCount: number; totleBytes: number }
+      downloadState: null, // { status: number; headers: any; chunkCount: number; downloadBytes: number, ... }
     };
 
     console.log('demo: checkReset when enter');
@@ -178,19 +187,9 @@ Page({
         console.error('demo: startP2PService err', err);
       });
 
-    // 图片流不支持 fullScreen
-    let { showIcons } = this.data;
-    if (detail.deviceInfo.isMjpgDevice) {
-      showIcons = {
-        ...showIcons,
-        fullScreen: false,
-      };
-    }
-
     console.log('demo: create components');
     this.setData({
       ...detail,
-      showIcons,
     }, () => {
       const player = this.selectComponent(`#${this.data.playerId}`);
       if (player) {
@@ -407,12 +406,26 @@ Page({
       return;
     }
     console.log('demo: getRecordDatesInMonth', this.userData.deviceId, this.data.calendarMonth);
-    const res = await xp2pManager.getRecordDatesInMonth(
-      this.userData.deviceId,
-      { month: this.data.calendarMonth },
-    );
+    this.setData({
+      validDatesTip: 'loading...',
+      validDates: null,
+    });
+    let res;
+    try {
+      res = await xp2pManager.getRecordDatesInMonth(
+        this.userData.deviceId,
+        { month: this.data.calendarMonth },
+      );
+    } catch (err) {
+      console.error('demo: getRecordDatesInMonth error', err);
+      this.setData({
+        validDatesTip: '获取录像日期失败',
+      });
+      return;
+    }
     console.log('demo: getRecordDatesInMonth res', res);
     this.setData({
+      validDatesTip: '',
       validDates: res.date_list.map(date => ({ month: res.month, date })),
     });
   },
@@ -421,12 +434,28 @@ Page({
       return;
     }
     console.log('demo: getRecordVideosInDate', this.userData.deviceId, this.data.recordDate);
+    this.setData({
+      recordVideosTip: 'loading...',
+      recordVideos: null,
+    });
     const date = this.data.recordDate;
-    const res = await xp2pManager.getRecordVideosInDate(
-      this.userData.deviceId,
-      { date },
-    );
-    console.log('demo: getRecordVideosInDate res', res);
+    let res;
+    try {
+      res = await xp2pManager.getRecordVideosInDate(
+        this.userData.deviceId,
+        { date },
+      );
+    } catch (err) {
+      console.error('demo: getRecordVideosInDate error', err);
+      this.setData({
+        validDatesTip: '获取录像列表失败',
+      });
+      return;
+    }
+    console.log('demo: getRecordVideosInDate success, res.video_list.length', res.video_list.length);
+    if (res.video_list.length > 0) {
+      console.log('demo: first video', res.video_list[0]);
+    }
     const nextDateSec = new Date(this.data.recordDate.replace(/-/g, '/')).getTime() / 1000 + 3600 * 24;
     const getTimeStr = (time) => {
       if (time < nextDateSec) {
@@ -435,6 +464,7 @@ Page({
       return toDateTimeString(new Date(time * 1000));
     };
     this.setData({
+      recordVideosTip: '',
       recordVideos: res.video_list.map(item => ({
         date,
         duration: item.end_time - item.start_time,
@@ -448,12 +478,28 @@ Page({
       return;
     }
     console.log('demo: getFilesInDate', this.userData.deviceId, this.data.recordDate);
+    this.setData({
+      localFilesTip: 'loading...',
+      localFiles: null,
+    });
     const date = this.data.recordDate;
-    const res = await xp2pManager.getFilesInDate(
-      this.userData.deviceId,
-      { date },
-    );
-    console.log('demo: getFilesInDate res', res);
+    let res;
+    try {
+      res = await xp2pManager.getFilesInDate(
+        this.userData.deviceId,
+        { date },
+      );
+    } catch (err) {
+      console.error('demo: getFilesInDate error', err);
+      this.setData({
+        localFilesTip: '获取文件列表失败',
+      });
+      return;
+    }
+    console.log('demo: getFilesInDate success, res.file_list.length', res.file_list.length);
+    if (res.file_list.length > 0) {
+      console.log('demo: first file', res.file_list[0]);
+    }
     const nextDateSec = new Date(this.data.recordDate.replace(/-/g, '/')).getTime() / 1000 + 3600 * 24;
     const getTimeStr = (time) => {
       if (time < nextDateSec) {
@@ -462,9 +508,10 @@ Page({
       return toDateTimeString(new Date(time * 1000));
     };
     this.setData({
+      localFilesTip: '',
       localFiles: res.file_list.map(item => ({
         date,
-        text: `${item.file_name} ${getTimeStr(item.start_time)} - ${getTimeStr(item.end_time)}`,
+        text: `${getTimeStr(item.start_time)} - ${getTimeStr(item.end_time)}`,
         ...item,
       })),
     });
@@ -560,7 +607,8 @@ Page({
   },
   downloadFile({ currentTarget: { dataset } }) {
     const file = this.data.localFiles[dataset.index];
-    console.log('demo: downloadFile', file);
+    const onlyDownload = dataset.onlyDownload || '';
+    console.log('demo: downloadFile', file, onlyDownload);
     if (file === this.userData.currentFile) {
       wx.showToast({
         title: '正在下载此文件',
@@ -571,6 +619,14 @@ Page({
     if (this.userData.currentFile) {
       wx.showToast({
         title: '请等待下载完成后再开始新的下载',
+        icon: 'none',
+      });
+      return;
+    }
+
+    if (file.file_size > maxSize) {
+      wx.showToast({
+        title: `文件大小超出上限 ${maxSizeInM}M`,
         icon: 'none',
       });
       return;
@@ -588,19 +644,42 @@ Page({
     }
     console.log('demo: prepareFile', fixedFilename);
     const filePath = downloadManager.prepareFile(fixedFilename);
-    console.log('demo: prepareFile res', filePath);
+    const fd = fileSystemManager.openSync({ filePath, flag: 'as+' });
+    console.log('demo: prepareFile res', filePath, fd);
 
     this.userData.currentFile = file;
     this.userData.downloadState = {
       filePath,
+      fd,
+      timestamp: Date.now(),
+      onlyDownload, // 调试用
+
+      // 下载状态
       status: NaN,
       headers: null,
       chunkCount: 0,
       downloadBytes: 0,
+      blockInfo: null,
+      writeBytes: 0,
+
+      // 下载速度
+      lastRefreshBytes: 0,
+      lastRefreshTimestamp: 0,
+      downloadSpeed: 0,
+
+      // 控制刷新频率
+      refreshTimer: null,
+
+      // 结果
+      downloadResult: null,
+      downloadSuccess: null,
+      downloadDelay: 0,
+      avgSpeed: 0,
     };
     this.setData({
       currentFile: file,
       downloadBytesStr: '0',
+      downloadSpeedStr: '',
     });
     xp2pManager.startDownloadFile(
       this.userData.deviceId,
@@ -626,53 +705,154 @@ Page({
     if (!this.userData.downloadState) {
       return;
     }
+    const writePos = this.userData.downloadState.downloadBytes;
     this.userData.downloadState.chunkCount++;
     this.userData.downloadState.downloadBytes += chunk.byteLength;
-    if (this.userData.downloadState.chunkCount % 100 === 1) {
-      // 用timer比较好，这里简单处理
-      this.setData({
-        downloadBytesStr: String(this.userData.downloadState.downloadBytes),
-      });
+    if (this.userData.downloadState.chunkCount === 1) {
+      console.log('demo: onDownloadChunkReceived firstChunk', chunk.byteLength);
+      // 第一个立刻刷新，这个方法里会启动refreshTimer
+      this.refreshDownloadProgress();
     }
-    // 将chunk包写入临时文件
-    try {
-      fileSystemManager.appendFileSync(this.userData.downloadState.filePath, chunk, 'binary');
-    } catch (err) {
-      console.error('demo: appendFileSync error', err);
-      this.stopDownloadFile();
-      wx.showModal({
-        title: '下载失败',
-        content: `${currentFile.file_name}\n${downloadState.downloadBytes}/${currentFile.file_size}\n写入文件失败`,
-        showCancel: false,
-      });
+
+    if (this.userData.downloadState.blockInfo?.blockBytes + chunk.byteLength > writeBlockSize) {
+      // block写不下，把之前的写到文件里，这个方法里会清除blockInfo
+      this.writeBlockToFile();
     }
+
+    if (!this.userData.downloadState.blockInfo) {
+      this.userData.downloadState.blockInfo = {
+        filePosition: writePos, // 写文件时用
+        blockBuffer: new Uint8Array(writeBlockSize),
+        blockBytes: 0,
+      };
+    }
+
+    // 写入block，注意chunk要转成Uint8Array
+    const { blockInfo } = this.userData.downloadState;
+    blockInfo.blockBuffer.set(new Uint8Array(chunk), blockInfo.blockBytes);
+    blockInfo.blockBytes += chunk.byteLength;
+  },
+  writeBlockToFile() {
+    if (!this.userData.downloadState?.blockInfo) {
+      return;
+    }
+
+    const { blockInfo } = this.userData.downloadState;
+    this.userData.downloadState.blockInfo = null;
+
+    if (this.userData.downloadState.onlyDownload) {
+      return;
+    }
+
+    // 写入临时文件
+    const writeState = this.userData.downloadState;
+    fileSystemManager.write({
+      fd: writeState.fd,
+      data: blockInfo.blockBuffer.buffer,
+      length: blockInfo.blockBytes,
+      position: blockInfo.filePosition,
+      encoding: 'binary',
+      success: ({ bytesWritten }) => {
+        const { currentFile, downloadState } = this.userData;
+        if (!currentFile || downloadState !== writeState) {
+          return;
+        }
+        if (bytesWritten === blockInfo.blockBytes) {
+          downloadState.writeBytes += bytesWritten;
+          if (downloadState.downloadSuccess && downloadState.writeBytes >= downloadState.downloadBytes) {
+            this.doDownloadComplete();
+          }
+        } else {
+          console.error('demo: fileSystemManager.write success but bytesWritten error', blockInfo.blockBytes, res);
+          this.stopDownloadFile();
+          wx.showModal({
+            title: '下载失败',
+            content: `${currentFile.file_name}\n${downloadState.downloadBytes}/${currentFile.file_size}\n写入文件失败`,
+            showCancel: false,
+          });
+        }
+      },
+      fail: (err) => {
+        const { currentFile, downloadState } = this.userData;
+        if (!currentFile || downloadState !== writeState) {
+          return;
+        }
+        console.error('demo: fileSystemManager.write fail', err);
+        this.stopDownloadFile();
+        wx.showModal({
+          title: '下载失败',
+          content: `${currentFile.file_name}\n${downloadState.downloadBytes}/${currentFile.file_size}\n写入文件失败`,
+          showCancel: false,
+        });
+      },
+    });
   },
   onDownloadSuccess(res) {
     console.log('demo: onDownloadSuccess', res);
-    this.doDownloadComplete(res);
+    this.checkDownloadComplete(res, true);
   },
   onDownloadFailure(res) {
     console.log('demo: onDownloadFailure', res);
-    this.doDownloadComplete(res);
+    this.checkDownloadComplete(res);
   },
   onDownloadError(res) {
     console.log('demo: onDownloadError', res);
-    this.doDownloadComplete(res);
+    this.checkDownloadComplete(res);
   },
-  doDownloadComplete(res) {
+  checkDownloadComplete(res, isSuccess) {
+    const { currentFile, downloadState } = this.userData;
+    if (!currentFile) {
+      return;
+    }
+
+    // 记录下载结果
+    downloadState.downloadResult = res;
+    downloadState.downloadSuccess = isSuccess || false;
+
+    // 结束立刻刷新
+    this.refreshDownloadProgress();
+
+    // 算个平均速度
+    const delay = Date.now() - downloadState.timestamp;
+    let avgSpeed;
+    if (delay >= 100) {
+      avgSpeed = downloadState.downloadBytes / delay / 1.024; // KB/s
+    }
+    downloadState.downloadDelay = delay;
+    downloadState.avgSpeed = avgSpeed;
+
+    // 剩下的block也要写入临时文件
+    if (downloadState.blockInfo) {
+      this.writeBlockToFile();
+    }
+
+    // 记录下载结果
+    if (downloadState.downloadSuccess && downloadState.writeBytes < downloadState.downloadBytes) {
+      // 下载成功但写入还未完成，等待写入结果
+      console.log(`demo: download success, wait writing complete ${downloadState.writeBytes}/${downloadState.downloadBytes}`);
+      return;
+    }
+
+    // 真正结束
+    this.doDownloadComplete();
+  },
+  doDownloadComplete() {
     if (!this.userData.currentFile) {
       return;
     }
     const { currentFile, downloadState } = this.userData;
-    this.userData.currentFile = null;
-    this.userData.downloadState = null;
-    this.setData({
-      currentFile: null,
-      downloadBytesStr: '',
-    });
+    console.log('demo: doDownloadComplete', currentFile, downloadState);
+    this.clearDownloadData();
+
+    const { downloadBytes, downloadResult, avgSpeed } = downloadState;
     wx.showModal({
       title: '下载结束',
-      content: `${currentFile.file_name}\n${downloadState.downloadBytes}/${currentFile.file_size}\nstatus: ${res?.status}, errcode: ${res?.errcode}, errmsg: ${res?.errmsg}`,
+      content: [
+        currentFile.file_name,
+        `${downloadBytes}/${currentFile.file_size}`,
+        `avgSpeed: ${avgSpeed ? avgSpeed.toFixed(2) : '-'} KB/s`,
+        `status: ${downloadResult?.status}, errcode: ${downloadResult?.errcode}, errmsg: ${downloadResult?.errmsg}`,
+      ].join('\n'),
       showCancel: false,
     });
   },
@@ -680,13 +860,56 @@ Page({
     if (!this.userData.currentFile) {
       return;
     }
-    console.log('demo: stopDownloadFile', this.userData.currentFile);
+    const { currentFile, downloadState } = this.userData;
+    console.log('demo: stopDownloadFile', currentFile, downloadState);
+    this.clearDownloadData();
+
+    xp2pManager.stopDownloadFile(this.userData.deviceId);
+  },
+  clearDownloadData() {
+    if (this.userData.downloadState?.refreshTimer) {
+      clearTimeout(this.userData.downloadState.refreshTimer);
+      this.userData.downloadState.refreshTimer = null;
+    }
+    if (this.userData.downloadState?.fd) {
+      fileSystemManager.closeSync({ fd: this.userData.downloadState.fd });
+      this.userData.downloadState.fd = null;
+    }
     this.userData.currentFile = null;
     this.userData.downloadState = null;
     this.setData({
       currentFile: null,
       downloadBytesStr: '',
+      downloadSpeedStr: '',
     });
-    xp2pManager.stopDownloadFile(this.userData.deviceId);
+  },
+  refreshDownloadProgress() {
+    if (!this.userData.downloadState) {
+      this.setData({
+        downloadBytesStr: '',
+        downloadSpeedStr: '',
+      });
+      return;
+    }
+    const { downloadState } = this.userData;
+    if (downloadState.refreshTimer) {
+      clearTimeout(downloadState.refreshTimer);
+      downloadState.refreshTimer = null;
+    }
+    if (downloadState.lastRefreshBytes) {
+      const recv = downloadState.downloadBytes - downloadState.lastRefreshBytes;
+      const delay = Date.now() - downloadState.lastRefreshTimestamp;
+      downloadState.downloadSpeed = recv / delay / 1.024; // KB/s
+    }
+    downloadState.lastRefreshBytes = downloadState.downloadBytes;
+    downloadState.lastRefreshTimestamp = Date.now();
+    this.setData({
+      downloadBytesStr: String(downloadState.downloadBytes),
+      downloadSpeedStr: `${downloadState.downloadSpeed.toFixed(2)} KB/s`,
+    });
+
+    if (!downloadState.downloadResult) {
+      downloadState.refreshTimer = setTimeout(this.refreshDownloadProgress.bind(this), 1000);
+    }
   },
 });

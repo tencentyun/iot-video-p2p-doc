@@ -10,6 +10,7 @@
   <view wx:else class="page-body">
     <iot-p2p-player-with-mjpg
       id="{{playerId}}"
+      class="my-player"
       deviceInfo="{{deviceInfo}}"
       xp2pInfo="{{xp2pInfo}}"
       liveStreamDomain="{{liveStreamDomain}}"
@@ -19,6 +20,7 @@
       mode="{{options.playerRTC ? 'RTC' : 'live'}}"
       muted="{{muted}}"
       orientation="{{orientation}}"
+      acceptPlayerEvents="{{acceptPlayerEvents}}"
       showLog="{{showLog}}"
       showDebugInfo="{{showDebugInfo}}"
       onlyp2pMap="{{onlyp2pMap}}"
@@ -29,6 +31,7 @@
       bind:playstop="onPlayStateEvent"
       bind:playend="onPlayStateEvent"
       bind:playerror="onPlayError"
+      bind:netstatus="onPlayerEvent"
       bind:fullscreenchange="onFullScreenChange"
       bind:mjpgplayerstatechange="onMjpgPlayerEvent"
       bind:mjpgstreamstatechange="onMjpgPlayerEvent"
@@ -37,6 +40,7 @@
       bind:mjpgplaystop="onMjpgPlayStateEvent"
       bind:mjpgplayend="onMjpgPlayStateEvent"
       bind:mjpgplayerror="onMjpgPlayStateEvent"
+      bind:mjpgnetstatus="onMjpgPlayerEvent"
     >
       <!--
         注意要指定slot属性，因为组件设置了 multipleSlots

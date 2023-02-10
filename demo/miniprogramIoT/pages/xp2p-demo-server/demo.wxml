@@ -11,6 +11,7 @@
     <iot-p2p-common-player
       wx:if="{{p2pMode === 'server'}}"
       id="{{playerId}}"
+      class="my-player"
       p2pMode="{{p2pMode}}"
       deviceInfo="{{deviceInfo}}"
       flvUrl="{{flvUrl}}"

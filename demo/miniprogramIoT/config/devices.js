@@ -42,18 +42,6 @@ const devices = {
       playerRTC: true,
       voiceType: 'Pusher',
     },
-  },
-  test_mjpgcloud: {
-    showInHomePageBtn: true,
-    isMjpgDevice: true,
-    productName: 'MjpgLock',
-    productId: '68MMP0SV0R',
-    deviceName: 'lockdemo_89398890_1',
-    xp2pInfo: 'XP2PfLGXhL7HQ5sFwtNTKt9Ycw==%2.4.34m',
-    options: {
-      playerRTC: true,
-      voiceType: 'Pusher',
-    },
     cloudRecords: [
       {
         startTime: 1674009852,

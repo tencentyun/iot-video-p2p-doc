@@ -11,6 +11,7 @@
   <view wx:else class="page-body">
     <iot-p2p-playback-player
       id="{{playerId}}"
+      class="my-player"
       deviceInfo="{{deviceInfo}}"
       xp2pInfo="{{xp2pInfo}}"
       videoInfo="{{videoInfo}}"
@@ -73,7 +74,10 @@
         正在下载：{{currentFile ? (currentFile.date + ' ' + currentFile.file_name) : ''}}
       </view>
       <view class="align-right">
-        <text wx:if="{{currentFile && downloadBytesStr}}">{{downloadBytesStr}} / {{currentFile.file_size}}</text>
+        <block wx:if="{{currentFile && downloadBytesStr}}">
+          <text>{{downloadSpeedStr}}</text>
+          <text style="margin-left: 40rpx">{{downloadBytesStr}}/{{currentFile.file_size}}</text>
+        </block>
         <text class="text-btn {{currentFile ? '' : 'disabled'}}" bindtap="stopDownloadFile">取消</text>
       </view>
       <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（可能触发 live-player 暂停）</navigator>
@@ -89,6 +93,9 @@
       <view>
         <view>有效日期：</view>
         <view class="group-button-area" style="padding: 0 20rpx; min-height: 100rpx">
+          <view wx:if="{{validDatesTip}}">
+              {{validDatesTip}}
+          </view>
           <button wx:for="{{validDates}}" wx:key="index" class="group-button" size="mini"
             data-month="{{item.month}}"
             data-date="{{item.date}}"
@@ -115,6 +122,9 @@
         </view>
         <view style="padding: 0 20rpx; display: {{activeTab === 'video' ? '' : 'none'}}">
           <view class="group-button-area">
+            <view wx:if="{{recordVideosTip}}">
+              {{recordVideosTip}}
+            </view>
             <view wx:for="{{recordVideos}}" wx:key="index" >
               <button size="mini"
                 class="group-button {{currentVideo && currentVideo.start_time === item.start_time ? 'active' : ''}}"
@@ -131,14 +141,29 @@
         </view>
         <view style="padding: 0 20rpx; display: {{activeTab === 'file' ? '' : 'none'}}">
           <view class="group-button-area">
-            <view wx:for="{{localFiles}}" wx:key="index" >
+            <view wx:if="{{localFilesTip}}">
+              {{localFilesTip}}
+            </view>
+            <view wx:for="{{localFiles}}" wx:key="index" style="position: relative">
               <button size="mini"
                 class="group-button {{currentFile && currentFile.file_name === item.file_name ? 'active' : ''}}"
+                style="text-align: left"
                 data-index="{{index}}"
                 bindtap="downloadFile"
               >
-                {{item.text}}
+                <view>{{item.file_name}}</view>
+                <view>
+                  <text>{{item.text}}</text>
+                  <text style="margin-left: 40rpx">{{item.file_size}} B</text>
+                </view>
               </button>
+              <text class="text-btn absolute-right" style="bottom: 0"
+                data-index="{{index}}"
+                data-only-download="onlyDownload"
+                bindtap="downloadFile"
+              >
+                仅下载
+              </text>
             </view>
             <view wx:if="{{localFiles && localFiles.length === 0}}">
               暂无文件

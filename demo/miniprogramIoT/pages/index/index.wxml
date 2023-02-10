@@ -28,7 +28,7 @@
   </view>
 </template>
 
-<view class="page-body">
+<view class="page-body" style="padding-bottom: 20rpx">
   <view class="page-section page-section-gap">
     <view class="notice-box">
       <view>· 使用期间需保持设备在线且 xp2pinfo 有效，可以在<text class="text-btn" bindtap="copyDocUrl" data-doc="https://cloud.tencent.com/document/product/1131/52739">控制台云日志</text>查看设备 _sys_xp2p_info 属性</view>
@@ -68,11 +68,12 @@
       <template is="itemInfo" wx:for="{{listServerStreams}}" wx:key="cfg" data="{{ item }}" />
     </view>
   </view>
-  <view class="page-section page-section-gap">
+  <view class="page-section">
     <navigator url="/pages/user-files/files?name=logs" hover-class="navigator-hover">跳转到 Log 管理页</navigator>
     <navigator url="/pages/user-files/files?name=records" hover-class="navigator-hover">跳转到 录像管理页</navigator>
     <navigator url="/pages/user-files/files?name=voices" hover-class="navigator-hover">跳转到 语音管理页</navigator>
     <navigator url="/pages/user-files/files?name=downloads" hover-class="navigator-hover">跳转到 下载管理页</navigator>
+    <navigator url="/pages/test-video/test" hover-class="navigator-hover">跳转到 Video 测试页</navigator>
   </view>
 </view>
 

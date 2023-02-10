@@ -1,0 +1,50 @@
+<view class="page-body">
+  <view class="page-section">
+    <view class="player-container">
+      <video
+        wx:if="{{playerId}}"
+        id="{{playerId}}"
+        customCache="{{customCache}}"
+        src="{{src}}"
+        autoplay
+        bindplay="onVideoEvent"
+        bindpause="onVideoEvent"
+        bindended="onVideoEvent"
+        bindwaiting="onVideoEvent"
+        bindloadedmetadata="onVideoEvent"
+        binderror="onVideoError"
+      />
+    </view>
+    <view class="input-item">
+      <label><switch type="checkbox" checked="{{customCache}}" data-stream="flv" bindchange="switchCustomCache" disabled="{{playerId}}"/>CustomCache</label>
+    </view>
+    <view class="group-button-area">
+      <button bindtap="bindCreatePlayer" class="group-button" type="primary" size="mini" disabled="{{playerId}}">创建</button>
+      <button bindtap="bindDestroyPlayer" class="group-button" type="primary" size="mini" disabled="{{!playerId}}">销毁</button>
+    </view>
+    <view class="input-item">
+      <view>src:</view>
+      <view class="weui-cells weui-cells_after-title">
+        <view class="weui-cell weui-cell_input">
+          <input class="weui-input" type="text" maxlength="-1" value="{{inputSrc}}" disabled="{{src}}" placeholder="请输入src" placeholder-class="placeholder" bindinput="bindInputSrc" />
+        </view>
+      </view>
+    </view>
+    <view class="group-button-area">
+      <button bindtap="bindChoose" data-from="album" class="group-button" type="primary" size="mini" disabled="{{src}}">ChooseAlbumVideo</button>
+      <button bindtap="bindChoose" data-from="message" class="group-button" type="primary" size="mini" disabled="{{src}}">ChooseMessageFile</button>
+    </view>
+    <view wx:if="{{playerId}}">
+      <view class="group-button-area">
+        <button bindtap="bindSetSrc" class="group-button" type="primary" size="mini" disabled="{{src}}">SetSrc</button>
+        <button bindtap="bindClearSrc" class="group-button" type="primary" size="mini" disabled="{{!src}}">ClearSrc</button>
+      </view>
+      <view class="group-button-area">
+        <button bindtap="bindPlay" class="group-button" type="primary" size="mini" disabled="{{!src || errMsg}}">播放</button>
+        <button bindtap="bindPause" class="group-button" type="primary" size="mini" disabled="{{!src || errMsg}}">暂停</button>
+        <button bindtap="bindStop" class="group-button" type="primary" size="mini" disabled="{{!src || errMsg}}">停止</button>
+      </view>
+      <view wx:if="{{src || errMsg}}">errMsg: {{errMsg}}</view>
+    </view>
+  </view>
+</view>
