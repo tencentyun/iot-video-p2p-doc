@@ -66,8 +66,8 @@
         正在播放：{{currentVideo ? (currentVideo.date + ' ' + currentVideo.text) : ''}}
       </view>
       <view class="align-right">
-        <text class="text-btn {{currentVideo && showTogglePlayIcon && isPlaying && !isPaused ? '' : 'disabled'}}" data-change="-10" bindtap="seekVideo">-10s</text>
-        <text class="text-btn {{currentVideo && showTogglePlayIcon && isPlaying && !isPaused ? '' : 'disabled'}}" data-change="10" bindtap="seekVideo">+10s</text>
+        <text class="text-btn {{currentVideo && showTogglePlayIcon && isPlaying && isPlaySuccess ? '' : 'disabled'}}" data-change="-10" bindtap="seekVideo">-10s</text>
+        <text class="text-btn {{currentVideo && showTogglePlayIcon && isPlaying && isPlaySuccess ? '' : 'disabled'}}" data-change="10" bindtap="seekVideo">+10s</text>
         <text class="text-btn {{currentVideo ? '' : 'disabled'}}" bindtap="stopVideo">取消</text>
       </view>
       <view>

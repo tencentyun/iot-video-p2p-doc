@@ -1,5 +1,5 @@
 import { presetDevices, presetServerStreams, totalData } from '../../config/config';
-import { getXp2pManager, Xp2pManagerEvent } from '../../lib/xp2pManager';
+import { getXp2pManager, XP2PManagerEvent } from '../../lib/xp2pManager';
 
 const sysInfo = wx.getSystemInfoSync();
 const accountInfo = wx.getAccountInfoSync();
@@ -44,7 +44,7 @@ Page({
     };
     if (!xp2pManager) {
       xp2pManager = getXp2pManager();
-      xp2pManager.addEventListener(Xp2pManagerEvent.XP2P_STATE_CHANGE, this.userData.xp2pStateChangeListener);
+      xp2pManager.addEventListener(XP2PManagerEvent.XP2P_STATE_CHANGE, this.userData.xp2pStateChangeListener);
     }
     this.setData({
       playerVersion: xp2pManager.P2PPlayerVersion,
@@ -98,7 +98,7 @@ Page({
   },
   onUnload() {
     if (xp2pManager) {
-      xp2pManager.removeEventListener(Xp2pManagerEvent.XP2P_STATE_CHANGE, this.userData.xp2pStateChangeListener);
+      xp2pManager.removeEventListener(XP2PManagerEvent.XP2P_STATE_CHANGE, this.userData.xp2pStateChangeListener);
     }
   },
   onShow() {

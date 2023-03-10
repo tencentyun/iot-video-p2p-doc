@@ -7,7 +7,20 @@
   </view>
   <view wx:elif="{{p2pMode !== 'ipc'}}">not for p2pMode {{p2pMode}}</view>
   <view wx:elif="{{sceneType !== 'live'}}">not for sceneType {{sceneType}}</view>
+  <view wx:elif="{{initCommand && initState !== 'success'}}">设备初始化：{{initState}}</view>
   <view wx:else class="page-body">
+    <!--
+      - 3.2.2 之后这么覆盖组件大小
+        .my-player .iot-player {
+          width: xxx;
+          height: xxx;
+        }
+      - 3.2.2 之前这么覆盖组件大小
+        .my-player .player-container {
+          width: xxx;
+          height: xxx;
+        }
+    -->
     <iot-p2p-player-with-mjpg
       id="{{playerId}}"
       class="my-player"
@@ -18,12 +31,15 @@
       streamQuality="{{streamQuality}}"
       needCheckStream="{{options.needCheckStream}}"
       mode="{{options.playerRTC ? 'RTC' : 'live'}}"
+      soundMode="{{soundMode}}"
       muted="{{muted}}"
       orientation="{{orientation}}"
+      rotate="{{rotate}}"
       acceptPlayerEvents="{{acceptPlayerEvents}}"
       showLog="{{showLog}}"
       showDebugInfo="{{showDebugInfo}}"
       onlyp2pMap="{{onlyp2pMap}}"
+      bind:domready="onPlayerEvent"
       bind:playerstatechange="onPlayerEvent"
       bind:streamstatechange="onPlayerEvent"
       bind:playstart="onPlayStateEvent"
@@ -31,6 +47,8 @@
       bind:playstop="onPlayStateEvent"
       bind:playend="onPlayStateEvent"
       bind:playerror="onPlayError"
+      bind:receiveidr="onPlayerEvent"
+      bind:statechange="onPlayerEvent"
       bind:netstatus="onPlayerEvent"
       bind:fullscreenchange="onFullScreenChange"
       bind:mjpgplayerstatechange="onMjpgPlayerEvent"
@@ -40,6 +58,7 @@
       bind:mjpgplaystop="onMjpgPlayStateEvent"
       bind:mjpgplayend="onMjpgPlayStateEvent"
       bind:mjpgplayerror="onMjpgPlayStateEvent"
+      bind:mjpgreceiveimage="onMjpgPlayerEvent"
       bind:mjpgnetstatus="onMjpgPlayerEvent"
     >
       <!--
@@ -57,6 +76,7 @@
         quality="{{streamQuality}}"
         muted="{{muted}}"
         orientation="{{orientation}}"
+        rotate="{{rotate}}"
         fullScreen="{{fullScreen}}"
         bind:clickicon="clickControlIcon"
       >
@@ -64,6 +84,12 @@
           <mp-icon icon="mike" size="{{iconSize}}" color="{{voiceState ? (voiceState === 'VoiceIdle' ? 'white' : 'orange') : 'grey'}}" type="{{voiceState === 'VoiceSending' ? 'field': 'outline'}}"></mp-icon>
         </view>
       </iot-player-controls>
+      <view slot="mjpgDebug">
+        <view>【I'm mjpgDebug】</view>
+      </view>
+      <view slot="flvDebug">
+        <view>【I'm flvDebug】</view>
+      </view>
       <view slot="after" class="debug-info-switch-container">
         <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
       </view>

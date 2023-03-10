@@ -12,6 +12,9 @@
     <view wx:if="{{showIcons.orientation}}" class="player-control-item" data-name="orientation" bindtap="clickIcon">
       {{orientation === 'horizontal' ? 'H' : 'V'}}
     </view>
+    <view wx:if="{{showIcons.rotate}}" class="player-control-item" data-name="rotate" bindtap="clickIcon">
+      R{{rotate}}
+    </view>
     <view wx:if="{{showIcons.fullScreen}}" class="player-control-item" data-name="fullScreen" bindtap="clickIcon">
       <mp-icon icon="{{fullScreen ? 'previous' : 'max-window'}}" size="{{iconSize}}" color="white"></mp-icon>
     </view>

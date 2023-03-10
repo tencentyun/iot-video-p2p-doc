@@ -2,13 +2,15 @@
 
 ## 介绍
 
-通过腾讯云IoT Video小程序P2P服务，引入IoT Video X-P2P插件和P2P-Player插件，可实现摄像头和小程序直接打洞传输视频流；配合云端的Server SDK，可实现小程序和小程序，小程序和APP之间的数据共享。
+通过腾讯云IoT Video小程序P2P服务，引入 `IoT Video X-P2P插件` 和 `P2P-Player插件`，可实现摄像头和小程序直接打洞传输视频流；配合云端的 Server SDK，可实现小程序和小程序，小程序和APP之间的数据共享。
 
 ## 准备工作
 
 - 申请腾讯云 IoT Video P2P 服务，获取访问密钥（联调阶段可直接使用demo里的密钥，正式发布时请使用我们邮件提供给您的正式密钥）
 - 向腾讯云IoT Video团队申请使用 [IoT Video X-P2P插件](https://mp.weixin.qq.com/wxopen/pluginbasicprofile?action=intro&appid=wx1319af22356934bf) 和 [IoT Video P2P-Player插件](https://mp.weixin.qq.com/wxopen/pluginbasicprofile?action=intro&appid=wx9e8fbc98ceac2628)
-- 有使用 live-player 的权限，详见 [官方文档](https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html)
+- 有 live-player 的权限，详见 [live-player官方文档](https://developers.weixin.qq.com/miniprogram/dev/component/live-player.html)
+- 如果使用语音对讲、双向音视频功能，还需要有 live-pusher 的权限，详见 [live-pusher官方文档](https://developers.weixin.qq.com/miniprogram/dev/component/live-pusher.html)
+
 - 如果使用 1v多 模式，需要将flv流的域名加到小程序的 `request合法域名` 和 `tcp合法域名` 配置中，详见 [服务器域名配置官方文档](https://developers.weixin.qq.com/miniprogram/dev/framework/ability/network.html#1.%20%E6%9C%8D%E5%8A%A1%E5%99%A8%E5%9F%9F%E5%90%8D%E9%85%8D%E7%BD%AE)
 
 ## 微信版本限制
@@ -21,7 +23,7 @@
 
 - [IoT Video X-P2P插件开发文档](https://mp.weixin.qq.com/wxopen/plugindevdoc?appid=wx1319af22356934bf)
 - [IoT Video P2P-Player插件开发文档](https://mp.weixin.qq.com/wxopen/plugindevdoc?appid=wx9e8fbc98ceac2628)
-- [Demo源码](./demo/miniprogram)
+- [Demo源码](./demo/miniprogramIoT)
 
 ### 原理介绍
 
@@ -63,7 +65,7 @@
 
 #### Demo地址
 
-- [源码](./demo/miniprogram)
+- [源码](./demo/miniprogramIoT)
 
 - 体验二维码
 

@@ -10,6 +10,7 @@ Component({
         quality: true,
         muted: true,
         orientation: true,
+        rotate: false, // 图片流监控才支持旋转，外部控制
         fullScreen: true,
         snapshot: true,
       },
@@ -33,6 +34,10 @@ Component({
     orientation: {
       type: String,
       value: 'vertical',
+    },
+    rotate: {
+      type: Number,
+      value: 0,
     },
     fullScreen: {
       type: Boolean,

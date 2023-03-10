@@ -41,6 +41,7 @@ Page({
     // 播放器控制
     muted: false,
     orientation: 'vertical',
+    rotate: 0,
     fullScreen: false,
 
     // 控件icon
@@ -49,6 +50,8 @@ Page({
     showIcons: {
       quality: false,
       muted: true,
+      orientation: false, // 视频流设备才支持，拿到 deviceInfo 后修改
+      rotate: false, // 图片流设备才支持，拿到 deviceInfo 后修改
       fullScreen: true,
       snapshot: true,
     },
@@ -72,6 +75,7 @@ Page({
     currentVideo: null, // 注意data、userData里都有
     showTogglePlayIcon: false,
     isPlaying: false, // 播放器状态，不一定播放成功
+    isPlaySuccess: false, // 成功过才能暂停或者seek
     isPaused: false,
     isPlayError: false,
     currentSecStr: '',
@@ -187,9 +191,21 @@ Page({
         console.error('demo: startP2PService err', err);
       });
 
+    const { showIcons } = this.data;
+    if (detail.deviceInfo.isMjpgDevice) {
+      // 图片流设备
+      showIcons.orientation = false;
+      showIcons.rotate = true;
+    } else {
+      // 视频流设备
+      showIcons.orientation = true;
+      showIcons.rotate = false;
+    }
+
     console.log('demo: create components');
     this.setData({
       ...detail,
+      showIcons,
     }, () => {
       const player = this.selectComponent(`#${this.data.playerId}`);
       if (player) {
@@ -216,9 +232,17 @@ Page({
     console.log('demo: onPlayStateEvent', type, detail);
     switch (type) {
       case 'playstart': // 开始
+        this.setData({
+          isPlaying: true,
+          isPlaySuccess: false,
+          isPaused: false,
+          isPlayError: false,
+        });
+        break;
       case 'playsuccess': // 成功
         this.setData({
           isPlaying: true,
+          isPlaySuccess: true,
           isPaused: false,
           isPlayError: false,
         });
@@ -237,6 +261,7 @@ Page({
       case 'playend': // 结束
         this.setData({
           isPlaying: false,
+          isPlaySuccess: false,
           isPaused: false,
           isPlayError: false,
         });
@@ -244,6 +269,7 @@ Page({
       case 'playerror': // 出错
         this.setData({
           isPlaying: false,
+          isPlaySuccess: false,
           isPaused: false,
           isPlayError: true,
         });
@@ -559,6 +585,7 @@ Page({
       currentVideo: video,
       showTogglePlayIcon: false,
       isPlaying: false,
+      isPlaySuccess: false,
       isPaused: false,
       isPlayError: false,
       currentSecStr: '',
@@ -570,7 +597,11 @@ Page({
     });
   },
   seekVideo({ currentTarget: { dataset } }) {
-    if (!this.userData.currentVideo || !this.data.showTogglePlayIcon || !this.data.isPlaying || this.data.isPaused) {
+    if (!this.userData.currentVideo
+      || !this.data.showTogglePlayIcon
+      || !this.data.isPlaying
+      || !this.data.isPlaySuccess
+    ) {
       return;
     }
     const change = parseInt(dataset.change, 10);
@@ -598,6 +629,7 @@ Page({
       currentVideo: null,
       showTogglePlayIcon: false,
       isPlaying: false,
+      isPlaySuccess: false,
       isPaused: false,
       isPlayError: false,
       currentSecStr: '',

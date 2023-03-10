@@ -10,6 +10,7 @@
       deviceInfo="{{deviceInfo}}"
       videoInfo="{{videoInfo}}"
       muted="{{muted}}"
+      rotate="{{rotate}}"
       showLog="{{showLog}}"
       showDebugInfo="{{showDebugInfo}}"
       bind:playerstatechange="onPlayerEvent"
@@ -34,6 +35,7 @@
         showIcons="{{showIcons}}"
         iconSize="{{iconSize}}"
         muted="{{muted}}"
+        rotate="{{rotate}}"
         bind:clickicon="clickControlIcon"
       >
         <view class="player-control-item" bindtap="togglePlay">

@@ -35,6 +35,10 @@ Page({
     xp2pInfo: '',
     liveStreamDomain: '',
 
+    // 有的设备需要先发初始化信令
+    initCommand: '',
+    initState: '',
+
     // 清晰度
     streamQuality: '',
     qualityMap,
@@ -42,11 +46,16 @@ Page({
     // 播放器控制
     muted: false,
     orientation: 'vertical',
+    rotate: 0,
     fullScreen: false,
     fullScreenInfo: null,
 
+    // 修复对讲后 live-player 声音变小的问题
+    soundMode: 'speaker',
+
     // 要接收的事件，组件只会抛出设置过的，以免log太多
     acceptPlayerEvents: {
+      statechange: true,
       // netstatus: true,
       // mjpgnetstatus: true,
     },
@@ -57,6 +66,8 @@ Page({
     showIcons: {
       quality: true,
       muted: true,
+      orientation: false, // 视频流设备才支持，拿到 deviceInfo 后修改
+      rotate: false, // 图片流设备才支持，拿到 deviceInfo 后修改
       fullScreen: true,
       snapshot: true,
     },
@@ -97,6 +108,7 @@ Page({
       deviceId: '',
       player: null,
       voice: null,
+      needFixSoundMode: false,
       releasePTZTimer: null,
     };
 
@@ -164,7 +176,7 @@ Page({
 
     // 开始连接
     console.log('demo: startP2PService', this.userData.deviceId);
-    xp2pManager.startP2PService({
+    const servicePromise = xp2pManager.startP2PService({
       p2pMode: detail.p2pMode,
       deviceInfo: detail.deviceInfo,
       xp2pInfo: detail.xp2pInfo,
@@ -179,37 +191,81 @@ Page({
         console.error('demo: startP2PService err', err);
       });
 
-    console.log('demo: create components');
+    const { showIcons } = this.data;
+    if (detail.deviceInfo.isMjpgDevice) {
+      // 图片流设备
+      showIcons.orientation = false;
+      showIcons.rotate = true;
+    } else {
+      // 视频流设备
+      showIcons.orientation = true;
+      showIcons.rotate = false;
+    }
+
+    console.log('demo: set deviceInfo', detail.deviceInfo);
     this.setData({
       ...detail,
+      showIcons,
     }, () => {
-      const player = this.selectComponent(`#${this.data.playerId}`);
-      if (player) {
-        console.log('demo: create player success');
-        oriConsole.log('demo: player', player); // console 被覆盖了会写logger影响性能，查看组件用 oriConsole
-        this.userData.player = player;
+      if (detail.initCommand) {
+        // 需要初始化设备
+        this.setData({ initState: 'requesting' });
+        servicePromise
+          .then(() => {
+            console.log('demo: sendInitCommand', this.userData.deviceId);
+            xp2pManager.sendCommand(this.userData.deviceId, detail.initCommand)
+              .then((res) => {
+                console.log('demo: sendInitCommand res', res);
+                if (res.type === 'success') {
+                  this.setData({ initState: 'success' }, () => {
+                    this.getComponents();
+                  });
+                } else {
+                  this.setData({ initState: 'commandError' });
+                }
+              })
+              .catch((err) => {
+                console.log('demo: sendInitCommand err', err);
+                this.setData({ initState: 'commandError' });
+              });
+          })
+          .catch((_err) => {
+            this.setData({ initState: 'serviceError' });
+          });
       } else {
-        console.error('demo: create player error');
-      }
-      const voice = this.selectComponent(`#${this.data.voiceId}`);
-      if (voice) {
-        console.log('demo: create voice success');
-        oriConsole.log('demo: voice', voice);
-        this.userData.voice = voice;
-        this.setData({
-          voiceState: 'VoiceIdle',
-        });
-      } else {
-        console.error('demo: create voice error');
-      }
-      const controls = this.selectComponent(`#${this.data.controlsId}`);
-      if (controls) {
-        console.log('demo: create controls success');
-        oriConsole.log('demo: controls', controls);
-      } else {
-        console.error('demo: create controls error');
+        this.getComponents();
       }
     });
+  },
+  // 初始化后再获取组件实例
+  getComponents() {
+    console.log('demo: create components');
+    const player = this.selectComponent(`#${this.data.playerId}`);
+    if (player) {
+      console.log('demo: create player success');
+      oriConsole.log('demo: player', player); // console 被覆盖了会写logger影响性能，查看组件用 oriConsole
+      this.userData.player = player;
+    } else {
+      console.error('demo: create player error');
+    }
+    const voice = this.selectComponent(`#${this.data.voiceId}`);
+    if (voice) {
+      console.log('demo: create voice success');
+      oriConsole.log('demo: voice', voice);
+      this.userData.voice = voice;
+      this.setData({
+        voiceState: 'VoiceIdle',
+      });
+    } else {
+      console.error('demo: create voice error');
+    }
+    const controls = this.selectComponent(`#${this.data.controlsId}`);
+    if (controls) {
+      console.log('demo: create controls success');
+      oriConsole.log('demo: controls', controls);
+    } else {
+      console.error('demo: create controls error');
+    }
   },
   // player事件
   onPlayerEvent({ type, detail }) {
@@ -264,6 +320,9 @@ Page({
       case 'orientation':
         this.changeOrientation();
         break;
+      case 'rotate':
+        this.changeRotate();
+        break;
       case 'fullScreen':
         this.changeFullScreen();
         break;
@@ -295,6 +354,12 @@ Page({
     console.log('demo: changeOrientation');
     this.setData({
       orientation: this.data.orientation === 'horizontal' ? 'vertical' : 'horizontal',
+    });
+  },
+  changeRotate() {
+    console.log('demo: changeRotate');
+    this.setData({
+      rotate: (this.data.rotate + 90) % 360,
     });
   },
   async changeFullScreen() {
@@ -358,6 +423,26 @@ Page({
   },
   onVoiceProcess({ type, detail }) {
     console.log('demo: onVoiceProcess', type, detail);
+    switch (type) {
+      case 'voicesuccess':
+        this.userData.needFixSoundMode = true;
+        break;
+      case 'voicestop':
+      case 'voiceerror':
+        if (this.userData.needFixSoundMode) {
+          console.log('demo: fix soundMode');
+          this.userData.needFixSoundMode = false;
+          this.setData({
+            soundMode: 'ear',
+          });
+          wx.nextTick(() => {
+            this.setData({
+              soundMode: 'speaker',
+            });
+          });
+        }
+        break;
+    }
   },
   onVoiceError({ type, detail }) {
     this.onVoiceProcess({ type, detail });

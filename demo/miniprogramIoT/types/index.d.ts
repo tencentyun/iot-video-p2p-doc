@@ -1,19 +1,39 @@
-declare interface DeviceInfo {
+declare interface XP2PDeviceInfo {
   deviceId: string;
   productId: string;
   deviceName: string;
   isMjpgDevice: boolean;
 }
 
-declare type EventListener = (...args) => any;
+declare interface XP2PStartIPCServiceParams {
+  p2pMode: 'ipc';
+  deviceInfo: XP2PDeviceInfo;
+  caller: string;
+  xp2pInfo?: string; // ipc模式用
+  liveStreamDomain?: string; // ipc模式用，1vN向server拉流的域名. 填写代表开启1v1转1vn
+}
 
-declare enum Xp2pManagerEvent {
+declare interface XP2PStartServerServiceParams {
+  p2pMode: 'server';
+  deviceInfo: XP2PDeviceInfo;
+  caller: string;
+  flvUrl?: string; // server模式用
+}
+
+declare type XP2PStartServiceParams = XP2PStartIPCServiceParams | XP2PStartServerServiceParams;
+
+declare enum XP2PManagerEvent {
   XP2P_STATE_CHANGE = 'xp2pStateChange',
+  XP2P_NAT_EVENT = 'xp2pNatEvent',
+  XP2P_LOCAL_HTTP_SERVER_ERROR = 'xp2pLocalHttpServerError',
+  XP2P_LOCAL_RTMP_SERVER_ERROR = 'xp2pLocalRtmpServerError',
 }
 
 declare enum XP2PServiceEvent {
   SERVICE_STATE_CHANGE = 'serviceStateChange',
 }
+
+declare type XP2PEventListener = (...args) => any;
 
 declare interface IXp2pManager {
   // 整体
@@ -22,21 +42,16 @@ declare interface IXp2pManager {
   uuid: string;
   moduleState: string;
   checkReset: () => void;
-  addEventListener: (evtName: Xp2pManagerEvent, listener: EventListener) => void;
-  removeEventListener: (evtName: Xp2pManagerEvent, listener: EventListener) => void;
+  addEventListener: (evtName: XP2PManagerEvent, listener: XP2PEventListener) => void;
+  removeEventListener: (evtName: XP2PManagerEvent, listener: XP2PEventListener) => void;
 
   // p2p连接，一个设备只能有一个连接，多个页面可以共用一个连接（比如监控页和回放页），用caller区分
-  startP2PService: (params: {
-    p2pMode: 'ipc' | 'server';
-    deviceInfo: DeviceInfo;
-    caller: string;
-    xp2pInfo?: string; // ipc模式用
-    liveStreamDomain?: string; // ipc模式用，1vN向server拉流的域名. 填写代表开启1v1转1vn
-    flvUrl?: string; // server模式用
-  }) => Promise<IoTResult>;
+  startP2PService: (params: XP2PStartServiceParams) => Promise<IoTResult>;
   stopP2PService: (deviceId: string, caller: string) => void;
-  addP2PServiceEventListener: (deviceId: string, evtName: XP2PServiceEvent, listener: EventListener) => void;
-  removeP2PServiceEventListener: (deviceId: string, evtName: XP2PServiceEvent, listener: EventListener) => void;
+  addP2PServiceEventListener: (deviceId: string, evtName: XP2PServiceEvent, listener: XP2PEventListener) => void;
+  removeP2PServiceEventListener: (deviceId: string, evtName: XP2PServiceEvent, listener: XP2PEventListener) => void;
+  isP2PServiceStarted: (deviceId: string, params?: { xp2pInfo: string }) => boolean;
+  isP2PServiceError: (deviceId: string) => boolean;
 
   // 拉流和对讲封装在组件里，不用另外提供接口
 
@@ -77,8 +92,12 @@ declare interface IXp2pManager {
   ) => Promise<any>;
 
   // 封装过的业务信令
-  sendPTZCommand: (deviceId: string, params: { ptzCmd: string }) => Promise<any>;
-  getRecordDatesInMonth: (deviceId: string, params: { month: string }) => Promise<{ date_list: number[] }>
-  getRecordVideosInDate: (deviceId: string, params: { date: string }) => Promise<{ video_list: any[] }>
-  getFilesInDate: (deviceId: string, params: { date: string; type?: string }) => Promise<{ file_list: any[] }>
+  sendPTZCommand: (deviceId: string, params: { ptzCmd: string }) => Promise<{ apex?: 'yes' | 'no' }>;
+  getRecordDatesInMonth: (deviceId: string, params: { month: string }) => Promise<{ date_list: number[] }>;
+  getRecordVideosInDate: (deviceId: string, params: { date: string }) => Promise<{
+    video_list: { start_time: number; end_time: number }[];
+  }>;
+  getFilesInDate: (deviceId: string, params: { date: string; type?: string }) => Promise<{
+    file_list: { start_time: number; end_time: number; file_size: number }[];
+  }>;
 }

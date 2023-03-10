@@ -20,12 +20,25 @@
 
 // 这些是预置的ipc设备
 const devices = {
+  debug_duodu: {
+    showInHomePageBtn: true,
+    productName: '多度',
+    productId: '4BW6W6XGE1',
+    deviceName: 'DDDevice2022_89659668_60',
+    xp2pInfo: 'XP2P8zgCY3SvKia7C2ya4d6Ukw==%2.4.32',
+    // initCommand: `action=user_define&channel=0&cmd=${Base64.encode('a1v1mj00198c0d64001fe3f45d40c06c#90#0#0')}`,
+    initCommand: 'action=user_define&channel=0&cmd=YTF2MW1qMDAxOThjMGQ2NDAwMWZlM2Y0NWQ0MGMwNmMjOTAjMCMw',
+    options: {
+      playerRTC: true,
+      voiceType: 'Pusher',
+    },
+  },
   test_ipc: {
     showInHomePageBtn: true,
     productName: 'IPC',
     productId: 'SO1Z9Y787A',
     deviceName: 'cannon_85317409_4',
-    xp2pInfo: 'XP2P4ZbW1lPiM5Jt6mw9spjB5g==%2.4.32',
+    xp2pInfo: 'XP2P4ZbW1lPiM5Jg311YqpTz6g==%2.4.32',
     options: {
       playerRTC: true,
       voiceType: 'Pusher',

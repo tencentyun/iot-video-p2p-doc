@@ -10,7 +10,7 @@
 const serverMap = {
   // key是serverName，与具体视频流无关
   httpsSvr: {
-    flvUrlBase: 'https://5000-test3.liveplay.myqcloud.com/live/',
+    flvUrlBase: 'https://dev.ad.qvb.qcloud.com/fakecdn/',
   },
   // tcpSvr: {
   //   flvUrlBase: 'http://dev.ad.qvb.qcloud.com:12680/openlive/',
@@ -26,7 +26,7 @@ const serverStreams = {
   httpsStream0: {
     showInHomePageBtn: true,
     serverName: 'httpsSvr',
-    flvFile: 'test_xp2ploop.flv',
+    flvFile: 'live.flv',
   },
   // tcpStream0: {
   //   showInHomePageBtn: true,

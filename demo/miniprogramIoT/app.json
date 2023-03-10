@@ -12,12 +12,12 @@
   ],
   "plugins": {
     "wechat-p2p-player": {
-      "version": "1.3.3",
+      "version": "1.3.5",
       "provider": "wx9e8fbc98ceac2628",
       "export": "exportForPlayerPlugin.js"
     },
     "xp2p": {
-      "version": "3.2.2",
+      "version": "3.2.4",
       "provider": "wx1319af22356934bf",
       "export": "exportForXp2pPlugin.js"
     }

@@ -55,8 +55,15 @@ Component({
         value: '',
       },
       {
+        field: 'initCommand',
+        text: '设备初始化信令',
+        value: '',
+        placeholder: '',
+        scene: 'live',
+      },
+      {
         field: 'liveQuality',
-        text: 'liveQuality',
+        text: '默认清晰度',
         value: '',
         scene: 'live',
       },
@@ -303,6 +310,7 @@ Component({
 
       let deviceInfo = null;
       let xp2pInfo = '';
+      let initCommand = '';
       let liveStreamDomain = '';
       let streamQuality = '';
       let flvUrl = '';
@@ -347,6 +355,7 @@ Component({
             this.showToast('开启`1v1转1vn`时需取消`播放前先检查能否拉流`');
             return;
           }
+          initCommand = inputValues.initCommand || '';
           liveStreamDomain = inputValues.liveStreamDomain || '';
           streamQuality = inputValues.liveQuality || '';
         }
@@ -381,6 +390,7 @@ Component({
         targetId: this.data.cfgTargetId,
         deviceInfo,
         xp2pInfo,
+        initCommand,
         liveStreamDomain,
         streamQuality,
         flvUrl,
