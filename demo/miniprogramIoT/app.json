@@ -3,23 +3,38 @@
     "pages/index/index",
     "pages/user-files/files",
     "pages/empty/empty",
-    "pages/xp2p-demo-ipc/demo",
-    "pages/xp2p-demo-ipc-playback/demo",
-    "pages/xp2p-demo-ipc-playback-cloudmjpg/demo",
-    "pages/xp2p-demo-ipc-playback-cloudvideo/demo",
-    "pages/xp2p-demo-server/demo",
     "pages/test-video/test"
   ],
-  "plugins": {
-    "wechat-p2p-player": {
-      "version": "1.3.5",
-      "provider": "wx9e8fbc98ceac2628",
-      "export": "exportForPlayerPlugin.js"
-    },
-    "xp2p": {
-      "version": "3.2.4",
-      "provider": "wx1319af22356934bf",
-      "export": "exportForXp2pPlugin.js"
+  "subPackages": [
+    {
+      "root": "pages/video",
+      "pages": [
+        "pages/xp2p-demo-ipc/demo",
+        "pages/xp2p-demo-ipc-playback/demo",
+        "pages/xp2p-demo-ipc-playback-cloudmjpg/demo",
+        "pages/xp2p-demo-ipc-playback-cloudvideo/demo",
+        "pages/xp2p-demo-server/demo"
+      ],
+      "plugins": {
+        "wechat-p2p-player": {
+          "version": "1.3.5",
+          "provider": "wx9e8fbc98ceac2628",
+          "export": "exportForPlayerPlugin.js"
+        },
+        "xp2p": {
+          "version": "3.2.6",
+          "provider": "wx1319af22356934bf",
+          "export": "exportForXp2pPlugin.js"
+        }
+      }
+    }
+  ],
+  "preloadRule": {
+    "pages/index/index": {
+      "network": "all",
+      "packages": [
+        "pages/video"
+      ]
     }
   },
   "usingComponents": {

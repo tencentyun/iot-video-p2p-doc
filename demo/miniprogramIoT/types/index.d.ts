@@ -22,15 +22,15 @@ declare interface XP2PStartServerServiceParams {
 
 declare type XP2PStartServiceParams = XP2PStartIPCServiceParams | XP2PStartServerServiceParams;
 
+declare enum XP2PServiceEvent {
+  SERVICE_STATE_CHANGE = 'serviceStateChange',
+}
+
 declare enum XP2PManagerEvent {
   XP2P_STATE_CHANGE = 'xp2pStateChange',
   XP2P_NAT_EVENT = 'xp2pNatEvent',
   XP2P_LOCAL_HTTP_SERVER_ERROR = 'xp2pLocalHttpServerError',
   XP2P_LOCAL_RTMP_SERVER_ERROR = 'xp2pLocalRtmpServerError',
-}
-
-declare enum XP2PServiceEvent {
-  SERVICE_STATE_CHANGE = 'serviceStateChange',
 }
 
 declare type XP2PEventListener = (...args) => any;

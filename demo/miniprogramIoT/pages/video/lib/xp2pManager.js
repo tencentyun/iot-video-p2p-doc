@@ -1,9 +1,5 @@
 // 接口参考 types/index.d.ts 里的 IXp2pManager
 
-export const XP2PManagerEvent = {
-  XP2P_STATE_CHANGE: 'xp2pStateChange',
-};
-
 let xp2pManager = null;
 export const getXp2pManager = () => {
   if (!xp2pManager) {
@@ -16,6 +12,10 @@ export const getXp2pManager = () => {
     // 开发版才打插件log
     if (iotExports?.setPluginLogger && app.pluginLogger && wx.getAccountInfoSync().miniProgram.envVersion === 'develop') {
       iotExports.setPluginLogger(app.pluginLogger);
+    }
+
+    if (iotExports?.setPluginReporter && app.pluginReporter) {
+      iotExports.setPluginReporter(app.pluginReporter);
     }
 
     xp2pManager = iotExports.getXp2pManager();

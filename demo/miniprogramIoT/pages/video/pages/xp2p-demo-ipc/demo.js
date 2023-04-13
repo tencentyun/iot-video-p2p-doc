@@ -1,3 +1,4 @@
+import { isDevTool } from '../../../../utils';
 import { getXp2pManager } from '../../lib/xp2pManager';
 
 // 覆盖 console
@@ -23,6 +24,7 @@ Page({
   data: {
     // 这是onLoad时就固定的
     cfg: '',
+    loadErrMsg: '',
 
     // 这些是控制player和p2p的
     playerId: 'iot-p2p-player',
@@ -34,6 +36,10 @@ Page({
     sceneType: '',
     xp2pInfo: '',
     liveStreamDomain: '',
+    onlyp2pMap: {
+      flv: isDevTool,
+      mjpg: isDevTool,
+    },
 
     // 有的设备需要先发初始化信令
     initCommand: '',
@@ -55,7 +61,7 @@ Page({
 
     // 要接收的事件，组件只会抛出设置过的，以免log太多
     acceptPlayerEvents: {
-      statechange: true,
+      // statechange: true,
       // netstatus: true,
       // mjpgnetstatus: true,
     },
@@ -72,7 +78,9 @@ Page({
       snapshot: true,
     },
 
-    // 播放错误
+    // 播放状态
+    isPlaying: false, // 播放器状态，不一定播放成功
+    isPlaySuccess: false, // 播放成功后才能对讲
     isPlayError: false,
 
     // 调试
@@ -92,6 +100,10 @@ Page({
     ],
     ptzCmd: '',
     releasePTZTimer: null,
+
+    // 信令
+    inputCommand: 'action=inner_define&channel=0&cmd=get_device_st&type=voice',
+    inputCommandResponseType: 'text',
   },
   onLoad(query) {
     pageSeq++;
@@ -114,6 +126,23 @@ Page({
 
     console.log('demo: checkReset when enter');
     xp2pManager.checkReset();
+
+    if (query.json) {
+      // 直接传播放数据
+      let detail;
+      try {
+        const json = decodeURIComponent(query.json);
+        detail = JSON.parse(json);
+      } catch (err) {
+        console.error('demo: parse json error', err);
+      };
+      if (!detail?.targetId || !detail?.deviceInfo || !detail?.p2pMode || !detail?.sceneType) {
+        this.setData({ loadErrMsg: 'invalid json' });
+        return;
+      }
+      this.onStartPlayer({ detail });
+      return;
+    }
 
     const cfg = query.cfg || '';
     this.setData({
@@ -206,6 +235,7 @@ Page({
     this.setData({
       ...detail,
       showIcons,
+      muted: detail.options.playerMuted,
     }, () => {
       if (detail.initCommand) {
         // 需要初始化设备
@@ -225,11 +255,12 @@ Page({
                 }
               })
               .catch((err) => {
-                console.log('demo: sendInitCommand err', err);
+                console.error('demo: sendInitCommand commandError', err);
                 this.setData({ initState: 'commandError' });
               });
           })
-          .catch((_err) => {
+          .catch((err) => {
+            console.error('demo: sendInitCommand serviceError', err);
             this.setData({ initState: 'serviceError' });
           });
       } else {
@@ -267,20 +298,53 @@ Page({
       console.error('demo: create controls error');
     }
   },
+  // 退出后就不再提示
+  showToast(content) {
+    !this.hasExited && wx.showToast({
+      title: content,
+      icon: 'none',
+    });
+  },
+  showModal(params) {
+    !this.hasExited && wx.showModal(params);
+  },
   // player事件
   onPlayerEvent({ type, detail }) {
     console.log('demo: onPlayerEvent', type, detail);
   },
   onPlayStateEvent({ type, detail }) {
     console.log('demo: onPlayStateEvent', type, detail);
-
-    const isPlayError = type === 'playerror';
-    if (isPlayError === this.data.isPlayError) {
-      return;
+    switch (type) {
+      case 'playstart':
+        this.setData({
+          isPlaying: true,
+          isPlaySuccess: false,
+          isPlayError: false,
+        });
+        break;
+      case 'playsuccess':
+        this.setData({
+          isPlaying: true,
+          isPlaySuccess: true,
+          isPlayError: false,
+        });
+        break;
+      case 'playstop':
+      case 'playend':
+        this.setData({
+          isPlaying: false,
+          isPlaySuccess: false,
+          isPlayError: false,
+        });
+        break;
+      case 'playerror':
+        this.setData({
+          isPlaying: false,
+          isPlaySuccess: false,
+          isPlayError: true,
+        });
+        break;
     }
-    this.setData({
-      isPlayError,
-    });
   },
   onPlayError({ type, detail }) {
     this.onPlayStateEvent({ type, detail });
@@ -402,6 +466,12 @@ Page({
     }
     this.userData.player.snapshotAndSave();
   },
+  changeSoundMode() {
+    console.log('demo: changeSoundMode');
+    this.setData({
+      soundMode: this.data.soundMode === 'ear' ? 'speaker' : 'ear',
+    });
+  },
   retryPlayer() {
     console.log('demo: retryPlayer');
     if (!this.userData.player) {
@@ -413,6 +483,26 @@ Page({
   toggleDebugInfo() {
     console.log('demo: toggleDebugInfo');
     this.setData({ showDebugInfo: !this.data.showDebugInfo });
+  },
+  gotoP2PPlayback() {
+    console.log('demo: gotoP2PPlayback');
+    const deviceDetail = {
+      targetId: this.data.targetId,
+      deviceInfo: this.data.deviceInfo,
+      p2pMode: this.data.p2pMode,
+      sceneType: 'playback',
+      xp2pInfo: this.data.xp2pInfo,
+      liveStreamDomain: this.data.liveStreamDomain,
+      onlyp2pMap: this.data.onlyp2pMap,
+    };
+    const url = `/pages/video/pages/xp2p-demo-ipc-playback/demo?json=${encodeURIComponent(JSON.stringify(deviceDetail))}`;
+    wx.navigateTo({ url });
+  },
+  gotoCloudPlayback() {
+    console.log('demo: gotoCloudPlayback');
+    const { isMjpgDevice } = this.data.deviceInfo;
+    const url = `/pages/video/pages/xp2p-demo-ipc-playback-${isMjpgDevice ? 'cloudmjpg' : 'cloudvideo'}/demo?cfg=${this.data.cfg}`;
+    wx.navigateTo({ url });
   },
   // voice事件
   onVoiceStateChange({ detail }) {
@@ -465,6 +555,15 @@ Page({
   startVoice(e) {
     const needRecord = parseInt(e?.currentTarget?.dataset?.needRecord, 10) > 0;
     console.log('demo: startVoice, needRecord', needRecord);
+
+    if (!this.data.isPlaySuccess) {
+      console.log('demo: startVoice err, isPlaySuccess false');
+      wx.showToast({
+        title: '请等待播放后再开启对讲',
+        icon: 'error',
+      });
+      return;
+    }
 
     if (!this.userData.voice) {
       console.error('demo: startVoice but no voice component');
@@ -528,5 +627,52 @@ Page({
     this.userData.releasePTZTimer = setTimeout(() => {
       this.controlPTZ('ptz_release_pre');
     }, 500);
+  },
+  // 信令
+  inputIPCCommand(e) {
+    this.setData({
+      inputCommand: e.detail.value,
+    });
+  },
+  commandResponseTypeChanged(e) {
+    this.setData({
+      inputCommandResponseType: e.detail.value,
+    });
+  },
+  sendCommand() {
+    console.log(`[${this.data.innerId}]`, 'sendCommand');
+
+    if (!this.data.inputCommand) {
+      this.showToast('sendCommand: please input command');
+      return;
+    }
+
+    xp2pManager
+      .sendCommand(this.userData.deviceId, this.data.inputCommand, {
+        responseType: this.data.inputCommandResponseType || 'text',
+      })
+      .then((res) => {
+        console.log(`[${this.data.innerId}]`, 'sendCommand res', res);
+        let content = `sendCommand res: type=${res.type}, status=${res.status}`;
+        if (res.type === 'success') {
+          const type = typeof res.data;
+          if (type === 'string') {
+            content += `, data=${res.data}`;
+          } else if (res.data && res.data.toString() === '[object ArrayBuffer]') {
+            content += `, data=ArrayBuffer(${res.data.byteLength})`;
+          }
+        }
+        this.showModal({
+          content,
+          showCancel: false,
+        });
+      })
+      .catch((err) => {
+        console.error(`[${this.data.innerId}]`, 'sendCommand error', err);
+        this.showModal({
+          content: `sendCommand error: ${err.errMsg}`,
+          showCancel: false,
+        });
+      });
   },
 });

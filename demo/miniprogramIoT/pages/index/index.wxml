@@ -4,7 +4,7 @@
     <view class="item-btns group-button-area">
       <button type="primary" class="group-button" size="mini"
         bindtap="gotoPage"
-        data-url="/pages/xp2p-demo-{{item.p2pMode === 'server' ? 'server' : 'ipc'}}/demo?cfg={{item.cfg}}"
+        data-url="/pages/video/pages/xp2p-demo-{{item.p2pMode === 'server' ? 'server' : 'ipc'}}/demo?cfg={{item.cfg}}"
       >
         P2P监控
       </button>
@@ -12,14 +12,14 @@
         <button type="primary" class="group-button {{item.isMjpgDevice ? 'disabled' : ''}}" size="mini"
           disabled="{{item.isMjpgDevice}}"
           bindtap="gotoPage"
-          data-url="/pages/xp2p-demo-ipc-playback/demo?cfg={{item.cfg}}"
+          data-url="/pages/video/pages/xp2p-demo-ipc-playback/demo?cfg={{item.cfg}}"
         >
           P2P回放
         </button>
         <button wx:if="{{item.targetId !== 'recentIPC'}}" type="primary" class="group-button {{(item.cloudRecords && item.cloudRecords.length) ? '' : 'disabled'}}" size="mini"
           disabled="{{!(item.cloudRecords && item.cloudRecords.length)}}"
           bindtap="gotoPage"
-          data-url="/pages/xp2p-demo-ipc-playback-{{item.isMjpgDevice ? 'cloudmjpg' : 'cloudvideo'}}/demo?cfg={{item.cfg}}"
+          data-url="/pages/video/pages/xp2p-demo-ipc-playback-{{item.isMjpgDevice ? 'cloudmjpg' : 'cloudvideo'}}/demo?cfg={{item.cfg}}"
         >
           {{(item.cloudRecords && item.cloudRecords.length) ? '云存回放' : '暂无录像'}}
         </button>
@@ -42,7 +42,8 @@
     <view>wxVersion: wx {{wxVersion}} / sdk {{wxSDKVersion}}</view>
     <view>pluginVersion: p2p-player {{playerVersion}} / xp2p {{xp2pVersion}}</view>
     <view>xp2pUUID: <text user-select>{{xp2pUUID}}</text></view>
-    <view>xp2pState: {{xp2pState}}</view>
+    <view>xp2pState: {{xp2pState}} <text wx:if="{{xp2pState}}">@{{xp2pStateTime}}</text></view>
+    <view wx:if="{{xp2pNatEvent}}" style="color: red">{{xp2pNatEvent}} @{{xp2pNatEventTime}}</view>
   </view>
   <view class="page-section" wx:if="{{recentIPCItem}}">
     <view class="page-section-title">【最近查看设备】</view>

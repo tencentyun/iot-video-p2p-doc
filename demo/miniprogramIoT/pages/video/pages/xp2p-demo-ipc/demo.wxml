@@ -1,6 +1,8 @@
-<view wx:if="{{cfg}}">
-  <view wx:if="{{!deviceInfo}}" class="page-body page-body-padding">
+<view>
+  <view wx:if="{{loadErrMsg}}">{{loadErrMsg}}</view>
+  <view wx:elif="{{!deviceInfo}}" class="page-body page-body-padding">
     <iot-device-input
+      wx:if="{{cfg}}"
       cfg="{{cfg}}"
       bind:startPlayer="onStartPlayer"
     />
@@ -98,35 +100,56 @@
       <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（可能触发 live-player 暂停）</navigator>
       <button bindtap="retryPlayer" disabled="{{!isPlayError}}" type="primary" size="mini">重试</button>
     </view>
+    <!-- 调试用
     <view class="page-section page-section-gap">
-      <view class="page-section-title">对讲</view>
-      <iot-p2p-voice
-        id="{{voiceId}}"
-        style="display:none"
-        deviceInfo="{{deviceInfo}}"
-        voiceType="{{options.voiceType}}"
-        showLog="{{showLog}}"
-        bind:voicestatechange="onVoiceStateChange"
-        bind:voicestart="onVoiceProcess"
-        bind:voicesuccess="onVoiceProcess"
-        bind:voicestop="onVoiceProcess"
-        bind:voiceerror="onVoiceError"
-      />
-      <view class="group-button-area">
-        <button bindtap="startVoice" class="group-button" type="primary" size="mini" disabled="{{!voiceState || voiceState !== 'VoiceIdle'}}">
-          对讲
-        </button>
-        <button bindtap="startVoice" data-need-record="1" class="group-button" type="primary" size="mini" disabled="{{!voiceState || voiceState !== 'VoiceIdle'}}">
-          对讲+录制
-        </button>
-        <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!voiceState || voiceState === 'VoiceIdle'}}">
-          挂断
-        </button>
+      <view class="page-section-title">【查看回放】</view>
+      <view class="margin-left group-button-area">
+        <button bindtap="gotoP2PPlayback" class="group-button" type="primary" size="mini">P2P回放</button>
+        <button wx:if="{{cfg && cfg !== 'recentIPC'}}" bindtap="gotoCloudPlayback" class="group-button" type="primary" size="mini">云存回放</button>
+      </view>
+    </view>
+    <view class="page-section page-section-gap">
+      <view class="page-section-title">【更多播放器属性】</view>
+      <view class="margin-left">
+        <view>
+          soundMode: {{soundMode}}
+          <text class="text-btn float-right" bindtap="changeSoundMode">切换</text>
+        </view>
+      </view>
+    </view>
+    -->
+    <view class="page-section page-section-gap">
+      <view class="page-section-title">【对讲】</view>
+      <view class="margin-left">
+        <iot-p2p-voice
+          id="{{voiceId}}"
+          style="display:none"
+          deviceInfo="{{deviceInfo}}"
+          voiceType="{{options.voiceType}}"
+          showLog="{{showLog}}"
+          bind:voicestatechange="onVoiceStateChange"
+          bind:voicestart="onVoiceProcess"
+          bind:voicesuccess="onVoiceProcess"
+          bind:voicestop="onVoiceProcess"
+          bind:voiceerror="onVoiceError"
+        />
+        <view>voiceState: {{voiceState}}</view>
+        <view class="group-button-area">
+          <button bindtap="startVoice" class="group-button" type="primary" size="mini" disabled="{{!voiceState || voiceState !== 'VoiceIdle'}}">
+            对讲
+          </button>
+          <button bindtap="startVoice" data-need-record="1" class="group-button" type="primary" size="mini" disabled="{{!voiceState || voiceState !== 'VoiceIdle'}}">
+            对讲+录制语音
+          </button>
+          <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!voiceState || voiceState === 'VoiceIdle'}}">
+            挂断
+          </button>
+        </view>
       </view>
     </view>
     <view wx:if="{{options.supportPTZ}}" class="page-section page-section-gap">
-      <view class="page-section-title">PTZ控制</view>
-      <view class="ptz-panel">
+      <view class="page-section-title">【PTZ控制】</view>
+      <view class="margin-left ptz-panel">
         <view class="ptz-controls">
           <view class="ptz-controls-top">
             <view class="ptz-position">
@@ -144,6 +167,33 @@
               </view>
             </view>
           </view>
+        </view>
+      </view>
+    </view>
+    <view class="page-section page-section-gap">
+      <view class="page-section-title">【自定义信令】</view>
+      <view class="margin-left">
+        <view class="weui-cells weui-cells_after-title">
+          <view class="weui-cell weui-cell_input">
+            <input class="weui-input" type="text" value="{{inputCommand}}" placeholder="请输入command" placeholder-class="placeholder" bindinput="inputIPCCommand" />
+          </view>
+        </view>
+        <!-- 设备端还不支持 arraybuffer 信令
+        <view>responseType:</view>
+        <view>
+          <radio-group bindchange="commandResponseTypeChanged" style="display: flex;">
+            <label class="weui-cell weui-check__label">
+              <radio value="text" checked="{{inputCommandResponseType === 'text'}}"/>text
+            </label>
+            <label class="weui-cell weui-check__label">
+              <radio value="arraybuffer" checked="{{inputCommandResponseType === 'arraybuffer'}}" />arraybuffer
+            </label>
+          </radio-group>
+        </view> -->
+        <view class="group-button-area">
+          <button bindtap="sendCommand" class="group-button" type="primary" size="mini" disabled="{{!inputCommand}}">
+            sendCommand
+          </button>
         </view>
       </view>
     </view>

@@ -4,6 +4,6 @@
   </view>
   <view wx:elif="{{deviceInfo.isMjpgDevice}}">only for video device</view>
   <view wx:else class="page-body">
-    直接用 video 组件播放
+    视频流云存直接用 video 组件播放
   </view>
 </view>

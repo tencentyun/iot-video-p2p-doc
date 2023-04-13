@@ -1,3 +1,4 @@
+@import '../../../../common.wxss';
 @import '../../player.wxss';
 
 .tabs .tab {

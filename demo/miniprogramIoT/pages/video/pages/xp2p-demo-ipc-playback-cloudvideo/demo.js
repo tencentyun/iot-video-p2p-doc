@@ -1,4 +1,4 @@
-import { presetDevices } from '../../config/config';
+import { presetDevices } from '../../../../config/config';
 
 // 覆盖 console
 const app = getApp();

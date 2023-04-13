@@ -1,6 +1,6 @@
-import { pad, toMonthString, toDateTimeString, toTimeString, toDateTimeFilename } from '../../utils';
+import { pad, toMonthString, toDateTimeString, toTimeString, toDateTimeFilename, isDevTool } from '../../../../utils';
+import { getRecordManager } from '../../../../lib/recordManager';
 import { getXp2pManager } from '../../lib/xp2pManager';
-import { getRecordManager } from '../../lib/recordManager';
 
 // 覆盖 console
 const app = getApp();
@@ -24,6 +24,7 @@ Page({
   data: {
     // 这是onLoad时就固定的
     cfg: '',
+    loadErrMsg: '',
 
     // 这些是控制player和p2p的
     playerId: 'iot-p2p-player',
@@ -34,6 +35,10 @@ Page({
     p2pMode: '',
     sceneType: '',
     xp2pInfo: '',
+    onlyp2pMap: {
+      flv: isDevTool,
+      mjpg: isDevTool,
+    },
 
     // 传给播放器的录像信息
     videoInfo: '',
@@ -75,7 +80,7 @@ Page({
     currentVideo: null, // 注意data、userData里都有
     showTogglePlayIcon: false,
     isPlaying: false, // 播放器状态，不一定播放成功
-    isPlaySuccess: false, // 成功过才能暂停或者seek
+    isPlaySuccess: false, // 播放成功后才能暂停或者seek
     isPaused: false,
     isPlayError: false,
     currentSecStr: '',
@@ -119,6 +124,23 @@ Page({
 
     console.log('demo: checkReset when enter');
     xp2pManager.checkReset();
+
+    if (query.json) {
+      // 直接传播放数据
+      let detail;
+      try {
+        const json = decodeURIComponent(query.json);
+        detail = JSON.parse(json);
+      } catch (err) {
+        console.error('demo: parse json error', err);
+      };
+      if (!detail?.targetId || !detail?.deviceInfo || !detail?.p2pMode || !detail?.sceneType) {
+        this.setData({ loadErrMsg: 'invalid json' });
+        return;
+      }
+      this.onStartPlayer({ detail });
+      return;
+    }
 
     const cfg = query.cfg || '';
     this.setData({

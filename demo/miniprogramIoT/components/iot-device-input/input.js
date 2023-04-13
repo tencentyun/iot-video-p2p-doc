@@ -60,6 +60,7 @@ Component({
         value: '',
         placeholder: '',
         scene: 'live',
+        hideIfEmpty: true, // 配置里有值才显示这个字段，没配就不显示
       },
       {
         field: 'liveQuality',
@@ -85,6 +86,12 @@ Component({
         field: 'playerRTC',
         text: '播放使用RTC模式',
         checked: true,
+      },
+      {
+        field: 'playerMuted',
+        text: '默认静音',
+        checked: false,
+        scene: 'live',
       },
       {
         field: 'supportPTZ',

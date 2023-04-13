@@ -1,5 +1,5 @@
-import { presetDevices } from '../../config/config';
-import { toTimeString, toDateTimeString } from '../../utils';
+import { presetDevices } from '../../../../config/config';
+import { toTimeString, toDateTimeString } from '../../../../utils';
 
 // 覆盖 console
 const app = getApp();
