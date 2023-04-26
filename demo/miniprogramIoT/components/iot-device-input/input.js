@@ -91,7 +91,6 @@ Component({
         field: 'playerMuted',
         text: '默认静音',
         checked: false,
-        scene: 'live',
       },
       {
         field: 'supportPTZ',

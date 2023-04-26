@@ -21,6 +21,7 @@
       mode="{{options.playerRTC ? 'RTC' : 'live'}}"
       muted="{{muted}}"
       orientation="{{orientation}}"
+      fill="{{fill}}"
       showLog="{{showLog}}"
       showDebugInfo="{{showDebugInfo}}"
       onlyp2p="{{onlyp2pMap && onlyp2pMap.flv}}"
@@ -49,6 +50,7 @@
         iconSize="{{iconSize}}"
         muted="{{muted}}"
         orientation="{{orientation}}"
+        fill="{{fill}}"
         fullScreen="{{fullScreen}}"
         bind:clickicon="clickControlIcon"
       >

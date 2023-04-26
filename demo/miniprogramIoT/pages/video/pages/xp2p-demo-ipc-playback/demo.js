@@ -47,6 +47,7 @@ Page({
     muted: false,
     orientation: 'vertical',
     rotate: 0,
+    fill: false,
     fullScreen: false,
 
     // 控件icon
@@ -57,6 +58,7 @@ Page({
       muted: true,
       orientation: false, // 视频流设备才支持，拿到 deviceInfo 后修改
       rotate: false, // 图片流设备才支持，拿到 deviceInfo 后修改
+      fill: true,
       fullScreen: true,
       snapshot: true,
     },
@@ -228,6 +230,7 @@ Page({
     this.setData({
       ...detail,
       showIcons,
+      muted: detail.options.playerMuted,
     }, () => {
       const player = this.selectComponent(`#${this.data.playerId}`);
       if (player) {
@@ -384,6 +387,9 @@ Page({
       case 'orientation':
         this.changeOrientation();
         break;
+      case 'fill':
+        this.changeFill();
+        break;
       case 'fullScreen':
         this.changeFullScreen();
         break;
@@ -402,6 +408,12 @@ Page({
     console.log('demo: changeOrientation');
     this.setData({
       orientation: this.data.orientation === 'horizontal' ? 'vertical' : 'horizontal',
+    });
+  },
+  changeFill() {
+    console.log('demo: changeFill');
+    this.setData({
+      fill: !this.data.fill,
     });
   },
   async changeFullScreen() {

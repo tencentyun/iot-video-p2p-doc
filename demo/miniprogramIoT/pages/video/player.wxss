@@ -3,13 +3,13 @@
 /* 3.2.2 之后这么覆盖，注意给组件加class属性 */
 .my-player .iot-player {
   width: 750rpx;
-  height: 420rpx;
+  height: 400rpx;
 }
 
 /* 3.2.2 之前这么覆盖，注意给组件加class属性 */
 .my-player .player-container {
   width: 750rpx;
-  height: 420rpx;
+  height: 400rpx;
 }
 
 /* 自己的 */

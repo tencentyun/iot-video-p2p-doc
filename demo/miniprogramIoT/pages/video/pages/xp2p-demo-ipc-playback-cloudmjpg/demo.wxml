@@ -11,6 +11,7 @@
       videoInfo="{{videoInfo}}"
       muted="{{muted}}"
       rotate="{{rotate}}"
+      fill="{{fill}}"
       showLog="{{showLog}}"
       showDebugInfo="{{showDebugInfo}}"
       bind:playerstatechange="onPlayerEvent"
@@ -36,6 +37,7 @@
         iconSize="{{iconSize}}"
         muted="{{muted}}"
         rotate="{{rotate}}"
+        fill="{{fill}}"
         bind:clickicon="clickControlIcon"
       >
         <view class="player-control-item" bindtap="togglePlay">

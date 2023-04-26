@@ -27,6 +27,7 @@ Page({
     // 播放器控制
     muted: false,
     rotate: 0,
+    fill: false,
 
     // 控件icon
     controlsId: 'controls',
@@ -34,6 +35,7 @@ Page({
     showIcons: {
       muted: true,
       rotate: true,
+      fill: true,
       snapshot: true,
     },
 
@@ -259,6 +261,9 @@ Page({
       case 'rotate':
         this.changeRotate();
         break;
+      case 'fill':
+        this.changeFill();
+        break;
       case 'snapshot':
         this.snapshotAndSave();
         break;
@@ -274,6 +279,12 @@ Page({
     console.log('demo: changeRotate');
     this.setData({
       rotate: (this.data.rotate + 90) % 360,
+    });
+  },
+  changeFill() {
+    console.log('demo: changeFill');
+    this.setData({
+      fill: !this.data.fill,
     });
   },
   snapshotAndSave() {

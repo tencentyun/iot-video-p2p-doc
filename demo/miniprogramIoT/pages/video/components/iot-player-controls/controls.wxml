@@ -15,6 +15,9 @@
     <view wx:if="{{showIcons.rotate}}" class="player-control-item" data-name="rotate" bindtap="clickIcon">
       R{{rotate}}
     </view>
+    <view wx:if="{{showIcons.fill}}" class="player-control-item" data-name="fill" bindtap="clickIcon">
+      {{fill ? 'FILL' : 'CTN'}}
+    </view>
     <view wx:if="{{showIcons.fullScreen}}" class="player-control-item" data-name="fullScreen" bindtap="clickIcon">
       <mp-icon icon="{{fullScreen ? 'previous' : 'max-window'}}" size="{{iconSize}}" color="white"></mp-icon>
     </view>

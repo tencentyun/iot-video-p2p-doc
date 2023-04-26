@@ -53,6 +53,7 @@ Page({
     muted: false,
     orientation: 'vertical',
     rotate: 0,
+    fill: false,
     fullScreen: false,
     fullScreenInfo: null,
 
@@ -74,6 +75,7 @@ Page({
       muted: true,
       orientation: false, // 视频流设备才支持，拿到 deviceInfo 后修改
       rotate: false, // 图片流设备才支持，拿到 deviceInfo 后修改
+      fill: true,
       fullScreen: true,
       snapshot: true,
     },
@@ -90,6 +92,15 @@ Page({
     // 对讲
     voiceId: 'iot-p2p-voice',
     voiceState: '',
+    pusherProps: {
+      voiceChangerType: 0,
+    },
+    voiceChangerTypes: [
+      { value: 0, label: '关闭' },
+      { value: 1, label: '熊孩子' },
+      { value: 2, label: '萝莉' },
+      { value: 3, label: '大叔' },
+    ],
 
     // PTZ
     ptzBtns: [
@@ -387,6 +398,9 @@ Page({
       case 'rotate':
         this.changeRotate();
         break;
+      case 'fill':
+        this.changeFill();
+        break;
       case 'fullScreen':
         this.changeFullScreen();
         break;
@@ -424,6 +438,12 @@ Page({
     console.log('demo: changeRotate');
     this.setData({
       rotate: (this.data.rotate + 90) % 360,
+    });
+  },
+  changeFill() {
+    console.log('demo: changeFill');
+    this.setData({
+      fill: !this.data.fill,
     });
   },
   async changeFullScreen() {
@@ -479,6 +499,22 @@ Page({
       return;
     }
     this.userData.player.retry();
+  },
+  snapshotView() {
+    console.log('demo: snapshotView');
+    if (!this.userData.player) {
+      console.error('demo: snapshotView but no player component');
+      return;
+    }
+    const { isMjpgDevice } = this.data.deviceInfo;
+    if (isMjpgDevice) {
+      // 图片流不支持截取渲染后的画面
+      this.showToast('snapshotView: not support mjpg device');
+      return;
+    }
+    this.userData.player.snapshotAndSave({
+      sourceType: 'view',
+    });
   },
   toggleDebugInfo() {
     console.log('demo: toggleDebugInfo');
@@ -584,6 +620,12 @@ Page({
 
     this.userData.voice.stopVoice();
   },
+  voiceChangerChange({ detail }) {
+    const newType = Number(detail.value) || 0;
+    this.setData({
+      'pusherProps.voiceChangerType': newType,
+    });
+  },
   // ptz控制
   controlPTZ(e) {
     const cmd = (typeof e === 'string') ? e : e?.currentTarget?.dataset?.cmd;
@@ -640,7 +682,7 @@ Page({
     });
   },
   sendCommand() {
-    console.log(`[${this.data.innerId}]`, 'sendCommand');
+    console.log(`[${this.userData.pageId}]`, 'sendCommand');
 
     if (!this.data.inputCommand) {
       this.showToast('sendCommand: please input command');
@@ -652,7 +694,7 @@ Page({
         responseType: this.data.inputCommandResponseType || 'text',
       })
       .then((res) => {
-        console.log(`[${this.data.innerId}]`, 'sendCommand res', res);
+        console.log(`[${this.userData.pageId}]`, 'sendCommand res', res);
         let content = `sendCommand res: type=${res.type}, status=${res.status}`;
         if (res.type === 'success') {
           const type = typeof res.data;
@@ -668,7 +710,7 @@ Page({
         });
       })
       .catch((err) => {
-        console.error(`[${this.data.innerId}]`, 'sendCommand error', err);
+        console.error(`[${this.userData.pageId}]`, 'sendCommand error', err);
         this.showModal({
           content: `sendCommand error: ${err.errMsg}`,
           showCancel: false,

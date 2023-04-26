@@ -35,6 +35,7 @@ Page({
     showIcons: {
       quality: false,
       muted: true,
+      orientation: true,
       fullScreen: true,
       snapshot: true,
     },
