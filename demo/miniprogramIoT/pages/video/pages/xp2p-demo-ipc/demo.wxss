@@ -1,3 +1,30 @@
 @import '../../../../common.wxss';
 @import '../../player.wxss';
 @import './ptz-panel.wxss';
+
+.voice-comp-container {
+  width: 100%;
+  height: 0;
+}
+.voice-comp-container .voice-pusher {
+  position: fixed;
+  right: 20rpx;
+  top: 20rpx;
+  z-index: 999;
+}
+.hungup-btn {
+  width: 100rpx;
+  height: 100rpx;
+  box-sizing: border-box;
+  padding: 5rpx;
+  border-radius: 50rpx;
+  position: absolute;
+  left: calc(50% - 50rpx);
+  top: -450rpx;
+  z-index: 3001;
+  background: red;
+}
+.hungup-btn image {
+  width: 100%;
+  height: 100%;
+}

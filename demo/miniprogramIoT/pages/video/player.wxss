@@ -5,6 +5,9 @@
   width: 750rpx;
   height: 400rpx;
 }
+.my-player.full .iot-player {
+  height: 100vh;
+}
 
 /* 3.2.2 之前这么覆盖，注意给组件加class属性 */
 .my-player .player-container {

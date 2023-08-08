@@ -50,4 +50,19 @@
       </view>
     </iot-p2p-common-player>
   </view>
+    <view class="component-section">
+      <view>localPeername: {{localPeername}}</view>
+      <view>接收p2p字节: {{p2pBytes}} Kb</view>
+      <view>接收cdn字节: {{cdnBytes}} Kb</view>
+      <view>种子节点数量: {{standbySize}}</view>
+      <view>正在连接数量: {{connectingSize}}</view>
+      <view>已连接数量: {{candidateSize}}</view>
+      <view>子节点数量: {{childrenSize}}</view>
+      <view>子节点: {{childrenStr}}</view>
+      <view>父节点: {{parent}}</view>
+    </view>
+      <view class="component-section">
+        <view>subscribeLog:</view>
+        <scroll-view scroll-y="true" class="log-box" style="height: 500rpx;"><text>{{subscribeLog}}</text></scroll-view>
+      </view>
 </view>

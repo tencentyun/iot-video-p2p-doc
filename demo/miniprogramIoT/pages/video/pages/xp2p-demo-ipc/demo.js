@@ -13,7 +13,7 @@ const qualityList = [
   { value: 'high', text: '高清' },
 ];
 const qualityMap = {};
-qualityList.forEach(({ value, text}) => {
+qualityList.forEach(({ value, text }) => {
   qualityMap[value] = text;
 });
 
@@ -115,6 +115,9 @@ Page({
     // 信令
     inputCommand: 'action=inner_define&channel=0&cmd=get_device_st&type=voice',
     inputCommandResponseType: 'text',
+
+    // 对讲方式
+    intercomType: 'voice', // 'voice' | 'video'
   },
   onLoad(query) {
     pageSeq++;
@@ -625,6 +628,27 @@ Page({
     this.setData({
       'pusherProps.voiceChangerType': newType,
     });
+  },
+  intercomTypeChange({ detail }) {
+    const newType = detail.value || 'voice';
+    this.setData({
+      intercomType: newType,
+    });
+    if (newType === 'voice') {
+      this.setData({
+        'pusherProps.enableCamera': false, // 关闭摄像头,默认值 false
+        'pusherProps.enableMic': true, // 开启麦克风,默认值 true
+        'pusherProps.videoWidth': 0, // 视频宽度,默认值 0
+        'pusherProps.videoHeight': 0, // 视频高度,默认值 0
+      });
+    } else {
+      this.setData({
+        'pusherProps.enableCamera': true,
+        'pusherProps.enableMic': true,
+        'pusherProps.videoWidth': 360,
+        'pusherProps.videoHeight': 480,
+      });
+    }
   },
   // ptz控制
   controlPTZ(e) {

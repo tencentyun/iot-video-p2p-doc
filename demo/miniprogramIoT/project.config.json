@@ -1,8 +1,7 @@
 {
   "appid": "wx9e8fbc98ceac2628",
-  "projectname": "iotvideo-xp2p-github-iot",
+  "projectname": "iotvideo-xp2p-demo-iot",
   "compileType": "miniprogram",
-  "libVersion": "2.20.2",
   "setting": {
     "urlCheck": false,
     "es6": true,
@@ -34,7 +33,8 @@
     "packNpmRelationList": [],
     "minifyWXSS": true,
     "minifyWXML": true,
-    "ignoreUploadUnusedFiles": true
+    "ignoreUploadUnusedFiles": true,
+    "condition": false
   },
   "simulatorType": "wechat",
   "simulatorPluginLibVersion": {},
@@ -46,5 +46,6 @@
   "editorSetting": {
     "tabIndent": "insertSpaces",
     "tabSize": 2
-  }
+  },
+  "libVersion": "2.33.0"
 }

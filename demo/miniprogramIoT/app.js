@@ -17,5 +17,11 @@ App({
         error: (...args) => this.logger.error('[Plugin]', ...args),
       };
     }
+
+    this.pluginReporter = {
+      reportInfo: (evtName, params) => console.log('reportInfo', evtName, params),
+      reportWarn: (evtName, params) => console.log('reportWarn', evtName, params),
+      reportError: (evtName, params) => console.log('reportError', evtName, params),
+    };
   },
 });

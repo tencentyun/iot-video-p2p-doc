@@ -13,7 +13,8 @@
         "pages/xp2p-demo-ipc-playback/demo",
         "pages/xp2p-demo-ipc-playback-cloudmjpg/demo",
         "pages/xp2p-demo-ipc-playback-cloudvideo/demo",
-        "pages/xp2p-demo-server/demo"
+        "pages/xp2p-demo-server/demo",
+        "pages/voip/voip"
       ],
       "plugins": {
         "wechat-p2p-player": {
@@ -22,9 +23,13 @@
           "export": "exportForPlayerPlugin.js"
         },
         "xp2p": {
-          "version": "3.2.8",
+          "version": "3.2.9",
           "provider": "wx1319af22356934bf",
           "export": "exportForXp2pPlugin.js"
+        },
+        "wmpf-voip": {
+          "version": "latest",
+          "provider": "wxf830863afde621eb"
         }
       }
     }

@@ -1,0 +1,79 @@
+.record-item {
+  padding: 20rpx;
+}
+
+.record-item .info {
+  color: #989898;
+  /* float: right; */
+  margin-left: 20rpx;
+}
+
+.record-item .left-btn {
+  color: #0052d9;
+  margin-right: 20rpx;
+}
+
+.record-item .right-btn {
+  color: #0052d9;
+  float: right;
+  margin-left: 20rpx;
+}
+
+.page-body {
+  font-size: 28rpx;
+  padding: 20rpx;
+}
+
+.section {
+  
+}
+.section .title {
+  margin-top: 20rpx;
+}
+
+.section .box {
+  padding: 0 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+.section button {
+  margin-top: 20rpx;
+  margin-left: 20rpx;
+}
+
+.input-box .label {
+  width: 150rpx;
+  color: #989898;
+}
+.input-box .input {
+  flex: 1;
+  border: 1px solid #ccc;
+  border-radius: 10rpx;
+  padding: 10rpx;
+  margin-top: 10rpx;
+}
+
+.text-box {
+  padding: 0 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+.text-box .label {
+  width: 125rpx;
+  color: #989898;
+}
+.text-box .text {
+  max-width: calc(100vw - 290rpx);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.copy-btn {
+  margin-left: 20rpx;
+  color: #0052d9;
+}
+.copy-btn.disabled {
+  color: #ccc;
+}

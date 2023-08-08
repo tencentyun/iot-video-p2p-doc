@@ -7,6 +7,11 @@ const console = app.logger || oriConsole;
 
 let xp2pManager;
 
+const formatTime = () => {
+  const d = new Date();
+  return `${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}.${d.getMilliseconds()}`;
+};
+
 const pageName = 'demo-page-server';
 let pageSeq = 0;
 
@@ -43,6 +48,18 @@ Page({
     // 调试
     showLog: true,
     showDebugInfo: false,
+
+    stat: {
+      p2pBytes: 0,
+      cdnBytes: 0,
+      standbySize: 0,
+      connectingSize: 0,
+      candidateSize: 0,
+      childrenSize: 0,
+      childrenStr: '',
+      parent: '',
+      subscribeLog: [],
+    },
   },
   onLoad(query) {
     pageSeq++;
@@ -66,6 +83,8 @@ Page({
     this.setData({
       cfg,
     });
+
+    xp2pManager.on('p2pDevNotify', this.onP2PDevNotify.bind(this));
   },
   onShow() {
     console.log('demo: onShow');
@@ -141,6 +160,39 @@ Page({
         console.error('demo: create controls error');
       }
     });
+  },
+  onP2PDevNotify({ type, detail }) {
+    switch (type) {
+      case 'peers':
+        this.setData({
+          standbySize: detail.standbySize,
+          candidateSize: detail.candidateSize,
+          connectingSize: detail.connectingSize,
+          childrenSize: detail.childrenSize,
+          childrenStr: detail.childrenStr,
+          localPeername: detail.localPeername,
+          p2pBytes: Math.floor(this.data.stat.p2pBytes / 1024),
+          cdnBytes: Math.floor(this.data.stat.cdnBytes / 1024),
+        });
+        break;
+      case 'P2P':
+        this.data.stat.p2pBytes += detail.chunkSize;
+        break;
+      case 'CDN':
+        this.data.stat.cdnBytes += detail.chunkSize;
+        break;
+      case 'parent':
+        this.setData({
+          parent: detail.peername,
+        });
+        break;
+      case 'subscribe':
+        this.data.stat.subscribeLog.push(`[${formatTime()}] ${detail} \n`);
+        this.setData({
+          subscribeLog: this.data.stat.subscribeLog.join(''),
+        });
+        break;
+    }
   },
   // player事件
   onPlayerEvent({ type, detail }) {

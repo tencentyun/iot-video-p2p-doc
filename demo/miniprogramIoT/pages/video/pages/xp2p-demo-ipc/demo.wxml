@@ -25,7 +25,7 @@
     -->
     <iot-p2p-player-with-mjpg
       id="{{playerId}}"
-      class="my-player"
+      class="my-player {{(voiceState && voiceState !== 'VoiceIdle' && intercomType === 'video') ? 'full' : ''}}"
       deviceInfo="{{deviceInfo}}"
       xp2pInfo="{{xp2pInfo}}"
       liveStreamDomain="{{liveStreamDomain}}"
@@ -124,11 +124,22 @@
     </view>
     -->
     <view class="page-section page-section-gap">
-      <view class="page-section-title">【对讲】</view>
+      <view class="page-section-title">
+        <radio-group bindchange="intercomTypeChange">
+          <label class="radio"  >
+            <radio value="voice" checked="{{intercomType === 'voice'}}"/>语音对讲
+            <radio value="video" checked="{{intercomType === 'video'}}"/>视频对讲
+          </label>
+        </radio-group>
+        <!-- <text>通过修改pusherProps来切换语音和视频对讲</text> -->
+        <!-- pusherStyle="width: 375rpx; height: 500rpx;" -->
+      </view>
       <view class="margin-left">
         <iot-p2p-voice
           id="{{voiceId}}"
-          style="display:none"
+          style="display:block"
+          compClass="voice-comp-container"
+          pusherClass="voice-pusher"
           deviceInfo="{{deviceInfo}}"
           voiceType="{{options.voiceType}}"
           pusherProps="{{pusherProps}}"
@@ -139,17 +150,27 @@
           bind:voicestop="onVoiceProcess"
           bind:voiceerror="onVoiceError"
         />
-        <view>voiceState: {{voiceState}}</view>
+        <!-- <live-pusher 
+          url="https://domain/push_stream" 
+          mode="RTC" 
+          autopush 
+          bindstatechange="statechange"
+          style="width: 375rpx; height: 500rpx; position: fixed; z-index: 99; bottom: 0; right: 0;" 
+         /> -->
+        <!-- <view>voiceState: {{voiceState || '-'}} intercomType: {{intercomType}}</view> -->
         <view class="group-button-area">
           <button bindtap="startVoice" class="group-button" type="primary" size="mini" disabled="{{!voiceState || voiceState !== 'VoiceIdle'}}">
             对讲
           </button>
           <button bindtap="startVoice" data-need-record="1" class="group-button" type="primary" size="mini" disabled="{{!voiceState || voiceState !== 'VoiceIdle'}}">
-            对讲+录制语音
+            对讲+录制
           </button>
           <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!voiceState || voiceState === 'VoiceIdle'}}">
             挂断
           </button>
+          <view bindtap="stopVoice" class="hungup-btn" style="{{intercomType === 'video' && voiceState && voiceState !== 'VoiceIdle' ? 'display: block;' : 'display: none;' }}">
+            <image alt="" src="data:image/svg+xml;base64,PHN2ZyBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgY2xhc3M9ImRlc2lnbi1pY29uZm9udCI+CiAgPHBhdGggZD0iTTI5LjE0OTcgMTguNjE4MUMyOC43MDIzIDIwLjM3NDQgMjcuNTQ4MSAyMC44NzQ2IDI1LjY0OTEgMjAuNTkyN0MyMy40MTcyIDIwLjI2MTEgMjEuNTI4NyAxOS42MzIzIDIxLjY2NjggMTcuNjA4QzIxLjgwNSAxNS41ODM2IDIxLjg0MzIgMTUuNDI4OSAxNi40MTMzIDE1LjI2M0MxMC4wNzY2IDE1LjA5MTcgMTAuMzQ5IDE1LjI5NjIgMTAuMzQ2NCAxNy42NzI5QzEwLjM0MzggMjAuMDQ5NyA4Ljc4MDM1IDIwLjE4MDkgNi41NTM2NCAyMC41MjkxQzQuMzI1NjIgMjAuODc3NCAyLjk2MzUzIDIwLjI5NyAyLjY4OTggMTcuNjk5MkMyLjE2MDc2IDEyLjY5MTUgMTAuODc1NSAxMS4zODU2IDE0LjY5ODUgMTEuMzM1OUMxNC42OTg1IDExLjMzNTkgMjAuNTI4NSAxMS4yNDMzIDIzLjMyMjQgMTIuMTA1NkwyNC44MjY2IDEyLjU1NDdDMjYuOTIzIDEzLjI2NjMgMjguODA0OSAxNC41NjExIDI5LjI0MTkgMTYuNDAzQzI5LjI0MTkgMTYuNDAzIDI5LjQ5OTggMTcuMjQxOCAyOS4xNDk3IDE4LjYxODFaIiBmaWxsPSIjZmZmIi8+Cjwvc3ZnPgo=" />
+          </view>
         </view>
         <view wx:if="{{options.voiceType === 'Pusher'}}">
           <view>变声 (基础库 2.31.0 以上)</view>
@@ -161,6 +182,7 @@
         </view>
       </view>
     </view>
+
     <view wx:if="{{options.supportPTZ}}" class="page-section page-section-gap">
       <view class="page-section-title">【PTZ控制】</view>
       <view class="margin-left ptz-panel">

@@ -21,14 +21,13 @@
 
 // 这些是预置的ipc设备
 const devices = {
-  debug_duodu: {
+  debug_wanjiaan: {
     showInHomePageBtn: true,
-    productName: '多度',
-    productId: '4BW6W6XGE1',
-    deviceName: 'DDDevice2022_89659668_60',
-    xp2pInfo: 'XP2P8zgCY3SvKia7C2ya4d6Ukw==%2.4.32',
-    // initCommand: `action=user_define&channel=0&cmd=${Base64.encode('a1v1mj00198c0d64001fe3f45d40c06c#90#0#0')}`,
-    // initCommand: 'action=user_define&channel=0&cmd=YTF2MW1qMDAxOThjMGQ2NDAwMWZlM2Y0NWQ0MGMwNmMjOTAjMCMw',
+    isMjpgDevice: true,
+    productName: '万佳安',
+    productId: 'CZO2TZEIF3',
+    deviceName: 'wanjiaan_91388972_1',
+    xp2pInfo: 'XP2P8gBsdOjIbzRvpfdo8zL23w==%2.4.35m',
     options: {
       playerRTC: true,
       voiceType: 'Pusher',
@@ -39,10 +38,22 @@ const devices = {
     productName: 'IPC',
     productId: 'SO1Z9Y787A',
     deviceName: 'cannon_85317409_4',
-    xp2pInfo: 'XP2P4ZbW1lPiM5Jg311YqpTz6g==%2.4.32',
+    xp2pInfo: 'XP2P4ZbW1lPiM5Jf6W1AipzB+g==%2.4.32',
     options: {
       playerRTC: true,
       voiceType: 'Pusher',
+    },
+  },
+  test_ac7916_duplexVideo: {
+    showInHomePageBtn: true,
+    isMjpgDevice: false,
+    productName: 'ac7916',
+    productId: 'SO1Z9Y787A',
+    deviceName: 'cannon_85317409_3',
+    xp2pInfo: 'XP2PHuYWm+pTHW54qlcsPM4gQQ==%2.4.38',
+    options: {
+      playerRTC: true,
+      intercomType: 'Pusher',
     },
   },
   test_mjpglock: {
@@ -51,7 +62,7 @@ const devices = {
     productName: 'MjpgLock',
     productId: '65HUY1C739',
     deviceName: 'yzlock_84641797_1',
-    xp2pInfo: 'XP2PfLGXhL7HQ5sFwtNTKt9Ycw==%2.4.34m',
+    xp2pInfo: 'XP2PfLGXhL7HQ5spx71xJdZ+HA==%2.4.34m',
     options: {
       playerRTC: true,
       voiceType: 'Pusher',

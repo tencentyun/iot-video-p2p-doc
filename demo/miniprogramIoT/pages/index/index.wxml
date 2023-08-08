@@ -73,9 +73,10 @@
   <view class="page-section">
     <navigator url="/pages/user-files/files?name=logs" hover-class="navigator-hover">跳转到 Log 管理页</navigator>
     <navigator url="/pages/user-files/files?name=records" hover-class="navigator-hover">跳转到 录像管理页</navigator>
-    <navigator url="/pages/user-files/files?name=voices" hover-class="navigator-hover">跳转到 语音管理页</navigator>
+    <navigator url="/pages/user-files/files?name=voices" hover-class="navigator-hover">跳转到 对讲管理页</navigator>
     <navigator url="/pages/user-files/files?name=downloads" hover-class="navigator-hover">跳转到 下载管理页</navigator>
     <navigator url="/pages/test-video/test" hover-class="navigator-hover">跳转到 Video 测试页</navigator>
+    <navigator url="/pages/video/pages/voip/voip" hover-class="navigator-hover">跳转到 voip 测试页面</navigator>
   </view>
 </view>
 

@@ -1,0 +1,71 @@
+<view class="page-body">
+  <view class="section">
+    <view class="title">1、输入设备信息</view>
+    <!-- <view class="input-box box">
+      <view class="label">wx 产品ID</view>
+      <input class="input" type="text" placeholder="请输入 wx 产品ID" />
+    </view>
+    <view class="input-box box">
+      <view class="label">deviceID</view>
+      <input class="input" type="text" placeholder="请输入 deviceID" />
+    </view> -->
+    <view class="input-box box">
+      <view class="label"> 设备 sn</view>
+      <input class="input" type="text" bindinput="bindKeyInputSn" placeholder="deviceId, 斜杠换成-" />
+    </view>
+    <!-- <view class="input-box box">
+      <view class="label">voipToken</view>
+      <input class="input" type="text" bindinput="bindKeyInputToken" placeholder="输入voipToken" />
+    </view> -->
+  </view>
+  
+  <view class="section">
+    <view class="title">2、拉取snTicket和openID</view>
+    <button size="mini" type="primary" bindtap="getSnTicket">拉取</button>
+  </view>
+  
+  <view class="section">
+    <view class="title">3、订阅VOIP提醒</view>
+    <button size="mini" type="primary" bindtap="requestPermission">订阅</button>
+  </view>
+
+  <view class="section">
+    <view class="title">4、参数信息</view>
+    <view class="text-box box">
+      <view class="label">snTicket:</view>
+      <text class="text">{{snTicket || '-'}}</text>
+      <text class="copy-btn {{snTicket ? '' : 'disabled'}}" data-type="snTicket" bindtap="copyData">复制</text>
+    </view>
+    <view class="text-box box">
+      <view class="label">openID:</view>
+      <text class="text">{{openId || '-'}}</text>
+      <text class="copy-btn {{openId ? '' : 'disabled'}}" data-type="openId" bindtap="copyData">复制</text>
+    </view>
+    <!-- <view class="text-box box">
+      <view class="label">voipToken:</view>
+      <text class="text">{{voipToken || '-'}}</text>
+      <text class="copy-btn {{voipToken ? '' : 'disabled'}}" data-type="voipToken" bindtap="copyData">复制</text>
+    </view>
+    <view class="text-box box">
+      <view class="label">sn:</view>
+      <text class="text">{{sn || '-'}}</text>
+      <text class="copy-btn {{sn ? '' : 'disabled'}}" data-type="sn" bindtap="copyData">复制</text>
+    </view>
+    <view class="text-box box">
+      <view class="label">modelId:</view>
+      <text class="text">{{modelId || '-'}}</text>
+      <text class="copy-btn {{modelId ? '' : 'disabled'}}" data-type="modelId" bindtap="copyData">复制</text>
+    </view> -->
+  </view>
+
+  <!-- <view class="section">
+    <view class="title">5、获取 voip 授权情况</view>
+    <button size="mini" type="primary" bindtap="getVoipAuth">查询</button>
+  </view> -->
+
+  <!-- <view class="section">
+    <view class="title">6、开始 voip 通话</view>
+    <button size="mini" type="primary" bindtap="startCall">呼叫</button>
+    <button size="mini" type="primary" bindtap="waitCall">接听</button>
+  </view> -->
+</view>
