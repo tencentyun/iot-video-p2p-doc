@@ -23,9 +23,10 @@
           height: xxx;
         }
     -->
-    <iot-p2p-player-with-mjpg
-      id="{{playerId}}"
-      class="my-player {{(voiceState && voiceState !== 'VoiceIdle' && intercomType === 'video') ? 'full' : ''}}"
+    <p2p-live-player
+      id="p2p-live-player-{{item}}"
+      wx:for="{{useChannelIds}}"
+      streamChannel="{{item}}"
       deviceInfo="{{deviceInfo}}"
       xp2pInfo="{{xp2pInfo}}"
       liveStreamDomain="{{liveStreamDomain}}"
@@ -39,72 +40,13 @@
       rotate="{{rotate}}"
       fill="{{fill}}"
       acceptPlayerEvents="{{acceptPlayerEvents}}"
-      showLog="{{showLog}}"
-      showDebugInfo="{{showDebugInfo}}"
       onlyp2pMap="{{onlyp2pMap}}"
-      bind:domready="onPlayerEvent"
-      bind:playerstatechange="onPlayerEvent"
-      bind:streamstatechange="onPlayerEvent"
-      bind:playstart="onPlayStateEvent"
-      bind:playsuccess="onPlayStateEvent"
-      bind:playstop="onPlayStateEvent"
-      bind:playend="onPlayStateEvent"
-      bind:playerror="onPlayError"
-      bind:receiveidr="onPlayerEvent"
-      bind:statechange="onPlayerEvent"
-      bind:netstatus="onPlayerEvent"
-      bind:fullscreenchange="onFullScreenChange"
-      bind:mjpgplayerstatechange="onMjpgPlayerEvent"
-      bind:mjpgstreamstatechange="onMjpgPlayerEvent"
-      bind:mjpgplaystart="onMjpgPlayStateEvent"
-      bind:mjpgplaysuccess="onMjpgPlayStateEvent"
-      bind:mjpgplaystop="onMjpgPlayStateEvent"
-      bind:mjpgplayend="onMjpgPlayStateEvent"
-      bind:mjpgplayerror="onMjpgPlayStateEvent"
-      bind:mjpgreceiveimage="onMjpgPlayerEvent"
-      bind:mjpgnetstatus="onMjpgPlayerEvent"
     >
-      <!--
-        注意要指定slot属性，因为组件设置了 multipleSlots
-        flvInner: 放在 live-player 内部，全屏时可见，随 live-player 销毁，视频流设备用
-        mjpgInner: 放在 image 后面，随 image 销毁，图片流设备用
-        after: 放在 live-player/image 后面，全屏时不可见，live-player/image 销毁后依然存在
-      -->
-      <iot-player-controls
-        id="{{controlsId}}"
-        slot="{{deviceInfo.isMjpgDevice ? 'mjpgInner' : 'flvInner'}}"
-        showIcons="{{showIcons}}"
-        iconSize="{{iconSize}}"
-        qualityMap="{{qualityMap}}"
-        quality="{{streamQuality}}"
-        muted="{{muted}}"
-        orientation="{{orientation}}"
-        rotate="{{rotate}}"
-        fill="{{fill}}"
-        fullScreen="{{fullScreen}}"
-        bind:clickicon="clickControlIcon"
-      >
-        <view class="player-control-item" bindtap="toggleVoice">
-          <mp-icon icon="mike" size="{{iconSize}}" color="{{voiceState ? (voiceState === 'VoiceIdle' ? 'white' : 'orange') : 'grey'}}" type="{{voiceState === 'VoiceSending' ? 'field': 'outline'}}"></mp-icon>
-        </view>
-      </iot-player-controls>
-      <view slot="mjpgDebug">
-        <view>【I'm mjpgDebug】</view>
+      <view class="player-control-item" bindtap="toggleVoice">
+        <mp-icon icon="mike" size="{{iconSize}}" color="{{voiceState ? (voiceState === 'VoiceIdle' ? 'white' : 'orange') : 'grey'}}" type="{{voiceState === 'VoiceSending' ? 'field': 'outline'}}"></mp-icon>
       </view>
-      <view slot="flvDebug">
-        <view>【I'm flvDebug】</view>
-      </view>
-      <view slot="after" class="debug-info-switch-container">
-        <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
-      </view>
-    </iot-p2p-player-with-mjpg>
-    <view class="page-section page-section-gap">
-      <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（可能触发 live-player 暂停）</navigator>
-      <view class="group-button-area">
-        <button bindtap="retryPlayer" disabled="{{!isPlayError}}" class="group-button" type="primary" size="mini">重试</button>
-        <button bindtap="snapshotView" disabled="{{!isPlaySuccess}}" class="group-button" type="primary" size="mini">截取渲染后的画面</button>
-      </view>
-    </view>
+    </p2p-live-player>
+
     <!-- 调试用
     <view class="page-section page-section-gap">
       <view class="page-section-title">【查看回放】</view>
@@ -150,12 +92,12 @@
           bind:voicestop="onVoiceProcess"
           bind:voiceerror="onVoiceError"
         />
-        <!-- <live-pusher 
-          url="https://domain/push_stream" 
-          mode="RTC" 
-          autopush 
+        <!-- <live-pusher
+          url="https://domain/push_stream"
+          mode="RTC"
+          autopush
           bindstatechange="statechange"
-          style="width: 375rpx; height: 500rpx; position: fixed; z-index: 99; bottom: 0; right: 0;" 
+          style="width: 375rpx; height: 500rpx; position: fixed; z-index: 99; bottom: 0; right: 0;"
          /> -->
         <!-- <view>voiceState: {{voiceState || '-'}} intercomType: {{intercomType}}</view> -->
         <view class="group-button-area">
