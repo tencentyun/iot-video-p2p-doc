@@ -29,6 +29,9 @@ Page({
     // 这些是控制player和p2p的
     playerId: 'iot-p2p-player',
 
+    // 流的channel
+    streamChannel: 0,
+
     // 设备信息，在input组件里填
     targetId: '',
     deviceInfo: null,
@@ -474,7 +477,7 @@ Page({
     try {
       res = await xp2pManager.getRecordDatesInMonth(
         this.userData.deviceId,
-        { month: this.data.calendarMonth },
+        { month: this.data.calendarMonth, channel: this.data.streamChannel },
       );
     } catch (err) {
       console.error('demo: getRecordDatesInMonth error', err);
@@ -503,7 +506,7 @@ Page({
     try {
       res = await xp2pManager.getRecordVideosInDate(
         this.userData.deviceId,
-        { date },
+        { date, channel: this.data.streamChannel },
       );
     } catch (err) {
       console.error('demo: getRecordVideosInDate error', err);
@@ -547,7 +550,7 @@ Page({
     try {
       res = await xp2pManager.getFilesInDate(
         this.userData.deviceId,
-        { date },
+        { date, channel: this.data.streamChannel },
       );
     } catch (err) {
       console.error('demo: getFilesInDate error', err);

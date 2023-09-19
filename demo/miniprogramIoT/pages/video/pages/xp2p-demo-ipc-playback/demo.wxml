@@ -25,6 +25,7 @@
       showLog="{{showLog}}"
       showDebugInfo="{{showDebugInfo}}"
       onlyp2p="{{onlyp2pMap && onlyp2pMap.flv}}"
+      streamChannel="{{streamChannel}}"
       bind:playerstatechange="onPlayerEvent"
       bind:streamstatechange="onPlayerEvent"
       bind:playstart="onPlayStateEvent"

@@ -23,7 +23,7 @@
           "export": "exportForPlayerPlugin.js"
         },
         "xp2p": {
-          "version": "3.2.9",
+          "version": "3.2.12",
           "provider": "wx1319af22356934bf",
           "export": "exportForXp2pPlugin.js"
         },
