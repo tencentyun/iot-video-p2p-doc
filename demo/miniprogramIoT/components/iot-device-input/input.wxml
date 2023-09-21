@@ -28,8 +28,15 @@
             </view>
           </view>
         </view>
-        <view wx:for="{{simpleChecks}}" wx:key="field" class="input-item {{item.scene && item.scene !== scene ? 'hide' : ''}}">
-          <label><switch type="checkbox" checked="{{item.checked}}" data-field="{{item.field}}" data-index="{{index}}" bindchange="switchSimpleCheck"/>{{item.text}}</label>
+        <view wx:if="{{scene === 'live'}}" style="margin-bottom: 30rpx;">
+          <view>通道选择</view>
+          <label wx:for="{{channels}}"><switch type="checkbox" checked="{{item.checked}}" data-value="{{item.value}}" data-index="{{index}}" bindchange="switchChannel"/>{{item.name}}</label>
+        </view>
+        <view>
+          <view>其它选项</view>
+          <view wx:for="{{simpleChecks}}" wx:key="field" class="input-item {{item.scene && item.scene !== scene ? 'hide' : ''}}">
+            <label><switch type="checkbox" checked="{{item.checked}}" data-field="{{item.field}}" data-index="{{index}}" bindchange="switchSimpleCheck"/>{{item.text}}</label>
+          </view>
         </view>
         <view class="input-item" wx:if="{{scene === 'live'}}">
           <view>对讲方式:<text class="text-btn font-small" bindtap="copyDocUrl" data-doc="https://mp.weixin.qq.com/wxopen/plugindevdoc?appid=wx1319af22356934bf#6-">查看详细说明</text></view>
@@ -40,6 +47,18 @@
                 <view class="voice-type-item-text">
                   <view>{{item.text}}</view>
                   <view>{{item.desc}}</view>
+                </view>
+              </view>
+            </label>
+          </radio-group>
+          <view>语音/视频对讲</view>
+          <radio-group bindchange="changeIntercomTypeRadio">
+            <label wx:for="{{intercomTypeList}}" wx:key="value">
+              <view class="voice-type-item">
+                <radio value="{{item.value}}" checked="{{item.checked}}" class="voice-type-item-radio"/>
+                <view class="voice-type-item-text">
+                  <view>{{item.text}}</view>
+                  <view wx:if="{{item.desc}}">{{item.desc}}</view>
                 </view>
               </view>
             </label>

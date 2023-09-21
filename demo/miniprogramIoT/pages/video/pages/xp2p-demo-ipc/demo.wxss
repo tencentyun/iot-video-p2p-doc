@@ -12,7 +12,7 @@
   top: 20rpx;
   z-index: 999;
 }
-.hungup-btn {
+.hangup-btn {
   width: 100rpx;
   height: 100rpx;
   box-sizing: border-box;
@@ -24,7 +24,7 @@
   z-index: 3001;
   background: red;
 }
-.hungup-btn image {
+.hangup-btn image {
   width: 100%;
   height: 100%;
 }

@@ -1,0 +1,23 @@
+<view style="padding: 0 20rpx">
+  <view style="font-size: 42rpx; text-align: center">P2P播放器小程序服务声明</view>
+  <view style="margin-top: 20rpx; text-align: right">
+    <view>发布日期：2023年08月18日</view>
+    <view>生效日期：2023年08月18日</view>
+  </view>
+  <view style="margin-bottom: 25rpx;">引言</view>
+  <view>P2P播放器由深圳市腾讯计算机系统有限公司（以下简称“我们”）开发，公司注册地为中国广东省深圳市南山区科技中一路腾讯大厦35层。</view>
+  <view>
+    <view>我们在此特别声明：</view>
+    <view>1.本小程序产品功能的实现不涉及收集和处理用户（以下简称“您”）的任何个人信息。</view>
+    <view>2.如果我们更新、改进或修改小程序产品功能，并因此导致我们需要处理您的个人信息的，我们将会依据适用法律的要求对本声明进行修订，并将修订后的内容通过弹框等形式通知您并获得您同意。</view>
+    <view>3.如果您对本声明有任何疑问或建议，您可以通过以下方式与我们取得联系：</view>
+    <view>
+      <view>（1）将问题发送至iotvideo_helper@tencent.com；</view>
+      <view>（2）通过iotvideo_helper@tencent.com与我们联系；</view>
+      <view>（3）将您的问题邮寄至下列地址：</view>
+    </view>
+    <view>中国广东省深圳市南山区海天二路33号腾讯滨海大厦 数据隐私保护部（收）</view>
+    <view>邮编：518054</view>
+    <view>我们将尽快审核所涉问题，并在15个工作日或法律法规规定的期限内予以反馈。</view>
+  </view>
+</view>

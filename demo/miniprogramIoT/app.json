@@ -3,8 +3,16 @@
     "pages/index/index",
     "pages/user-files/files",
     "pages/empty/empty",
-    "pages/test-video/test"
+    "pages/test-video/test",
+    "pages/private-policy/private-policy"
   ],
+  "plugins": {
+    "xp2p": {
+      "version": "3.2.13",
+      "provider": "wx1319af22356934bf",
+      "export": "exportForXp2pPlugin.js"
+    }
+  },
   "subPackages": [
     {
       "root": "pages/video",
@@ -21,11 +29,6 @@
           "version": "1.3.6",
           "provider": "wx9e8fbc98ceac2628",
           "export": "exportForPlayerPlugin.js"
-        },
-        "xp2p": {
-          "version": "3.2.12",
-          "provider": "wx1319af22356934bf",
-          "export": "exportForXp2pPlugin.js"
         },
         "wmpf-voip": {
           "version": "latest",

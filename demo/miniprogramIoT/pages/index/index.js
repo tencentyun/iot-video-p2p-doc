@@ -43,6 +43,7 @@ Page({
   },
   onLoad() {
     console.log('index: onLoad');
+    this.showPolicyModal();
 
     const listVideoDevices = [];
     const listMjpgDevices = [];
@@ -194,5 +195,27 @@ Page({
       data: doc,
     });
     wx.showToast({ title: '文档地址已复制到剪贴板', icon: 'none' });
+  },
+  showPolicyModal() {
+    const key = 'PRIVATE_POLICY_MODAL_SHOWED';
+    const value = wx.getStorageSync(key);
+
+    if (!value) {
+      wx.setStorageSync(key, true);
+      wx.showModal({
+        title: '隐私政策',
+        content: '我们严格按照《小程序服务声明》向您提供服务，不会收集和处理您的个人信息。如您对《小程序服务声明》有任何疑问或建议，可以通过声明内的联系方式向我们反馈。',
+        confirmText: '我已知晓',
+        cancelText: '查看声明',
+        success(res) {
+          if (!res.confirm) {
+            console.log('res.confirm');
+            wx.navigateTo({
+              url: '/pages/private-policy/private-policy',
+            });
+          }
+        },
+      });
+    }
   },
 });

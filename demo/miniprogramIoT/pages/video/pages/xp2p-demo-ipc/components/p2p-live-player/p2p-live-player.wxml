@@ -2,7 +2,7 @@
   <view>channel-{{streamChannel}}直播</view>
   <iot-p2p-player-with-mjpg
     id="{{playerId}}"
-    class="my-player {{(voiceState && voiceState !== 'VoiceIdle' && intercomType === 'video') ? 'full' : ''}}"
+    class="{{compClass}}"
     streamChannel="{{streamChannel}}"
     deviceInfo="{{deviceInfo}}"
     xp2pInfo="{{xp2pInfo}}"

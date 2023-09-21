@@ -20,6 +20,7 @@ Component({
     multipleSlots: true,
   },
   properties: {
+    compClass: String,
     deviceInfo: Object,
     xp2pInfo: String,
     streamChannel: {

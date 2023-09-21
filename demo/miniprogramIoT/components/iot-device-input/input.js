@@ -1,5 +1,19 @@
 import { totalData } from '../../config/config';
 import { adjustXp2pInfo, getDeviceFlags, isDevTool } from '../../utils';
+const getDefaultChannelOptions = () => (
+  [
+    {
+      value: 0,
+      name: 'channel0',
+      checked: false,
+    },
+    {
+      value: 1,
+      name: 'channel1',
+      checked: false,
+    },
+  ]
+);
 
 Component({
   behaviors: ['wx://component-export'],
@@ -38,6 +52,8 @@ Component({
     ],
 
     // 1v1用
+    channels: getDefaultChannelOptions(),
+    useChannelIds: [],
     simpleInputs: [
       {
         field: 'productId',
@@ -120,6 +136,17 @@ Component({
       //   checked: false,
       // },
     ],
+    intercomType: 'voice',
+    intercomTypeList: [{
+      value: 'voice',
+      text: '语音对讲',
+      checked: true,
+    }, {
+      value: 'video',
+      text: '视频对讲',
+      desc: '只支持 LivePusher，与 Voip 通话建立双向音视频通话',
+      checked: false,
+    }],
 
     // 1v多用
     inputUrl: '',
@@ -170,6 +197,11 @@ Component({
       voiceTypeList.forEach((item) => {
         item.checked = item.value === voiceType;
       });
+      const intercomType = options.intercomType || 'video';
+      const { intercomTypeList } = this.data;
+      intercomTypeList.forEach((item) => {
+        item.checked = item.value === intercomType;
+      });
 
       // setData
       this.setData({
@@ -181,18 +213,20 @@ Component({
         simpleChecks,
         voiceType,
         voiceTypeList,
+        intercomType,
+        intercomTypeList,
         // 1v多用
         inputUrl: data.flvUrl || '',
       });
 
-      this.changeSceneRadio({ detail: { value: this.properties.scene }});
+      this.changeSceneRadio({ detail: { value: this.properties.scene } });
     },
     detached() {
       // 在组件实例被从页面节点树移除时执行
       console.log(`[${this.id}]`, 'detached');
     },
   },
-  export() {},
+  export() { },
   methods: {
     showToast(content) {
       wx.showToast({
@@ -284,6 +318,14 @@ Component({
         simpleChecks: this.data.simpleChecks,
       });
     },
+    switchChannel(e) {
+      const { index } = e.currentTarget.dataset;
+      const item = this.data.channels[index];
+      item.checked = e.detail.value;
+      this.setData({
+        channels: this.data.channels,
+      });
+    },
     changeVoiceTypeRadio(e) {
       const { voiceTypeList } = this.data;
       voiceTypeList.forEach((item) => {
@@ -292,6 +334,16 @@ Component({
       this.setData({
         voiceType: e.detail.value,
         voiceTypeList,
+      });
+    },
+    changeIntercomTypeRadio(e) {
+      const { intercomTypeList } = this.data;
+      intercomTypeList.forEach((item) => {
+        item.checked = item.value === e.detail.value;
+      });
+      this.setData({
+        intercomType: e.detail.value,
+        intercomTypeList,
       });
     },
     // 1v多用
@@ -320,6 +372,12 @@ Component({
       let liveStreamDomain = '';
       let streamQuality = '';
       let flvUrl = '';
+      let useChannelIds = this.data.channels.filter(item => item.checked).map(item => item.value);
+
+      if (useChannelIds.length === 0) {
+        useChannelIds = [0];
+      }
+
       if (this.data.p2pMode === 'ipc') {
         // deviceInfo
         const deviceId = `${inputValues.productId}/${inputValues.deviceName}`;
@@ -400,6 +458,7 @@ Component({
         liveStreamDomain,
         streamQuality,
         flvUrl,
+        useChannelIds,
       };
     },
     startPlayer() {
@@ -409,6 +468,7 @@ Component({
       });
       const options = {
         voiceType: this.data.voiceType, // 对讲方式
+        intercomType: this.data.intercomType, // 对讲类型
       };
       this.data.simpleChecks.forEach((item) => {
         options[item.field] = item.checked;
@@ -440,6 +500,7 @@ Component({
 
       console.log(`[${this.id}]`, 'startPlayer', this.data.p2pMode, sceneType, streamData, options);
       this.setData(streamData);
+
       this.triggerEvent('startPlayer', {
         p2pMode: this.data.p2pMode,
         sceneType,

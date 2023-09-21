@@ -11,6 +11,12 @@ let xp2pManager;
 const pageName = 'demo-page-ipc';
 let pageSeq = 0;
 
+const wmpfVoip = requirePlugin('wmpf-voip').default;
+// 监听 voip 通话
+wmpfVoip.onVoipEvent((event) => {
+  console.info('demo onVoipEvent', event.eventName);
+});
+
 Page({
   data: {
     // 这是onLoad时就固定的
@@ -44,11 +50,19 @@ Page({
       // mjpgnetstatus: true,
     },
 
+    // 双向音视频
+    intercomId: 'iot-p2p-intercom',
     // 对讲
     voiceId: 'iot-p2p-voice',
     voiceState: '',
     pusherProps: {
       voiceChangerType: 0,
+    },
+    intercomPusherProps: {
+      enableCamera: true,
+      enableMic: true,
+      videoWidth: 360,
+      videoHeight: 480,
     },
     voiceChangerTypes: [
       { value: 0, label: '关闭' },
@@ -73,6 +87,11 @@ Page({
 
     // 对讲方式
     intercomType: 'voice', // 'voice' | 'video'
+
+    // 双向音视频
+    stateList: [],
+    eventList: [],
+    intercomState: '',
   },
   onLoad(query) {
     pageSeq++;
@@ -128,13 +147,6 @@ Page({
     console.log('demo: onUnload');
     this.hasExited = true;
 
-    // 停止播放
-    if (this.userData.player) {
-      console.log('demo: player.stopAll');
-      this.userData.player.stopAll();
-      this.userData.player = null;
-    }
-
     // 停止对讲
     if (this.userData.voice && this.data.voiceState !== 'VoiceIdle') {
       this.stopVoice();
@@ -169,7 +181,6 @@ Page({
       });
       return;
     }
-
     this.userData.deviceId = detail.deviceInfo.deviceId;
 
     // 开始连接
@@ -194,6 +205,18 @@ Page({
     this.setData({
       ...detail,
       muted: detail.options.playerMuted,
+      intercomType: detail.options.intercomType || 'voice',
+      ...(detail.options.intercomType === 'video' ? {
+        'pusherProps.enableCamera': true,
+        'pusherProps.enableMic': true,
+        'pusherProps.videoWidth': 360,
+        'pusherProps.videoHeight': 480,
+      } : {
+        'pusherProps.enableCamera': false, // 关闭摄像头,默认值 false
+        'pusherProps.enableMic': true, // 开启麦克风,默认值 true
+        'pusherProps.videoWidth': 0, // 视频宽度,默认值 0
+        'pusherProps.videoHeight': 0, // 视频高度,默认值 0
+      }),
     }, () => {
       if (detail.initCommand) {
         // 需要初始化设备
@@ -228,6 +251,20 @@ Page({
   },
   // 初始化后再获取组件实例
   getComponents() {
+    console.log('demo: create components');
+
+    const intercom = this.selectComponent(`#${this.data.intercomId}`);
+    if (intercom) {
+      console.log('demo: create intercom success');
+      oriConsole.log('demo: intercom', intercom);
+      this.userData.intercom = intercom;
+      this.setData({
+        intercomState: 'intercomIdle',
+      });
+    } else {
+      console.error('demo: create intercom error');
+    }
+
     const voice = this.selectComponent(`#${this.data.voiceId}`);
     if (voice) {
       console.log('demo: create voice success');
@@ -313,6 +350,71 @@ Page({
         break;
     }
   },
+  // 双向音视频事件通知
+  onIntercomEventChange({ detail }) {
+    console.log('demo: onIntercomEventChange: ', { detail });
+    this.setData({
+      eventList: [...this.data.eventList, detail.event],
+    });
+    let tips = '';
+    const isCalling = ['calling', 'Sending'].includes(this.data.intercomState);
+    switch (detail.event) {
+      // 插件自身事件
+      case 'IntercomError': {
+        tips = '呼叫异常';
+        break;
+      }
+      case 'VoiceError': {
+        tips = '初始化语音对讲组件异常';
+        break;
+      }
+      case 'CancelCalling': {
+        tips = '小程序取消呼叫';
+        break;
+      }
+      case 'Hangup': {
+        tips = '小程序挂断';
+        break;
+      }
+
+      // 设备端响应事件
+      case 'BeHangup': {
+        tips = isCalling && '设备端挂断';
+        break;
+      }
+      case 'RejectCalling': {
+        tips = isCalling && '设备端拒接';
+        break;
+      }
+      case 'CallCanceled': {
+        tips = isCalling && '设备端取消呼叫';
+        break;
+      }
+      case 'Busy': {
+        tips = isCalling && '设备端繁忙';
+        break;
+      }
+      case 'CallTimeout': {
+        tips = isCalling && '设备端呼叫超时';
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+    if (tips) wx.showToast({ title: tips });
+  },
+  onIntercomStateChange({ detail }) {
+    console.log('demo: onIntercomStateChange: ', { detail });
+    this.setData({
+      stateList: [...this.data.stateList, detail.state],
+      intercomState: detail.state,
+    });
+    wx.showToast({
+      title: detail,
+      icon: 'none',
+    });
+  },
   onVoiceError({ type, detail }) {
     this.onVoiceProcess({ type, detail });
 
@@ -330,6 +432,44 @@ Page({
     } else if (this.data.voiceState === 'VoiceSending') {
       this.stopVoice();
     }
+  },
+  startIntercomCall(e) {
+    const needRecord = parseInt(e?.currentTarget?.dataset?.needRecord, 10) > 0;
+    console.log('demo: startIntercomCall, needRecord', needRecord);
+
+    // 只要有一个player播放成功，就启动对讲
+    const successPlayer = (this.userData.players || []).find(player => !!player.isPlaySuccess());
+
+    console.log('开启双向音视频对讲：', e);
+    if (!successPlayer) {
+      console.log('demo: startIntercomCall err, isPlaySuccess false');
+      wx.showToast({
+        title: '请等待播放后再开始呼叫',
+        icon: 'error',
+      });
+      return;
+    }
+
+    // 检查实例是否初始化成功
+    if (!this.userData.intercom) {
+      console.error('demo: startIntercomCall but no intercom component');
+      return;
+    }
+
+    this.userData.intercom.intercomCall({
+      needRecord,
+    });
+  },
+  stopIntercomCall() {
+    console.log('demo: stopIntercomCall');
+    this.setData({ stateList: [], eventList: [], intercomState: 'Ready2Call' });
+
+    if (!this.userData.intercom) {
+      console.error('demo: stopIntercomCall but no intercom component');
+      return;
+    }
+
+    this.userData.intercom.intercomHangup();
   },
   startVoice(e) {
     const needRecord = parseInt(e?.currentTarget?.dataset?.needRecord, 10) > 0;
@@ -371,27 +511,6 @@ Page({
     this.setData({
       'pusherProps.voiceChangerType': newType,
     });
-  },
-  intercomTypeChange({ detail }) {
-    const newType = detail.value || 'voice';
-    this.setData({
-      intercomType: newType,
-    });
-    if (newType === 'voice') {
-      this.setData({
-        'pusherProps.enableCamera': false, // 关闭摄像头,默认值 false
-        'pusherProps.enableMic': true, // 开启麦克风,默认值 true
-        'pusherProps.videoWidth': 0, // 视频宽度,默认值 0
-        'pusherProps.videoHeight': 0, // 视频高度,默认值 0
-      });
-    } else {
-      this.setData({
-        'pusherProps.enableCamera': true,
-        'pusherProps.enableMic': true,
-        'pusherProps.videoWidth': 360,
-        'pusherProps.videoHeight': 480,
-      });
-    }
   },
   // ptz控制
   controlPTZ(e) {
