@@ -194,6 +194,8 @@ Page({
     })
       .then((res) => {
         console.log('demo: startP2PService res', res);
+
+        this.onFeedbackFromDevice();
       })
       .catch((err) => {
         // 只是提前连接，不用特别处理
@@ -350,6 +352,16 @@ Page({
         break;
     }
   },
+  // feedback 事件通知
+  onFeedbackFromDevice() {
+    xp2pManager.addP2PServiceEventListener(
+      this.userData.deviceId,
+      'feedbackFromDevice',
+      (body) => {
+        console.log('demo: FEEDBACK_FROM_DEVICE', body);
+      },
+    );
+  },
   // 双向音视频事件通知
   onIntercomEventChange({ detail }) {
     console.log('demo: onIntercomEventChange: ', { detail });
@@ -432,6 +444,14 @@ Page({
     } else if (this.data.voiceState === 'VoiceSending') {
       this.stopVoice();
     }
+  },
+  // 开关视频对讲 麦克风
+  toggleMic() {
+    this.setData({ 'intercomPusherProps.enableMic': !intercomPusherProps.enableMic });
+  },
+  // 开关视频对讲 摄像头
+  toggleCamera() {
+    this.setData({ 'intercomPusherProps.enableCamera': !intercomPusherProps.enableCamera });
   },
   startIntercomCall(e) {
     const needRecord = parseInt(e?.currentTarget?.dataset?.needRecord, 10) > 0;

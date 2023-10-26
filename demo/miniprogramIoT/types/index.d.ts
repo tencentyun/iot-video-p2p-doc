@@ -24,6 +24,7 @@ declare type XP2PStartServiceParams = XP2PStartIPCServiceParams | XP2PStartServe
 
 declare enum XP2PServiceEvent {
   SERVICE_STATE_CHANGE = 'serviceStateChange',
+  FEEDBACK_FROM_DEVICE = 'feedbackFromDevice',
 }
 
 declare enum XP2PManagerEvent {

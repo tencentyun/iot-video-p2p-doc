@@ -122,6 +122,14 @@
           </view>
         </view>
         <view class="group-button-area" wx:else>
+          <view>
+            <button bindtap="toggleMic" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
+              麦克风: {{intercomPusherProps.enableMic ? '开' : '关'}}
+            </button>
+            <button bindtap="toggleCamera" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
+              摄像头: {{intercomPusherProps.enableCamera ? '开' : '关'}}
+            </button>
+          </view>
           <button bindtap="startIntercomCall" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
             双向对讲
           </button>

@@ -8,7 +8,7 @@
   ],
   "plugins": {
     "xp2p": {
-      "version": "3.2.13",
+      "version": "3.2.15",
       "provider": "wx1319af22356934bf",
       "export": "exportForXp2pPlugin.js"
     }
@@ -49,7 +49,6 @@
     "iot-device-input": "components/iot-device-input/input"
   },
   "sitemapLocation": "sitemap.json",
-  "lazyCodeLoading": "requiredComponents",
   "useExtendedLib": {
     "weui": true
   }

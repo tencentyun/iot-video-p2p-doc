@@ -182,6 +182,14 @@ Page({
       xp2pNatEventTime: Date.now(),
     });
   },
+  openSetting() {
+    wx.openSetting({
+      success() { /** */ },
+      fail() {
+        wx.showToast({ title: '打开失败！' });
+      },
+    });
+  },
   gotoPage(e) {
     const { url } = e.currentTarget.dataset;
     wx.navigateTo({ url });
