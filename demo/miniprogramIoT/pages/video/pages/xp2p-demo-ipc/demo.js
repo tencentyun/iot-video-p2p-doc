@@ -357,8 +357,12 @@ Page({
     xp2pManager.addP2PServiceEventListener(
       this.userData.deviceId,
       'feedbackFromDevice',
-      (body) => {
+      async (body) => {
         console.log('demo: FEEDBACK_FROM_DEVICE', body);
+        await wx.showModal({
+          title: 'feedbackFromDevice',
+          content: JSON.stringify(body),
+        });
       },
     );
   },

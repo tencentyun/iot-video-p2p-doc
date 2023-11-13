@@ -33,8 +33,7 @@
     "packNpmRelationList": [],
     "minifyWXSS": true,
     "minifyWXML": true,
-    "ignoreUploadUnusedFiles": true,
-    "condition": false
+    "ignoreUploadUnusedFiles": true
   },
   "simulatorType": "wechat",
   "simulatorPluginLibVersion": {},
@@ -46,6 +45,5 @@
   "editorSetting": {
     "tabIndent": "insertSpaces",
     "tabSize": 2
-  },
-  "libVersion": "2.33.0"
+  }
 }

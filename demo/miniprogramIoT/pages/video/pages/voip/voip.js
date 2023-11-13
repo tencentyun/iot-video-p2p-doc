@@ -61,8 +61,12 @@ Page({
   copyData(e) {
     const { type: key } = e.currentTarget.dataset;
     const value = this.data[key];
-    if (!value) return;
+    if (!value) {
+      wx.showModal({ title: '复制失败', content: '没有数据' });
+      return;
+    }
     wx.setClipboardData({ data: value });
+    wx.showToast({ title: '复制成功' });
   },
   async getSnTicket() {
     if (!this.data.sn) {
