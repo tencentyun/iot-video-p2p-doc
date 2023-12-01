@@ -8,9 +8,6 @@
 .my-player.full .iot-player {
   height: 100vh;
 }
-.my-player .mock-p2p-player .player-content {
-  top: 50rpx;
-}
 
 /* 3.2.2 之前这么覆盖，注意给组件加class属性 */
 .my-player .player-container {
@@ -21,15 +18,6 @@
 /* 自己的 */
 .p2p-live-player {
   position: relative;
-}
-.player-channel {
-  box-sizing: border-box;
-  position: absolute;
-  left: 0;
-  top: 0;
-  padding: 20rpx;
-  background-color: rgba(0, 0, 0, 0.3);
-  color: white;
 }
 .player-controls-container {
   box-sizing: border-box;

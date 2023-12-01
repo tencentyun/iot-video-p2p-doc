@@ -48,7 +48,6 @@
       after: 放在 live-player/image 后面，全屏时不可见，live-player/image 销毁后依然存在
     -->
     <view slot="{{deviceInfo.isMjpgDevice ? 'mjpgInner' : 'flvInner'}}">
-      <view class="player-channel">ch-{{streamChannel}}</view>
       <iot-player-controls
         id="{{controlsId}}"
         showIcons="{{showIcons}}"
@@ -80,6 +79,7 @@
   </iot-p2p-player-with-mjpg>
 
   <view class="page-section page-section-gap">
+    <view class="player-channel">channel-{{streamChannel}}</view>
     <view class="group-button-area">
       <button bindtap="retryPlayer" disabled="{{!isPlayError}}" class="group-button" type="primary" size="mini">重试</button>
       <button bindtap="snapshotView" disabled="{{!isPlaySuccess}}" class="group-button" type="primary" size="mini">截取渲染后的画面</button>
