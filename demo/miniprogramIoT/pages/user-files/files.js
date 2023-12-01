@@ -1,4 +1,4 @@
-import { isDevTool } from '../../utils';
+import { isDevTool, compareVersion } from '../../utils';
 import { getRecordManager, getSaveFormat } from '../../lib/recordManager';
 
 const app = getApp();
@@ -98,10 +98,16 @@ Page({
     });
 
     if (needExit) {
-      app.logger.reset('reLaunch');
-      wx.reLaunch({
-        url: '/pages/index/index',
-      });
+      if (compareVersion(wx.getSystemInfoSync().SDKVersion, '3.0.1') >= 0) {
+        wx.restartMiniProgram({
+          path: '/pages/index/index',
+        });
+      } else {
+        app.logger?.reset('reLaunch');
+        wx.reLaunch({
+          url: '/pages/index/index',
+        });
+      }
     }
   },
   async saveToAlbum(e) {

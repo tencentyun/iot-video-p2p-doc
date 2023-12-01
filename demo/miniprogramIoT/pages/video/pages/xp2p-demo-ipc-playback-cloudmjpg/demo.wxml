@@ -12,7 +12,7 @@
       muted="{{muted}}"
       rotate="{{rotate}}"
       fill="{{fill}}"
-      showLog="{{showLog}}"
+      showLog="{{options.playerLog}}"
       showDebugInfo="{{showDebugInfo}}"
       bind:playerstatechange="onPlayerEvent"
       bind:streamstatechange="onPlayerEvent"

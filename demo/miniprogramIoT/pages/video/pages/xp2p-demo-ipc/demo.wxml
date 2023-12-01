@@ -24,9 +24,10 @@
         }
     -->
     <p2p-live-player
+      wx:for="{{useChannelIds}}"
+      wx:key="index"
       id="p2p-live-player-{{item}}"
       compClass="my-player {{intercomState && intercomState === 'Sending' ? 'full' : ''}}"
-      wx:for="{{useChannelIds}}"
       streamChannel="{{item}}"
       deviceInfo="{{deviceInfo}}"
       xp2pInfo="{{xp2pInfo}}"
@@ -36,19 +37,20 @@
       needCheckStream="{{options.needCheckStream}}"
       mode="{{options.playerRTC ? 'RTC' : 'live'}}"
       soundMode="{{soundMode}}"
-      muted="{{muted}}"
-      orientation="{{orientation}}"
-      rotate="{{rotate}}"
-      fill="{{fill}}"
+      muted="{{options.playerMuted}}"
       acceptPlayerEvents="{{acceptPlayerEvents}}"
       onlyp2pMap="{{onlyp2pMap}}"
+      showLog="{{options.playerLog}}"
     >
-      <view class="player-control-item" bindtap="toggleVoice">
+      <view wx:if="{{intercomType === 'voice'}}" class="player-control-item" bindtap="toggleVoice">
         <mp-icon icon="mike" size="{{iconSize}}" color="{{voiceState ? (voiceState === 'VoiceIdle' ? 'white' : 'orange') : 'grey'}}" type="{{voiceState === 'VoiceSending' ? 'field': 'outline'}}"></mp-icon>
       </view>
     </p2p-live-player>
 
     <!-- 调试用
+    <view class="page-section page-section-gap">
+      <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（可能触发 live-player 暂停）</navigator>
+    </view>
     <view class="page-section page-section-gap">
       <view class="page-section-title">【查看回放】</view>
       <view class="margin-left group-button-area">
@@ -66,19 +68,8 @@
       </view>
     </view>
     -->
-    <view class="page-section page-section-gap">
+    <view class="page-section page-section-gap" wx:if="{{intercomType === 'voice'}}">
       <view class="margin-left">
-        <iot-p2p-intercom 
-          id="{{intercomId}}"
-          compClass="voice-comp-container"
-          pusherClass="voice-pusher"
-          deviceInfo="{{deviceInfo}}"
-          pusherProps="{{intercomPusherProps}}"
-          showLog="{{showLog}}"
-    
-          bind:intercomeventchange="onIntercomEventChange"
-          bind:intercomstatechange="onIntercomStateChange"
-        ></iot-p2p-intercom>
         <iot-p2p-voice
           id="{{voiceId}}"
           style="display:block"
@@ -87,22 +78,14 @@
           deviceInfo="{{deviceInfo}}"
           voiceType="{{options.voiceType}}"
           pusherProps="{{pusherProps}}"
-          showLog="{{showLog}}"
+          showLog="{{options.intercomLog}}"
           bind:voicestatechange="onVoiceStateChange"
           bind:voicestart="onVoiceProcess"
           bind:voicesuccess="onVoiceProcess"
           bind:voicestop="onVoiceProcess"
           bind:voiceerror="onVoiceError"
         />
-        <!-- <live-pusher
-          url="https://domain/push_stream"
-          mode="RTC"
-          autopush
-          bindstatechange="statechange"
-          style="width: 375rpx; height: 500rpx; position: fixed; z-index: 99; bottom: 0; right: 0;"
-         /> -->
-        <!-- <view>voiceState: {{voiceState || '-'}} intercomType: {{intercomType}}</view> -->
-        <view class="group-button-area" wx:if="{{intercomType === 'voice'}}">
+        <view class="group-button-area">
           <button bindtap="startVoice" class="group-button" type="primary" size="mini" disabled="{{!voiceState || voiceState !== 'VoiceIdle'}}">
             对讲
           </button>
@@ -115,21 +98,57 @@
           <view wx:if="{{options.voiceType === 'Pusher'}}">
             <view>变声 (基础库 2.31.0 以上)</view>
             <radio-group bindchange="voiceChangerChange">
-              <label class="radio" wx:for="{{voiceChangerTypes}}" wx:key="value" >
+              <label class="radio" wx:for="{{voiceChangerTypeList}}" wx:key="value" >
                 <radio value="{{item.value}}" checked="{{pusherProps.voiceChangerType === item.value}}"/>{{item.label}}
               </label>
             </radio-group>
           </view>
         </view>
-        <view class="group-button-area" wx:else>
-          <view>
-            <button bindtap="toggleMic" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
-              麦克风: {{intercomPusherProps.enableMic ? '开' : '关'}}
-            </button>
-            <button bindtap="toggleCamera" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
-              摄像头: {{intercomPusherProps.enableCamera ? '开' : '关'}}
-            </button>
+      </view>
+    </view>
+    <view class="page-section page-section-gap" wx:if="{{intercomType === 'video'}}">
+      <view class="margin-left">
+        <iot-p2p-intercom 
+          wx:if="{{intercomType === 'video'}}"
+          id="{{intercomId}}"
+          compClass="{{'intercom-comp-container ' + (intercomCompVisible ? 'visible' : '')}}"
+          pusherClass="voice-pusher"
+          deviceInfo="{{deviceInfo}}"
+          pusherProps="{{intercomPusherProps}}"
+          showLog="{{options.intercomLog}}"
+          bind:intercomeventchange="onIntercomEventChange"
+          bind:intercomstatechange="onIntercomStateChange"
+          bind:netstatus="onIntercomLivePusherNetStatus"
+        ></iot-p2p-intercom>
+        <!-- <live-pusher
+          url="https://domain/push_stream"
+          mode="RTC"
+          autopush
+          bindstatechange="statechange"
+          style="width: 375rpx; height: 500rpx; position: fixed; z-index: 99; bottom: 0; right: 0;"
+         /> -->
+        <!-- <view>voiceState: {{voiceState || '-'}} intercomType: {{intercomType}}</view> -->
+        <view class="group-button-area">
+          <button bindtap="toggleIntercomMic" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
+            麦克风: {{intercomPusherProps.enableMic ? '开' : '关'}}
+          </button>
+          <button bindtap="toggleIntercomCamera" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
+            摄像头: {{intercomPusherProps.enableCamera ? '开' : '关'}}
+          </button>
+          <view wx:for="{{intercomPusherPropConfigList}}" wx:for-item="propCfg" wx:key="field">
+            <label>{{propCfg.field}}</label>
+            <radio-group bindchange="intercomPusherPropChange" data-field="{{propCfg.field}}">
+              <label class="radio" wx:for="{{propCfg.list}}" wx:for-item="radioItem" wx:key="index">
+                <radio value="{{radioItem.value}}" checked="{{intercomPusherProps[propCfg.field] === radioItem.value}}" disabled="{{intercomCompVisible}}"/>{{radioItem.label}}
+              </label>
+            </radio-group>
           </view>
+          <view>
+            <view>expected videoSize</view>
+            <view>{{intercomPusherProps.videoWidth}}x{{intercomPusherProps.videoHeight}}</view>
+          </view>
+        </view>
+        <view class="group-button-area">
           <button bindtap="startIntercomCall" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
             双向对讲
           </button>
@@ -139,26 +158,26 @@
           <button bindtap="stopIntercomCall" class="group-button" type="primary" size="mini" disabled="{{!intercomState || (intercomState !== 'Calling' && intercomState !==  'Sending') }}">
             挂断对讲
           </button>
-          <view bindtap="stopIntercomCall" class="hangup-btn" style="{{intercomState && intercomState === 'Sending' ? 'display: block;' : 'display: none;' }}">
-            <image alt="" src="data:image/svg+xml;base64,PHN2ZyBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgY2xhc3M9ImRlc2lnbi1pY29uZm9udCI+CiAgPHBhdGggZD0iTTI5LjE0OTcgMTguNjE4MUMyOC43MDIzIDIwLjM3NDQgMjcuNTQ4MSAyMC44NzQ2IDI1LjY0OTEgMjAuNTkyN0MyMy40MTcyIDIwLjI2MTEgMjEuNTI4NyAxOS42MzIzIDIxLjY2NjggMTcuNjA4QzIxLjgwNSAxNS41ODM2IDIxLjg0MzIgMTUuNDI4OSAxNi40MTMzIDE1LjI2M0MxMC4wNzY2IDE1LjA5MTcgMTAuMzQ5IDE1LjI5NjIgMTAuMzQ2NCAxNy42NzI5QzEwLjM0MzggMjAuMDQ5NyA4Ljc4MDM1IDIwLjE4MDkgNi41NTM2NCAyMC41MjkxQzQuMzI1NjIgMjAuODc3NCAyLjk2MzUzIDIwLjI5NyAyLjY4OTggMTcuNjk5MkMyLjE2MDc2IDEyLjY5MTUgMTAuODc1NSAxMS4zODU2IDE0LjY5ODUgMTEuMzM1OUMxNC42OTg1IDExLjMzNTkgMjAuNTI4NSAxMS4yNDMzIDIzLjMyMjQgMTIuMTA1NkwyNC44MjY2IDEyLjU1NDdDMjYuOTIzIDEzLjI2NjMgMjguODA0OSAxNC41NjExIDI5LjI0MTkgMTYuNDAzQzI5LjI0MTkgMTYuNDAzIDI5LjQ5OTggMTcuMjQxOCAyOS4xNDk3IDE4LjYxODFaIiBmaWxsPSIjZmZmIi8+Cjwvc3ZnPgo=" />
+        </view>
+        <view bindtap="stopIntercomCall" class="hangup-btn" style="{{intercomState && intercomState === 'Sending' ? 'display: block;' : 'display: none;' }}">
+          <image alt="" src="data:image/svg+xml;base64,PHN2ZyBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgY2xhc3M9ImRlc2lnbi1pY29uZm9udCI+CiAgPHBhdGggZD0iTTI5LjE0OTcgMTguNjE4MUMyOC43MDIzIDIwLjM3NDQgMjcuNTQ4MSAyMC44NzQ2IDI1LjY0OTEgMjAuNTkyN0MyMy40MTcyIDIwLjI2MTEgMjEuNTI4NyAxOS42MzIzIDIxLjY2NjggMTcuNjA4QzIxLjgwNSAxNS41ODM2IDIxLjg0MzIgMTUuNDI4OSAxNi40MTMzIDE1LjI2M0MxMC4wNzY2IDE1LjA5MTcgMTAuMzQ5IDE1LjI5NjIgMTAuMzQ2NCAxNy42NzI5QzEwLjM0MzggMjAuMDQ5NyA4Ljc4MDM1IDIwLjE4MDkgNi41NTM2NCAyMC41MjkxQzQuMzI1NjIgMjAuODc3NCAyLjk2MzUzIDIwLjI5NyAyLjY4OTggMTcuNjk5MkMyLjE2MDc2IDEyLjY5MTUgMTAuODc1NSAxMS4zODU2IDE0LjY5ODUgMTEuMzM1OUMxNC42OTg1IDExLjMzNTkgMjAuNTI4NSAxMS4yNDMzIDIzLjMyMjQgMTIuMTA1NkwyNC44MjY2IDEyLjU1NDdDMjYuOTIzIDEzLjI2NjMgMjguODA0OSAxNC41NjExIDI5LjI0MTkgMTYuNDAzQzI5LjI0MTkgMTYuNDAzIDI5LjQ5OTggMTcuMjQxOCAyOS4xNDk3IDE4LjYxODFaIiBmaWxsPSIjZmZmIi8+Cjwvc3ZnPgo=" />
+        </view>
+        <view class="{{'intercom-info ' + (intercomCompVisible ? 'visible' : '')}}">
+          <view>exp: {{intercomPusherProps.videoWidth}}x{{intercomPusherProps.videoHeight}}</view>
+          <view>rec: {{intercomVideoSize}}</view>
+        </view>
+        <view>
+          <view>双向音视频状态流转: {{stateList.length}}</view>
+          <view wx:for="{{stateList}}" wx:key="index">
+            <text>{{index}}: {{item}}</text>
           </view>
-
-          <view class="page-section-title">
-            <view>
-              <view>双向音视频状态流转: {{stateList.length}}</view>
-              <view wx:for="{{stateList}}" wx:key="state-{{index}}">
-                <text>{{index}}: {{item}}</text>
-              </view>
-              <view>双向音视频事件流: {{eventList.length}}</view>
-              <view wx:for="{{eventList}}" wx:key="event-{{index}}">
-                <text>{{index}}: {{item}}</text>
-              </view>
-            </view>
+          <view>双向音视频事件流: {{eventList.length}}</view>
+          <view wx:for="{{eventList}}" wx:key="index">
+            <text>{{index}}: {{item}}</text>
           </view>
         </view>
       </view>
     </view>
-
     <view wx:if="{{options.supportPTZ}}" class="page-section page-section-gap">
       <view class="page-section-title">【PTZ控制】</view>
       <view class="margin-left ptz-panel">

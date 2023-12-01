@@ -20,6 +20,7 @@ Page({
     // 设备信息，在input组件里填
     targetId: '',
     deviceInfo: null,
+    options: {},
 
     // 录像信息
     videoInfo: null,
@@ -40,7 +41,6 @@ Page({
     },
 
     // 调试
-    showLog: true,
     showDebugInfo: false,
 
     // 录像列表

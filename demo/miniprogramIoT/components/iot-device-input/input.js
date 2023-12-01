@@ -99,8 +99,14 @@ Component({
         checked: false,
       },
       {
+        field: 'supportPTZ',
+        text: '设备支持PTZ',
+        checked: false,
+        scene: 'live',
+      },
+      {
         field: 'playerRTC',
-        text: '播放使用RTC模式',
+        text: '播放使用RTC模式（需要设备采样率16k以上）',
         checked: true,
       },
       {
@@ -109,10 +115,14 @@ Component({
         checked: false,
       },
       {
-        field: 'supportPTZ',
-        text: '设备支持PTZ',
+        field: 'playerLog',
+        text: '显示播放组件log（影响性能，谨慎开启）',
         checked: false,
-        scene: 'live',
+      },
+      {
+        field: 'intercomLog',
+        text: '显示对讲组件log（影响性能，谨慎开启）',
+        checked: false,
       },
     ],
     voiceType: 'Recorder',
@@ -144,7 +154,7 @@ Component({
     }, {
       value: 'video',
       text: '视频对讲',
-      desc: '只支持 LivePusher，与 Voip 通话建立双向音视频通话',
+      desc: '只支持 LivePusher 采集，与 Voip 通话建立双向音视频通话',
       checked: false,
     }],
 
@@ -467,7 +477,7 @@ Component({
         inputValues[field] = value;
       });
       const options = {
-        voiceType: this.data.voiceType, // 对讲方式
+        voiceType: this.data.voiceType, // 语音采集方式
         intercomType: this.data.intercomType, // 对讲类型
       };
       this.data.simpleChecks.forEach((item) => {

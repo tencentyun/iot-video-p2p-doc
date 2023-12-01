@@ -28,6 +28,7 @@ Page({
     deviceInfo: null,
     p2pMode: '',
     sceneType: '',
+    options: {},
 
     // 播放器控制
     muted: false,
@@ -46,7 +47,6 @@ Page({
     },
 
     // 调试
-    showLog: true,
     showDebugInfo: false,
 
     stat: {

@@ -2,15 +2,35 @@
 @import '../../player.wxss';
 @import './ptz-panel.wxss';
 
-.voice-comp-container {
+.intercom-comp-container, .voice-comp-container {
   width: 100%;
   height: 0;
 }
-.voice-comp-container .voice-pusher {
+.intercom-comp-container .voice-pusher, .voice-comp-container .voice-pusher {
+  position: absolute;
+  left: 100vw;
+}
+.intercom-comp-container.visible .voice-pusher {
   position: fixed;
+  left: unset;
   right: 20rpx;
   top: 20rpx;
+  width: 200rpx;
   z-index: 999;
+}
+.intercom-info {
+  position: fixed;
+  right: 220rpx;
+  top: 20rpx;
+  width: 300rpx;
+  padding: 10rpx;
+  background-color: rgba(0, 0, 0, 0.3);
+  color: white;
+  z-index: 1000;
+  display: none;
+}
+.intercom-info.visible {
+  display: block;
 }
 .hangup-btn {
   width: 100rpx;

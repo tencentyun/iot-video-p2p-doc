@@ -22,7 +22,7 @@
       muted="{{muted}}"
       orientation="{{orientation}}"
       fill="{{fill}}"
-      showLog="{{showLog}}"
+      showLog="{{options.playerLog}}"
       showDebugInfo="{{showDebugInfo}}"
       onlyp2p="{{onlyp2pMap && onlyp2pMap.flv}}"
       streamChannel="{{streamChannel}}"

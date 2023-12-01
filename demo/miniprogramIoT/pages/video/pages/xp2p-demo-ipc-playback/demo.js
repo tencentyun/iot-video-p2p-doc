@@ -42,6 +42,7 @@ Page({
       flv: isDevTool,
       mjpg: isDevTool,
     },
+    options: {},
 
     // 传给播放器的录像信息
     videoInfo: '',
@@ -67,7 +68,6 @@ Page({
     },
 
     // 调试
-    showLog: true,
     showDebugInfo: false,
 
     // 回放日期

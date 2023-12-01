@@ -14,25 +14,31 @@
  * initCommand: string 拉流前要发送的初始化信令，非必填
  * options:
  *   needCheckStream: boolean 播放前先检查能否拉流，默认 false
- *   playerRTC: boolean 播放使用RTC模式，需要设备出流采样率16k以上，默认 false
- *   voiceType: 'Recorder' | 'Pusher' 对讲类型，默认 Recorder
  *   supportPTZ: boolean 是否支持PTZ，默认 false
+ *   playerRTC: boolean 播放使用RTC模式，需要设备出流采样率16k以上，默认 true
+ *   playerMuted: boolean 播放时默认静音，默认 false
+ *   playerLog: boolean 播放log，默认 false
+ *   voiceType: 'Recorder' | 'Pusher' 语音采集类型，默认 Recorder
+ *   intercomType: 'voice' | 'video' 对讲类型，默认 voice
+ *   intercomLog: boolean 对讲log，默认 false
  */
+
+const defaultOptions = {
+  // 设备属性
+  needCheckStream: false,
+  supportPTZ: false,
+  // 小程序播放组件
+  playerRTC: true,
+  playerMuted: false,
+  playerLog: false,
+  // 小程序对讲组件
+  voiceType: 'Recorder',
+  intercomType: 'voice',
+  intercomLog: false,
+};
 
 // 这些是预置的ipc设备
 const devices = {
-  debug_wanjiaan: {
-    showInHomePageBtn: true,
-    isMjpgDevice: true,
-    productName: '万佳安',
-    productId: 'CZO2TZEIF3',
-    deviceName: 'wanjiaan_91388972_1',
-    xp2pInfo: 'XP2P8gBsdOjIbzRvpfdo8zL23w==%2.4.35m',
-    options: {
-      playerRTC: true,
-      voiceType: 'Pusher',
-    },
-  },
   test_ipc: {
     showInHomePageBtn: true,
     productName: 'IPC',
@@ -53,7 +59,7 @@ const devices = {
     xp2pInfo: 'XP2PHuYWm+pTHW54qlcsPM4gQQ==%2.4.38',
     options: {
       playerRTC: true,
-      intercomType: 'Pusher',
+      voiceType: 'Pusher',
     },
   },
   test_mjpglock: {
@@ -90,6 +96,10 @@ const devices = {
 Object.values(devices).forEach((device) => {
   device.isMjpgDevice = typeof device.isMjpgDevice === 'boolean' ? device.isMjpgDevice : false;
   device.liveQuality = device.liveQuality || 'high';
+  device.options = {
+    ...defaultOptions,
+    ...device.options,
+  };
 });
 
 export const presetDevices = devices;

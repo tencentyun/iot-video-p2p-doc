@@ -18,7 +18,7 @@
       mode="{{options.playerRTC ? 'RTC' : 'live'}}"
       muted="{{muted}}"
       orientation="{{orientation}}"
-      showLog="{{showLog}}"
+      showLog="{{options.playerLog}}"
       showDebugInfo="{{showDebugInfo}}"
       onlyp2p="{{onlyp2pMap && onlyp2pMap.flv}}"
       bind:playerstatechange="onPlayerEvent"

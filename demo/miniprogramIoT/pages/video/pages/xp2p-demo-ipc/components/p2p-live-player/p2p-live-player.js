@@ -23,24 +23,44 @@ Component({
     compClass: String,
     deviceInfo: Object,
     xp2pInfo: String,
+    liveStreamDomain: String,
+    sceneType: {
+      type: String,
+      value: 'live',
+    },
     streamChannel: {
       type: Number,
       value: 0,
     },
-    streamQuality: String,
-    liveStreamDomain: String,
-    sceneType: String,
+    streamQuality: {
+      type: String,
+      value: 'high',
+    },
     needCheckStream: {
       type: Boolean,
       value: false,
     },
-    mode: String,
-    soundMode: String,
+    mode: {
+      type: String,
+      value: 'RTC',
+    },
+    soundMode: {
+      type: String,
+      value: 'speaker',
+    },
+    muted: {
+      type: Boolean,
+      value: false,
+    },
     acceptPlayerEvents: {
       type: Object,
       value: {},
     },
     onlyp2pMap: Object,
+    showLog: {
+      type: Boolean,
+      value: false,
+    },
   },
   data: {
     playerId: 'iot-p2p-player',
@@ -58,13 +78,12 @@ Component({
     qualityMap,
 
     // 播放器控制
-    muted: false,
+    // muted: false, // 支持 properties 控制
     orientation: 'vertical',
     rotate: 0,
     fill: false,
 
     // 调试
-    showLog: true,
     showDebugInfo: false,
 
     // 控件
@@ -308,12 +327,6 @@ Component({
         return;
       }
       this.userData.player.snapshotAndSave();
-    },
-    changeSoundMode() {
-      console.log('demo: changeSoundMode');
-      this.setData({
-        soundMode: this.data.soundMode === 'ear' ? 'speaker' : 'ear',
-      });
     },
     retryPlayer() {
       console.log('demo: retryPlayer');

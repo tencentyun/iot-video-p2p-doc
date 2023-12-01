@@ -1,16 +1,15 @@
-<view>
-  <view>channel-{{streamChannel}}直播</view>
+<view class="p2p-live-player">
   <iot-p2p-player-with-mjpg
     id="{{playerId}}"
     class="{{compClass}}"
-    streamChannel="{{streamChannel}}"
     deviceInfo="{{deviceInfo}}"
     xp2pInfo="{{xp2pInfo}}"
     liveStreamDomain="{{liveStreamDomain}}"
     sceneType="{{sceneType}}"
+    streamChannel="{{streamChannel}}"
     streamQuality="{{innerStreamQuality}}"
-    needCheckStream="{{options.needCheckStream}}"
-    mode="{{options.playerRTC ? 'RTC' : 'live'}}"
+    needCheckStream="{{needCheckStream}}"
+    mode="{{mode}}"
     soundMode="{{soundMode}}"
     muted="{{muted}}"
     orientation="{{orientation}}"
@@ -48,22 +47,24 @@
       mjpgInner: 放在 image 后面，随 image 销毁，图片流设备用
       after: 放在 live-player/image 后面，全屏时不可见，live-player/image 销毁后依然存在
     -->
-    <iot-player-controls
-      id="{{controlsId}}"
-      slot="{{deviceInfo.isMjpgDevice ? 'mjpgInner' : 'flvInner'}}"
-      showIcons="{{showIcons}}"
-      iconSize="{{iconSize}}"
-      qualityMap="{{qualityMap}}"
-      quality="{{innerStreamQuality}}"
-      muted="{{muted}}"
-      orientation="{{orientation}}"
-      rotate="{{rotate}}"
-      fill="{{fill}}"
-      fullScreen="{{fullScreen}}"
-      bind:clickicon="clickControlIcon"
-    >
-      <slot></slot>
-    </iot-player-controls>
+    <view slot="{{deviceInfo.isMjpgDevice ? 'mjpgInner' : 'flvInner'}}">
+      <view class="player-channel">ch-{{streamChannel}}</view>
+      <iot-player-controls
+        id="{{controlsId}}"
+        showIcons="{{showIcons}}"
+        iconSize="{{iconSize}}"
+        qualityMap="{{qualityMap}}"
+        quality="{{innerStreamQuality}}"
+        muted="{{muted}}"
+        orientation="{{orientation}}"
+        rotate="{{rotate}}"
+        fill="{{fill}}"
+        fullScreen="{{fullScreen}}"
+        bind:clickicon="clickControlIcon"
+      >
+        <slot></slot>
+      </iot-player-controls>
+    </view>
 
     <view slot="mjpgDebug">
       <view>【I'm mjpgDebug】</view>
@@ -79,7 +80,6 @@
   </iot-p2p-player-with-mjpg>
 
   <view class="page-section page-section-gap">
-    <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（可能触发 live-player 暂停）</navigator>
     <view class="group-button-area">
       <button bindtap="retryPlayer" disabled="{{!isPlayError}}" class="group-button" type="primary" size="mini">重试</button>
       <button bindtap="snapshotView" disabled="{{!isPlaySuccess}}" class="group-button" type="primary" size="mini">截取渲染后的画面</button>

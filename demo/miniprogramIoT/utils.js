@@ -77,19 +77,26 @@ export const checkAuthorize = (scope) =>
   new Promise((resolve, reject) => {
     wx.getSetting({
       success(res) {
+        console.log(`checkAuthorize ${scope}, wx.getSetting success`, res);
         if (!res.authSetting[scope]) {
           wx.authorize({
             scope,
             success() {
-              resolve();
+              console.log(`wx.authorize ${scope} success`);
+              resolve({ errMsg: 'success' });
             },
             fail(err) {
+              console.error(`wx.authorize ${scope} fail`, err);
               reject(err);
             },
           });
         } else {
-          resolve();
+          resolve({ errMsg: 'success' });
         }
+      },
+      fail: (err) => {
+        console.error(`checkAuthorize ${scope}, wx.getSetting fail`, err);
+        reject(err);
       },
     });
   });
