@@ -21,9 +21,23 @@ Component({
   },
   properties: {
     compClass: String,
-    deviceInfo: Object,
-    xp2pInfo: String,
-    liveStreamDomain: String,
+    deviceInfo: {
+      type: Object,
+      value: {
+        deviceId: '',
+        productId: '',
+        deviceName: '',
+        isMjpgDevice: false,
+      },
+    },
+    xp2pInfo: {
+      type: String,
+      value: '',
+    },
+    liveStreamDomain: {
+      type: String,
+      value: '',
+    },
     sceneType: {
       type: String,
       value: 'live',
@@ -102,13 +116,12 @@ Component({
   lifetimes: {
     created() {
       this.userData = {
+        innerId: 'p2p-live-player',
         player: null,
       };
     },
     attached() {
       const { showIcons } = this.data;
-
-      console.log('this.properties.deviceInfo.isMjpgDevice', this.properties.deviceInfo.isMjpgDevice);
 
       if (this.properties.deviceInfo.isMjpgDevice) {
         // 图片流设备
@@ -120,6 +133,7 @@ Component({
         showIcons.rotate = false;
       }
 
+      this.userData.innerId += `.ch-${this.properties.streamChannel}`;
       this.setData({
         innerStreamQuality: this.properties.streamQuality,
         showIcons,
@@ -135,33 +149,33 @@ Component({
   methods: {
     // 获取组件实例
     getComponents() {
-      console.log('demo: create components', this.data.playerId);
+      console.log(this.userData.innerId, 'create components', this.data.playerId);
       const player = this.selectComponent(`#${this.data.playerId}`);
 
       if (player) {
-        console.log('demo: create player success');
-        oriConsole.log('demo: player', player); // console 被覆盖了会写logger影响性能，查看组件用 oriConsole
+        console.log(this.userData.innerId, 'create player success');
+        oriConsole.log(this.userData.innerId, 'player', player); // console 被覆盖了会写logger影响性能，查看组件用 oriConsole
         this.userData.player = player;
       } else {
-        console.error('demo: create player error');
+        console.error(this.userData.innerId, 'create player error');
       }
 
       const controls = this.selectComponent(`#${this.data.controlsId}`);
 
       if (controls) {
-        console.log('demo: create controls success');
-        oriConsole.log('demo: controls', controls);
+        console.log(this.userData.innerId, 'create controls success');
+        oriConsole.log(this.userData.innerId, 'controls', controls);
       } else {
-        console.error('demo: create controls error');
+        console.error(this.userData.innerId, 'create controls error');
       }
     },
 
     // player事件
     onPlayerEvent({ type, detail }) {
-      console.log('demo: onPlayerEvent', type, detail);
+      console.log(this.userData.innerId, 'onPlayerEvent', type, detail);
     },
     onPlayStateEvent({ type, detail }) {
-      console.log('demo: onPlayStateEvent', type, detail);
+      console.log(this.userData.innerId, 'onPlayStateEvent', type, detail);
       switch (type) {
         case 'playstart':
           this.setData({
@@ -197,36 +211,37 @@ Component({
     onPlayError({ type, detail }) {
       this.onPlayStateEvent({ type, detail });
 
-      console.error('demo: onPlayError', detail);
+      console.error(this.userData.innerId, 'onPlayError', detail);
       const { errMsg, errDetail } = detail;
       wx.showModal({
         content: `${errMsg || '播放失败'}\n${(errDetail && errDetail.msg) || ''}`, // 换行在开发者工具中无效，真机正常
         showCancel: false,
       });
     },
-    onFullScreenChange({ detail }) {
-      console.log('demo: onFullScreenChange', detail);
+    onFullScreenChange({ type, detail }) {
+      console.log(this.userData.innerId, 'onFullScreenChange', detail);
       const { fullScreen, ...others } = detail;
       this.setData({
         fullScreen: detail.fullScreen,
         fullScreenInfo: detail.fullScreen ? others : null,
       });
+      this.triggerEvent(type, detail);
     },
     onMjpgPlayerEvent({ type, detail }) {
-      console.log('demo: onMjpgPlayerEvent', type, detail);
+      console.log(this.userData.innerId, 'onMjpgPlayerEvent', type, detail);
     },
     onMjpgPlayStateEvent({ type, detail }) {
-      console.log('demo: onMjpgPlayStateEvent', type, detail);
+      console.log(this.userData.innerId, 'onMjpgPlayStateEvent', type, detail);
     },
     toggleDebugInfo() {
-      console.log('demo: toggleDebugInfo');
+      console.log(this.userData.innerId, 'toggleDebugInfo');
       this.setData({ showDebugInfo: !this.data.showDebugInfo });
     },
 
     // player控制
     clickControlIcon({ detail }) {
       const { name } = detail;
-      console.log('demo: clickControlIcon', name);
+      console.log(this.userData.innerId, 'clickControlIcon', name);
       switch (name) {
         case 'quality':
           this.changeQuality();
@@ -259,42 +274,47 @@ Component({
           if (item.value === this.data.innerStreamQuality) {
             return;
           }
-          console.log('demo: changeQuality', item.value);
+          console.log(this.userData.innerId, 'changeQuality', item.value);
           this.setData({ innerStreamQuality: item.value });
         },
       });
     },
     changeMuted() {
-      console.log('demo: changeMuted');
+      const newVal = !this.data.muted;
+      console.log(this.userData.innerId, 'changeMuted', newVal);
       this.setData({
-        muted: !this.data.muted,
+        muted: newVal,
       });
     },
     changeOrientation() {
-      console.log('demo: changeOrientation');
+      const newVal = this.data.orientation === 'horizontal' ? 'vertical' : 'horizontal';
+      console.log(this.userData.innerId, 'changeOrientation', newVal);
       this.setData({
-        orientation: this.data.orientation === 'horizontal' ? 'vertical' : 'horizontal',
+        orientation: newVal,
       });
     },
     changeRotate() {
-      console.log('demo: changeRotate');
+      const newVal = (this.data.rotate + 90) % 360;
+      console.log(this.userData.innerId, 'changeRotate', newVal);
       this.setData({
-        rotate: (this.data.rotate + 90) % 360,
+        rotate: newVal,
       });
     },
     changeFill() {
-      console.log('demo: changeFill');
+      const newVal = !this.data.fill;
+      console.log(this.userData.innerId, 'changeFill', newVal);
       this.setData({
-        fill: !this.data.fill,
+        fill: newVal,
       });
     },
     async changeFullScreen() {
-      console.log('demo: changeFullScreen');
+      const newVal = !this.data.fullScreen;
+      console.log(this.userData.innerId, 'changeFullScreen', newVal);
       if (!this.userData.player) {
-        console.error('demo: changeFullScreen but no player component');
+        console.error(this.userData.innerId, 'changeFullScreen but no player component');
         return;
       }
-      if (!this.data.fullScreen) {
+      if (newVal) {
         try {
           await this.userData.player.requestFullScreen({ direction: 90 });
           this.setData({
@@ -320,31 +340,21 @@ Component({
         }
       }
     },
-    snapshotAndSave() {
-      console.log('demo: snapshotAndSave');
+    snapshotAndSave(params) {
+      console.log(this.userData.innerId, 'snapshotAndSave', params);
       if (!this.userData.player) {
-        console.error('demo: snapshotAndSave but no player component');
+        console.error(this.userData.innerId, 'snapshotAndSave but no player component');
         return;
       }
-      this.userData.player.snapshotAndSave();
+      this.userData.player.snapshotAndSave(params);
     },
     retryPlayer() {
-      console.log('demo: retryPlayer');
+      console.log(this.userData.innerId, 'retryPlayer');
       if (!this.userData.player) {
-        console.error('demo: retryPlayer but no player component');
+        console.error(this.userData.innerId, 'retryPlayer but no player component');
         return;
       }
       this.userData.player.retry();
-    },
-    snapshotView() {
-      console.log('demo: snapshotView');
-      if (!this.userData.player) {
-        console.error('demo: snapshotView but no player component');
-        return;
-      }
-      this.userData.player.snapshotAndSave({
-        sourceType: 'view',
-      });
     },
 
     // 导出
@@ -357,8 +367,23 @@ Component({
           isPlaySuccess() {
             return componentInstance.data.isPlaySuccess;
           },
-          getStreamChannel() {
-            return componentInstance.properties.streamChannel;
+          isFullScreen() {
+            return componentInstance.data.fullScreen;
+          },
+          requestFullScreen(params = { direction: 90 }) {
+            if (!componentInstance.userData.player) {
+              return Promise.reject({ errMsg: 'player not ready' });
+            }
+            return componentInstance.userData.player.requestFullScreen(params);
+          },
+          exitFullScreen(params) {
+            if (!componentInstance.userData.player) {
+              return Promise.reject({ errMsg: 'player not ready' });
+            }
+            return componentInstance.userData.player.exitFullScreen(params);
+          },
+          snapshotAndSave(params) {
+            componentInstance.snapshotAndSave(params);
           },
         };
       }

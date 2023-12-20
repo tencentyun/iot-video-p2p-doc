@@ -27,6 +27,13 @@ const pusherPropConfigMap = {
       { value: 'FHD', label: '超清' },
     ],
   },
+  orientation: {
+    field: 'orientation',
+    list: [
+      { value: 'vertical', label: '竖直' },
+      { value: 'horizontal', label: '水平' },
+    ],
+  },
   aspect: {
     field: 'aspect',
     list: [
@@ -34,8 +41,8 @@ const pusherPropConfigMap = {
       { value: '9:16', label: '9:16' },
     ],
   },
-  videoHeight: {
-    field: 'videoHeight',
+  videoLongSide: {
+    field: 'videoLongSide',
     list: [
       { value: 480, label: '480' },
       { value: 640, label: '640' },
@@ -127,15 +134,18 @@ Page({
       enableCamera: true,
       enableMic: true,
       mode: 'RTC',
-      aspect: '3:4',
+      orientation: 'vertical', // vertical / horizontal
+      aspect: '3:4', // 3:4 / 9:16
+      videoLongSide: 640,
       videoWidth: 480,
       videoHeight: 640,
       needLivePusherInfo: true,
     },
     intercomPusherPropConfigList: [
       // pusherPropConfigMap.mode, // 只有 RTC 才支持设置 aspect
+      pusherPropConfigMap.orientation,
       pusherPropConfigMap.aspect,
-      // pusherPropConfigMap.videoHeight, // 不生效
+      // pusherPropConfigMap.videoLongSide, // 不生效
     ],
   },
   onLoad(query) {
@@ -330,6 +340,9 @@ Page({
 
     this.userData.players = players;
   },
+  hasSuccessPlayer() {
+    return (this.userData.players || []).find(player => !!player?.isPlaySuccess());
+  },
   // 退出后就不再提示
   showToast(content) {
     !this.hasExited && wx.showToast({
@@ -367,6 +380,10 @@ Page({
     this.setData({
       soundMode: this.data.soundMode === 'ear' ? 'speaker' : 'ear',
     });
+  },
+  onFullScreenChange({ currentTarget: { dataset }, detail }) {
+    const channel = Number(dataset.channel);
+    console.log(`demo: onFullScreenChange, channel ${channel} ${detail.fullScreen}`);
   },
 
   // voice事件
@@ -516,9 +533,9 @@ Page({
     console.log('demo: startIntercomCall, needRecord', needRecord);
 
     // 只要有一个player播放成功，就启动对讲
-    const successPlayer = (this.userData.players || []).find(player => !!player.isPlaySuccess());
+    const isPlaySuccess = this.hasSuccessPlayer();
 
-    if (!successPlayer) {
+    if (!isPlaySuccess) {
       console.log('demo: startIntercomCall err, isPlaySuccess false');
       wx.showToast({
         title: '请等待播放后再开始呼叫',
@@ -565,9 +582,9 @@ Page({
     console.log('demo: startVoice, needRecord', needRecord);
 
     // 只要有一个player播放成功，就启动对讲
-    const successPlayer = (this.userData.players || []).find(player => !!player.isPlaySuccess());
+    const isPlaySuccess = this.hasSuccessPlayer();
 
-    if (!successPlayer) {
+    if (!isPlaySuccess) {
       console.log('demo: startVoice err, isPlaySuccess false');
       wx.showToast({
         title: '请等待播放后再开启对讲',
@@ -604,18 +621,22 @@ Page({
   intercomPusherPropChange({ detail, currentTarget: { dataset } }) {
     const { field } = dataset;
     let value = detail.value;
-    if (field === 'videoHeight') {
-      value = Number(detail.value) || 480;
+    if (field === 'videoLongSide') {
+      value = Number(detail.value) || 640;
     }
     const newProps = {
       ...this.data.intercomPusherProps,
       [field]: value,
     };
-    if (field === 'aspect' || field === 'videoHeight') {
-      if (newProps.aspect === '3:4') {
-        newProps.videoWidth = newProps.videoHeight / 4 * 3;
+    if (field === 'orientation' || field === 'aspect' || field === 'videoLongSide') {
+      const longSide = newProps.videoLongSide;
+      const shortSide = (newProps.aspect === '3:4') ? (longSide / 4 * 3) : (longSide / 16 * 9);
+      if (newProps.orientation === 'horizontal') {
+        newProps.videoWidth = longSide;
+        newProps.videoHeight = shortSide;
       } else {
-        newProps.videoWidth = newProps.videoHeight / 16 * 9;
+        newProps.videoWidth = shortSide;
+        newProps.videoHeight = longSide;
       }
     }
     console.log('demo: intercomPusherPropChange', field, detail.value, newProps);

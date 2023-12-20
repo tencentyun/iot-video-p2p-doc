@@ -151,7 +151,7 @@ Page({
   },
   onXp2pLoaded() {
     const { xp2pManager } = this.userData;
-    console.log(`index: onXp2pLoaded, xp2pState ${xp2pManager?.moduleState}`);
+    console.log(`index: onXp2pLoaded, uuid ${xp2pManager?.uuid}, xp2pState ${xp2pManager?.moduleState}`);
     xp2pManager.addEventListener(XP2PManagerEvent.XP2P_STATE_CHANGE, this.userData.xp2pStateChangeListener);
     xp2pManager.addEventListener(XP2PManagerEvent.XP2P_NAT_EVENT, this.userData.xp2pNatEventListener);
     this.setData({

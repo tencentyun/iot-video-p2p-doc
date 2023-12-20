@@ -77,12 +77,4 @@
       <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
     </view>
   </iot-p2p-player-with-mjpg>
-
-  <view class="page-section page-section-gap">
-    <view class="player-channel">channel-{{streamChannel}}</view>
-    <view class="group-button-area">
-      <button bindtap="retryPlayer" disabled="{{!isPlayError}}" class="group-button" type="primary" size="mini">重试</button>
-      <button bindtap="snapshotView" disabled="{{!isPlaySuccess}}" class="group-button" type="primary" size="mini">截取渲染后的画面</button>
-    </view>
-  </view>
 </view>

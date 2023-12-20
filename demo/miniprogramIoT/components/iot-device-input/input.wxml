@@ -34,6 +34,17 @@
             <label wx:for="{{channels}}" wx:key="value"><switch type="checkbox" checked="{{item.checked}}" data-value="{{item.value}}" data-index="{{index}}" bindchange="switchChannel"/>{{item.name}}</label>
           </view>
           <view class="input-item">
+            <view>清晰度</view>
+            <radio-group bindchange="changeQualityRadio">
+              <label wx:for="{{liveQualityList}}" wx:key="value">
+                <view class="radio-list-inline-item">
+                  <radio value="{{item.value}}" checked="{{item.checked}}" class="radio-list-item-radio"/>
+                  <span>{{item.text}}</span>
+                </view>
+              </label>
+            </radio-group>
+          </view>
+          <view class="input-item">
             <view>对讲方式</view>
             <radio-group bindchange="changeIntercomTypeRadio">
               <label wx:for="{{intercomTypeList}}" wx:key="value">

@@ -10,12 +10,12 @@ export const getXp2pManager = () => {
     const app = getApp();
 
     // 开发版才打插件log
-    if (iotExports?.setPluginLogger && app.pluginLogger && wx.getAccountInfoSync().miniProgram.envVersion === 'develop') {
-      iotExports.setPluginLogger(app.pluginLogger);
+    if (app.pluginLogger && wx.getAccountInfoSync().miniProgram.envVersion === 'develop') {
+      iotExports?.setPluginLogger?.(app.pluginLogger);
     }
 
-    if (iotExports?.setPluginReporter && app.pluginReporter) {
-      iotExports.setPluginReporter(app.pluginReporter);
+    if (app.pluginReporter) {
+      iotExports?.setPluginReporter?.(app.pluginReporter);
     }
 
     xp2pManager = iotExports.getXp2pManager();

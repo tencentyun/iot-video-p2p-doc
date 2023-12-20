@@ -13,6 +13,11 @@
   margin-bottom: 10rpx;
 }
 
+.radio-list-inline-item {
+  display: inline-block;
+  margin-right: 20rpx;
+}
+
 .radio-list-item {
   margin-bottom: 10rpx;
 }

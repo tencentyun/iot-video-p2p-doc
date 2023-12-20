@@ -79,12 +79,6 @@ Component({
         hideIfEmpty: true, // 配置里有值才显示这个字段，没配就不显示
       },
       {
-        field: 'liveQuality',
-        text: '默认清晰度',
-        value: '',
-        scene: 'live',
-      },
-      {
         field: 'liveStreamDomain',
         text: '1v1转1vn server拉流域名(填入开启1v1转1vn)',
         value: '',
@@ -139,12 +133,6 @@ Component({
         desc: 'LivePusher采集，AAC编码，支持回音消除',
         checked: false,
       },
-      // {
-      //   value: 'DuplexVideo',
-      //   text: '双向音视频（实验中）',
-      //   desc: 'LivePusher采集，视频H.264，音频AAC',
-      //   checked: false,
-      // },
     ],
     intercomType: 'voice',
     intercomTypeList: [{
@@ -155,6 +143,20 @@ Component({
       value: 'video',
       text: '视频对讲',
       desc: '只支持 LivePusher 采集，与 Voip 通话建立双向音视频通话',
+      checked: false,
+    }],
+    liveQuality: 'high',
+    liveQualityList: [{
+      value: 'standard',
+      text: '标清',
+      checked: false,
+    }, {
+      value: 'high',
+      text: '高清',
+      checked: true,
+    }, {
+      value: 'super',
+      text: '超清',
       checked: false,
     }],
 
@@ -212,6 +214,11 @@ Component({
       intercomTypeList.forEach((item) => {
         item.checked = item.value === intercomType;
       });
+      const liveQuality = options.liveQuality || 'high';
+      const { liveQualityList } = this.data;
+      liveQualityList.forEach((item) => {
+        item.checked = item.value === liveQuality;
+      });
 
       // setData
       this.setData({
@@ -225,6 +232,8 @@ Component({
         voiceTypeList,
         intercomType,
         intercomTypeList,
+        liveQuality,
+        liveQualityList,
         // 1v多用
         inputUrl: data.flvUrl || '',
       });
@@ -356,6 +365,16 @@ Component({
         intercomTypeList,
       });
     },
+    changeQualityRadio(e) {
+      const { liveQualityList } = this.data;
+      liveQualityList.forEach((item) => {
+        item.checked = item.value === e.detail.value;
+      });
+      this.setData({
+        liveQuality: e.detail.value,
+        liveQualityList,
+      });
+    },
     // 1v多用
     inputStreamUrl(e) {
       this.setData({
@@ -431,7 +450,7 @@ Component({
           }
           initCommand = inputValues.initCommand || '';
           liveStreamDomain = inputValues.liveStreamDomain || '';
-          streamQuality = inputValues.liveQuality || '';
+          streamQuality = options.liveQuality || '';
         }
         if (sceneType === 'playback') {
           if (this.data.isMjpgDevice) {
@@ -477,8 +496,9 @@ Component({
         inputValues[field] = value;
       });
       const options = {
-        voiceType: this.data.voiceType, // 语音采集方式
+        liveQuality: this.data.liveQuality, // 清晰度
         intercomType: this.data.intercomType, // 对讲类型
+        voiceType: this.data.voiceType, // 语音采集方式
       };
       this.data.simpleChecks.forEach((item) => {
         options[item.field] = item.checked;

@@ -26,6 +26,8 @@
     <p2p-live-player
       wx:for="{{useChannelIds}}"
       wx:key="index"
+      data-index="{{index}}"
+      data-channel="{{item}}"
       id="p2p-live-player-{{item}}"
       compClass="my-player {{intercomState && intercomState === 'Sending' ? 'full' : ''}}"
       streamChannel="{{item}}"
@@ -41,7 +43,11 @@
       acceptPlayerEvents="{{acceptPlayerEvents}}"
       onlyp2pMap="{{onlyp2pMap}}"
       showLog="{{options.playerLog}}"
+      bind:fullscreenchange="onFullScreenChange"
     >
+      <view class="player-control-item">
+        CH-{{item}}
+      </view>
       <view wx:if="{{intercomType === 'voice'}}" class="player-control-item" bindtap="toggleVoice">
         <mp-icon icon="mike" size="{{iconSize}}" color="{{voiceState ? (voiceState === 'VoiceIdle' ? 'white' : 'orange') : 'grey'}}" type="{{voiceState === 'VoiceSending' ? 'field': 'outline'}}"></mp-icon>
       </view>
@@ -68,7 +74,9 @@
       </view>
     </view>
     -->
+
     <view class="page-section page-section-gap" wx:if="{{intercomType === 'voice'}}">
+      <view class="page-section-title">【语音对讲】</view>
       <view class="margin-left">
         <iot-p2p-voice
           id="{{voiceId}}"
@@ -107,6 +115,7 @@
       </view>
     </view>
     <view class="page-section page-section-gap" wx:if="{{intercomType === 'video'}}">
+      <view class="page-section-title">【视频对讲】</view>
       <view class="margin-left">
         <iot-p2p-intercom 
           wx:if="{{intercomType === 'video'}}"
@@ -139,7 +148,7 @@
             <label>{{propCfg.field}}</label>
             <radio-group bindchange="intercomPusherPropChange" data-field="{{propCfg.field}}">
               <label class="radio" wx:for="{{propCfg.list}}" wx:for-item="radioItem" wx:key="index">
-                <radio value="{{radioItem.value}}" checked="{{intercomPusherProps[propCfg.field] === radioItem.value}}" disabled="{{intercomCompVisible}}"/>{{radioItem.label}}
+                <radio value="{{radioItem.value}}" checked="{{intercomPusherProps[propCfg.field] === radioItem.value}}"/>{{radioItem.label}}
               </label>
             </radio-group>
           </view>
