@@ -61,6 +61,9 @@ const pusherPropConfigMap = {
   },
 };
 
+// 影响性能，需要调试时才打开
+const showPusherVideoSize = false;
+
 Page({
   data: {
     // 这是onLoad时就固定的
@@ -75,11 +78,14 @@ Page({
     xp2pInfo: '',
     liveStreamDomain: '',
     useChannelIds: [], // number[]，要看的通道list
+    options: {},
+
+    // 开发者工具不支持 live-player，设置 onlyp2pMap 可以控制只拉数据不实际播放
+    // 仅调试用，实际项目中带参数直接进页面时不要设置这个参数
     onlyp2pMap: {
       flv: isDevTool,
       mjpg: isDevTool,
     },
-    options: {},
 
     // 控件icon
     iconSize: 25,
@@ -139,7 +145,7 @@ Page({
       videoLongSide: 640,
       videoWidth: 480,
       videoHeight: 640,
-      needLivePusherInfo: true,
+      needLivePusherInfo: showPusherVideoSize,
     },
     intercomPusherPropConfigList: [
       // pusherPropConfigMap.mode, // 只有 RTC 才支持设置 aspect
@@ -436,7 +442,7 @@ Page({
       },
     );
   },
-  // 双向音视频事件通知
+  // 双向音视频事件通知，4.0.1 以上监听 intercomerror 即可，不再触发 intercomeventchange，
   onIntercomEventChange({ detail }) {
     console.log('demo: onIntercomEventChange: ', detail);
     this.setData({
@@ -497,6 +503,20 @@ Page({
       intercomState: detail.state,
       intercomCompVisible: detail.state === 'Calling' || detail.state ===  'Sending',
     });
+  },
+  onIntercomProcess({ type, detail }) {
+    console.log('demo: onIntercomProcess', type, detail);
+  },
+  onIntercomError({ detail }) {
+    console.log('demo: onIntercomError', detail);
+    let tips = '';
+    if (detail.errType === 'FeedbackResult') {
+      const isCalling = ['Calling', 'Sending'].includes(this.data.intercomState);
+      tips = isCalling && detail.errMsg;
+    } else {
+      tips = detail.errMsg || '呼叫异常';
+    }
+    if (tips) this.showToast(tips);
   },
   onIntercomLivePusherNetStatus({ detail }) {
     // console.log('demo: onIntercomLivePusherNetStatus', detail);

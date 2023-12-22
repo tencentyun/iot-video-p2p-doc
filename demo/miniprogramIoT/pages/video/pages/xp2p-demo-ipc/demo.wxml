@@ -127,6 +127,10 @@
           showLog="{{options.intercomLog}}"
           bind:intercomeventchange="onIntercomEventChange"
           bind:intercomstatechange="onIntercomStateChange"
+          bind:intercomstart="onIntercomProcess"
+          bind:intercomsuccess="onIntercomProcess"
+          bind:intercomstop="onIntercomProcess"
+          bind:intercomerror="onIntercomError"
           bind:netstatus="onIntercomLivePusherNetStatus"
         ></iot-p2p-intercom>
         <!-- <live-pusher
@@ -173,7 +177,7 @@
         </view>
         <view class="{{'intercom-info ' + (intercomCompVisible ? 'visible' : '')}}">
           <view>exp: {{intercomPusherProps.videoWidth}}x{{intercomPusherProps.videoHeight}}</view>
-          <view>rec: {{intercomVideoSize}}</view>
+          <view wx:if="{{showPusherVideoSize}}">rec: {{intercomVideoSize}}</view>
         </view>
         <view>
           <view>双向音视频状态流转: {{stateList.length}}</view>
