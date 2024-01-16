@@ -38,6 +38,10 @@ Component({
       type: String,
       value: '',
     },
+    needCheckStream: {
+      type: Boolean,
+      value: false,
+    },
     sceneType: {
       type: String,
       value: 'live',
@@ -50,9 +54,9 @@ Component({
       type: String,
       value: 'high',
     },
-    needCheckStream: {
-      type: Boolean,
-      value: false,
+    streamParams: {
+      type: String,
+      value: '',
     },
     mode: {
       type: String,

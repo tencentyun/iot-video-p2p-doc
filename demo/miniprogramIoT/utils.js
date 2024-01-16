@@ -209,3 +209,16 @@ export async function snapshotAndSave({ snapshot }) {
     });
   }
 }
+
+const userIdKey = 'userId';
+// demo 随机生成一个userId，正式小程序请使用自己用户系统的用户id
+export const getUserId = () => {
+  let userId = wx.getStorageSync(userIdKey);
+  if (userId) {
+    return userId;
+  }
+  const accountInfo = wx.getAccountInfoSync();
+  userId = `demo_${accountInfo.miniProgram.appId}_${pad(Math.floor(Math.random() * 10000), 4)}`;
+  wx.setStorageSync(userIdKey, userId);
+  return userId;
+};

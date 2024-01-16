@@ -18,8 +18,19 @@ wmpfVoip.onVoipEvent((event) => {
 });
 
 const pusherPropConfigMap = {
+  enableCamera: {
+    field: 'enableCamera',
+    label: '开启摄像头',
+    type: 'checkbox',
+  },
+  enableMic: {
+    field: 'enableMic',
+    label: '开启麦克风',
+    type: 'checkbox',
+  },
   mode: {
     field: 'mode',
+    type: 'radio-group',
     list: [
       { value: 'RTC', label: '实时通话' },
       { value: 'SD', label: '标清' },
@@ -29,6 +40,7 @@ const pusherPropConfigMap = {
   },
   orientation: {
     field: 'orientation',
+    type: 'radio-group',
     list: [
       { value: 'vertical', label: '竖直' },
       { value: 'horizontal', label: '水平' },
@@ -36,6 +48,7 @@ const pusherPropConfigMap = {
   },
   aspect: {
     field: 'aspect',
+    type: 'radio-group',
     list: [
       { value: '3:4', label: '3:4' },
       { value: '9:16', label: '9:16' },
@@ -43,6 +56,7 @@ const pusherPropConfigMap = {
   },
   videoLongSide: {
     field: 'videoLongSide',
+    type: 'radio-group',
     list: [
       { value: 480, label: '480' },
       { value: 640, label: '640' },
@@ -52,6 +66,7 @@ const pusherPropConfigMap = {
   },
   voiceChangerType: {
     field: 'voiceChangerType',
+    type: 'radio-group',
     list: [
       { value: 0, label: '关闭' },
       { value: 1, label: '熊孩子' },
@@ -62,7 +77,9 @@ const pusherPropConfigMap = {
 };
 
 // 影响性能，需要调试时才打开
-const showPusherVideoSize = false;
+const isDevMode = wx.getAccountInfoSync().miniProgram.envVersion === 'develop';
+const needLivePusherInfo = isDevMode;
+const showPusherVideoSize = isDevMode;
 
 Page({
   data: {
@@ -74,9 +91,10 @@ Page({
     targetId: '',
     deviceInfo: null,
     p2pMode: '',
-    sceneType: '',
     xp2pInfo: '',
     liveStreamDomain: '',
+    sceneType: '',
+    streamQuality: '',
     useChannelIds: [], // number[]，要看的通道list
     options: {},
 
@@ -126,6 +144,9 @@ Page({
     voiceState: '',
     pusherProps: {
       voiceChangerType: 0,
+      acceptPusherEvents: {
+        netstatus: needLivePusherInfo,
+      },
     },
     voiceChangerTypeList: pusherPropConfigMap.voiceChangerType.list,
 
@@ -134,7 +155,7 @@ Page({
     stateList: [],
     eventList: [],
     intercomState: '',
-    intercomCompVisible: false,
+    showPusherVideoSize,
     intercomVideoSize: '', // 从netstatus事件里解析出来的实际size，有一定延迟
     intercomPusherProps: {
       enableCamera: true,
@@ -145,14 +166,22 @@ Page({
       videoLongSide: 640,
       videoWidth: 480,
       videoHeight: 640,
-      needLivePusherInfo: showPusherVideoSize,
+      // fps: 15,
+      // minBitrate: 200,
+      // maxBitrate: 1000,
+      acceptPusherEvents: {
+        netstatus: needLivePusherInfo || showPusherVideoSize,
+      },
     },
     intercomPusherPropConfigList: [
+      pusherPropConfigMap.enableCamera,
+      pusherPropConfigMap.enableMic,
       // pusherPropConfigMap.mode, // 只有 RTC 才支持设置 aspect
       pusherPropConfigMap.orientation,
       pusherPropConfigMap.aspect,
       // pusherPropConfigMap.videoLongSide, // 不生效
     ],
+    intercomVideoSizeClass: 'vertical_3_4',
   },
   onLoad(query) {
     pageSeq++;
@@ -167,10 +196,13 @@ Page({
     this.userData = {
       pageId,
       deviceId: '',
+      serviceStateChangeHandler: null,
+      serviceState: null,
+      players: [],
       voice: null,
+      pusherInfoCount: 0,
       needFixSoundMode: false,
       releasePTZTimer: null,
-      players: [],
     };
 
     console.log('demo: checkReset when enter');
@@ -203,6 +235,22 @@ Page({
   },
   onHide() {
     console.log('demo: onHide');
+
+    // 停止对讲
+    if (this.userData.voice && this.data.voiceState !== 'VoiceIdle') {
+      this.stopVoice();
+    }
+
+    if (this.userData.intercom && this.data.intercomState !== 'IntercomIdle') {
+      this.stopIntercomCall();
+    }
+
+    // 停止PTZ
+    if (this.data.ptzCmd || this.userData.releasePTZTimer) {
+      this.controlPTZ('ptz_release_pre');
+    }
+
+    console.log('demo: onHide end');
   },
   onUnload() {
     console.log('demo: onUnload');
@@ -225,12 +273,16 @@ Page({
     // 断开连接
     if (this.userData.deviceId) {
       console.log('demo: stopP2PService', this.userData.deviceId);
+      xp2pManager.removeP2PServiceEventListener(this.userData.deviceId, this.userData.serviceStateChangeHandler);
       xp2pManager.stopP2PService(this.userData.deviceId, this.userData.pageId);
       this.userData.deviceId = '';
+      this.userData.serviceStateChangeHandler = null;
+      this.userData.serviceState = null;
     }
 
     console.log('demo: checkReset when exit');
     xp2pManager.checkReset();
+
     console.log('demo: onUnload end');
   },
   onStartPlayer({ detail }) {
@@ -247,6 +299,15 @@ Page({
       return;
     }
     this.userData.deviceId = detail.deviceInfo.deviceId;
+    this.userData.serviceStateChangeHandler = (detail) => {
+      console.log('demo: SERVICE_STATE_CHANGE', detail);
+      this.userData.serviceState = detail;
+    };
+    xp2pManager.addP2PServiceEventListener(
+      this.userData.deviceId,
+      'serviceStateChange',
+      this.userData.serviceStateChangeHandler,
+    );
 
     // 开始连接
     console.log('demo: startP2PService', this.userData.deviceId);
@@ -428,6 +489,15 @@ Page({
     console.error('demo: onVoiceError', detail);
     this.showToast(detail.errMsg || '启动对讲失败');
   },
+  onVoiceLivePusherNetStatus({ detail }) {
+    if (!detail.info) {
+      return;
+    }
+    if (this.userData.pusherInfoCount < 10) {
+      this.userData.pusherInfoCount++;
+      console.log('demo: onVoiceLivePusherNetStatus', this.userData.pusherInfoCount, detail);
+    }
+  },
   // feedback 事件通知
   onFeedbackFromDevice() {
     xp2pManager.addP2PServiceEventListener(
@@ -501,7 +571,6 @@ Page({
     this.setData({
       stateList: [...this.data.stateList, detail.state],
       intercomState: detail.state,
-      intercomCompVisible: detail.state === 'Calling' || detail.state ===  'Sending',
     });
   },
   onIntercomProcess({ type, detail }) {
@@ -523,6 +592,10 @@ Page({
     if (!detail.info) {
       return;
     }
+    if (this.userData.pusherInfoCount < 10) {
+      this.userData.pusherInfoCount++;
+      console.log('demo: onIntercomLivePusherNetStatus', this.userData.pusherInfoCount, detail);
+    }
     if (detail.info.videoWidth && detail.info.videoHeight) {
       const intercomVideoSize = `${detail.info.videoWidth}x${detail.info.videoHeight}`;
       if (intercomVideoSize !== this.data.intercomVideoSize) {
@@ -539,63 +612,6 @@ Page({
     } else if (this.data.voiceState === 'VoiceSending') {
       this.stopVoice();
     }
-  },
-  // 开关视频对讲 麦克风
-  toggleIntercomMic() {
-    this.setData({ 'intercomPusherProps.enableMic': !this.data.intercomPusherProps.enableMic });
-  },
-  // 开关视频对讲 摄像头
-  toggleIntercomCamera() {
-    this.setData({ 'intercomPusherProps.enableCamera': !this.data.intercomPusherProps.enableCamera });
-  },
-  startIntercomCall(e) {
-    const needRecord = parseInt(e?.currentTarget?.dataset?.needRecord, 10) > 0;
-    console.log('demo: startIntercomCall, needRecord', needRecord);
-
-    // 只要有一个player播放成功，就启动对讲
-    const isPlaySuccess = this.hasSuccessPlayer();
-
-    if (!isPlaySuccess) {
-      console.log('demo: startIntercomCall err, isPlaySuccess false');
-      wx.showToast({
-        title: '请等待播放后再开始呼叫',
-        icon: 'error',
-      });
-      return;
-    }
-
-    // 检查实例是否初始化成功
-    if (!this.userData.intercom) {
-      console.error('demo: startIntercomCall but no intercom component');
-      return;
-    }
-
-    // 移到 onIntercomStateChange，根据 intercomState 判断
-    // this.setData({
-    //   intercomCompVisible: true,
-    // });
-
-    this.userData.intercom.intercomCall({
-      needRecord,
-    });
-  },
-  stopIntercomCall() {
-    console.log('demo: stopIntercomCall');
-
-    if (!this.userData.intercom) {
-      console.error('demo: stopIntercomCall but no intercom component');
-      return;
-    }
-
-    this.setData({
-      stateList: [],
-      eventList: [],
-      intercomState: 'Ready2Call',
-      intercomCompVisible: false,
-      intercomVideoSize: '',
-    });
-
-    this.userData.intercom.intercomHangup();
   },
   startVoice(e) {
     const needRecord = parseInt(e?.currentTarget?.dataset?.needRecord, 10) > 0;
@@ -618,6 +634,7 @@ Page({
       return;
     }
 
+    this.userData.pusherInfoCount = 0;
     this.userData.voice.startVoice({
       needRecord,
     });
@@ -637,6 +654,51 @@ Page({
     this.setData({
       'pusherProps.voiceChangerType': newType,
     });
+  },
+  // intercom控制
+  startIntercomCall(e) {
+    const needRecord = parseInt(e?.currentTarget?.dataset?.needRecord, 10) > 0;
+    console.log('demo: startIntercomCall, needRecord', needRecord);
+
+    // 只要有一个player播放成功，就启动对讲
+    const isPlaySuccess = this.hasSuccessPlayer();
+
+    if (!isPlaySuccess) {
+      console.log('demo: startIntercomCall err, isPlaySuccess false');
+      wx.showToast({
+        title: '请等待播放后再开始呼叫',
+        icon: 'error',
+      });
+      return;
+    }
+
+    // 检查实例是否初始化成功
+    if (!this.userData.intercom) {
+      console.error('demo: startIntercomCall but no intercom component');
+      return;
+    }
+
+    this.userData.pusherInfoCount = 0;
+    this.userData.intercom.intercomCall({
+      needRecord,
+    });
+  },
+  stopIntercomCall() {
+    console.log('demo: stopIntercomCall');
+
+    if (!this.userData.intercom) {
+      console.error('demo: stopIntercomCall but no intercom component');
+      return;
+    }
+
+    this.setData({
+      stateList: [],
+      eventList: [],
+      intercomState: 'Ready2Call',
+      intercomVideoSize: '',
+    });
+
+    this.userData.intercom.intercomHangup();
   },
   intercomPusherPropChange({ detail, currentTarget: { dataset } }) {
     const { field } = dataset;
@@ -662,6 +724,7 @@ Page({
     console.log('demo: intercomPusherPropChange', field, detail.value, newProps);
     this.setData({
       intercomPusherProps: newProps,
+      intercomVideoSizeClass: `${newProps.orientation}_${newProps.aspect.replace(':', '_')}`,
     });
   },
   // ptz控制

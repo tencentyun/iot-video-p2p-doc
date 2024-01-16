@@ -1,9 +1,8 @@
 import { Logger } from './lib/logger';
+import { getUserId } from './utils';
 
 App({
   onLaunch(options) {
-    console.log('App: onLaunch', options);
-
     this.console = console;
     console.warn('【注意】开启 Logger 会影响运行性能，请避免频繁写入');
     this.logger = new Logger({
@@ -15,5 +14,16 @@ App({
       warn: (...args) => this.logger.warn('[Plugin]', ...args),
       error: (...args) => this.logger.error('[Plugin]', ...args),
     };
+
+    this.logger.log('App: onLaunch', options);
+
+    this.userId = getUserId();
+    this.logger.log('App: userId', this.userId);
+  },
+  onShow(options) {
+    this.logger.log('App: onShow', options);
+  },
+  onHide() {
+    this.logger.log('App: onHide');
   },
 });

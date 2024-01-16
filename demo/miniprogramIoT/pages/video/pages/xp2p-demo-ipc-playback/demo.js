@@ -45,7 +45,7 @@ Page({
     options: {},
 
     // 传给播放器的录像信息
-    videoInfo: '',
+    videoInfo: null,
 
     // 播放器控制
     muted: false,
@@ -120,6 +120,8 @@ Page({
     this.userData = {
       pageId,
       deviceId: '',
+      serviceStateChangeHandler: null,
+      serviceState: null,
       player: null,
       currentVideo: null,
       playState: null, // { supportProgress: boolean; currentTime: number }
@@ -177,8 +179,11 @@ Page({
     // 断开连接
     if (this.userData.deviceId) {
       console.log('demo: stopP2PService', this.userData.deviceId);
+      xp2pManager.removeP2PServiceEventListener(this.userData.deviceId, this.userData.serviceStateChangeHandler);
       xp2pManager.stopP2PService(this.userData.deviceId, this.userData.pageId);
       this.userData.deviceId = '';
+      this.userData.serviceStateChangeHandler = null;
+      this.userData.serviceState = null;
     }
 
     console.log('demo: checkReset when exit');
@@ -200,6 +205,15 @@ Page({
     }
 
     this.userData.deviceId = detail.deviceInfo.deviceId;
+    this.userData.serviceStateChangeHandler = (detail) => {
+      console.log('demo: SERVICE_STATE_CHANGE', detail);
+      this.userData.serviceState = detail;
+    };
+    xp2pManager.addP2PServiceEventListener(
+      this.userData.deviceId,
+      'serviceStateChange',
+      this.userData.serviceStateChangeHandler,
+    );
 
     // 开始连接
     console.log('demo: startP2PService', this.userData.deviceId);
@@ -511,7 +525,7 @@ Page({
     } catch (err) {
       console.error('demo: getRecordVideosInDate error', err);
       this.setData({
-        validDatesTip: '获取录像列表失败',
+        recordVideosTip: '获取录像列表失败',
       });
       return;
     }

@@ -1,4 +1,5 @@
 // 接口参考 types/index.d.ts 里的 IXp2pManager
+import { getUserId } from '../../../utils';
 
 let xp2pManager = null;
 export const getXp2pManager = () => {
@@ -10,7 +11,7 @@ export const getXp2pManager = () => {
     const app = getApp();
 
     // 用户id
-    iotExports?.setUserId?.('demo');
+    iotExports?.setUserId?.(getUserId() || 'demo');
 
     // 开发版才打插件log
     if (app.pluginLogger && wx.getAccountInfoSync().miniProgram.envVersion === 'develop') {
@@ -18,6 +19,11 @@ export const getXp2pManager = () => {
     }
 
     xp2pManager = iotExports.getXp2pManager();
+    app.logger?.log('xp2pManager', {
+      P2PPlayerVersion: xp2pManager.P2PPlayerVersion,
+      XP2PVersion: xp2pManager.XP2PVersion,
+      uuid: xp2pManager.uuid,
+    });
   }
   return xp2pManager;
 };

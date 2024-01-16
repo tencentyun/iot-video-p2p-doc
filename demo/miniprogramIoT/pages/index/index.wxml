@@ -43,6 +43,7 @@
     <view>hostInfo: {{hostInfo}}</view>
     <view>wxVersion: wx {{wxVersion}} / sdk {{wxSDKVersion}}</view>
     <view>pluginVersion: p2p-player {{playerVersion}} / xp2p {{xp2pVersion}}</view>
+    <view>userId: <text user-select>{{userId}}</text></view>
     <view>xp2pUUID: <text user-select>{{xp2pUUID}}</text></view>
     <view>xp2pState: {{xp2pState}} <text wx:if="{{xp2pState}}">@{{xp2pStateTime}}</text></view>
     <view wx:if="{{xp2pNatEvent}}" style="color: red">{{xp2pNatEvent}} @{{xp2pNatEventTime}}</view>

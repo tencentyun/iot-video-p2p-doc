@@ -2,35 +2,30 @@
 @import '../../player.wxss';
 @import './ptz-panel.wxss';
 
-.intercom-comp-container, .voice-comp-container {
-  width: 100%;
+.iot-p2p-voice.voice-comp-container {
+  width: 0;
   height: 0;
 }
-.intercom-comp-container .voice-pusher, .voice-comp-container .voice-pusher {
-  position: absolute;
-  left: 100vw;
-}
-.intercom-comp-container.visible .voice-pusher {
+.iot-p2p-intercom.intercom-comp-container {
   position: fixed;
-  left: unset;
   right: 20rpx;
   top: 20rpx;
-  width: 200rpx;
-  z-index: 999;
 }
-.intercom-info {
-  position: fixed;
-  right: 220rpx;
-  top: 20rpx;
-  width: 300rpx;
-  padding: 10rpx;
-  background-color: rgba(0, 0, 0, 0.3);
-  color: white;
-  z-index: 1000;
-  display: none;
+.iot-p2p-intercom.intercom-comp-container.vertical_3_4 {
+  width: 180rpx;
+  height: 240rpx;
 }
-.intercom-info.visible {
-  display: block;
+.iot-p2p-intercom.intercom-comp-container.vertical_9_16 {
+  width: 180rpx;
+  height: 320rpx;
+}
+.iot-p2p-intercom.intercom-comp-container.horizontal_3_4 {
+  width: 240rpx;
+  height: 180rpx;
+}
+.iot-p2p-intercom.intercom-comp-container.horizontal_9_16 {
+  width: 320rpx;
+  height: 180rpx;
 }
 .hangup-btn {
   width: 100rpx;

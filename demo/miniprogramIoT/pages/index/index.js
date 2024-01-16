@@ -1,4 +1,5 @@
 import { presetDevices, presetServerStreams, totalData } from '../../config/config';
+import { getUserId } from '../../utils';
 
 const sysInfo = wx.getSystemInfoSync();
 const accountInfo = wx.getAccountInfoSync();
@@ -22,6 +23,7 @@ Page({
     wxVersion: sysInfo.version,
     wxSDKVersion: sysInfo.SDKVersion,
     hostInfo: `${miniProgramInfo.appId}-${miniProgramInfo.envVersion}`,
+    userId: getUserId(),
     playerVersion: '',
     xp2pVersion: '',
     xp2pUUID: '',
