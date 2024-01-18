@@ -328,7 +328,7 @@ Page({
         console.error('demo: startP2PService err', err);
       });
 
-    console.log('demo: set deviceInfo', detail.deviceInfo);
+    console.log('demo: set deviceInfo', detail.deviceInfo, detail.useChannelIds);
 
     this.setData({
       ...detail,

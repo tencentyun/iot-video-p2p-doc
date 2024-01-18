@@ -29,9 +29,6 @@ Page({
     // 这些是控制player和p2p的
     playerId: 'iot-p2p-player',
 
-    // 流的channel
-    streamChannel: 0,
-
     // 设备信息，在input组件里填
     targetId: '',
     deviceInfo: null,
@@ -43,6 +40,9 @@ Page({
       mjpg: isDevTool,
     },
     options: {},
+
+    // 流的channel
+    streamChannel: 0,
 
     // 传给播放器的录像信息
     videoInfo: null,
@@ -243,10 +243,17 @@ Page({
       showIcons.rotate = false;
     }
 
-    console.log('demo: create components');
+    let streamChannel = 0;
+    if (detail.useChannelIds?.length > 0 && typeof detail.useChannelIds[0] === 'number') {
+      streamChannel = detail.useChannelIds[0];
+    }
+
+    console.log('demo: set deviceInfo', detail.deviceInfo, detail.useChannelIds, streamChannel);
+
     this.setData({
       ...detail,
       showIcons,
+      streamChannel,
       muted: detail.options.playerMuted,
     }, () => {
       const player = this.selectComponent(`#${this.data.playerId}`);

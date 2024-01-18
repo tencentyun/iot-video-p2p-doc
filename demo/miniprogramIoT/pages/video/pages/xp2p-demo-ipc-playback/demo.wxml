@@ -55,6 +55,9 @@
         fullScreen="{{fullScreen}}"
         bind:clickicon="clickControlIcon"
       >
+        <view class="player-control-item">
+          CH-{{streamChannel}}
+        </view>
         <view wx:if="{{showTogglePlayIcon}}" class="player-control-item" bindtap="togglePlay">
           <mp-icon icon="{{(isPlaying && !isPaused) ? 'pause' : 'play'}}" size="{{iconSize}}" color="white" type="field"></mp-icon>
         </view>
@@ -85,8 +88,14 @@
         </block>
         <text class="text-btn {{currentFile ? '' : 'disabled'}}" bindtap="stopDownloadFile">取消</text>
       </view>
-      <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（可能触发 live-player 暂停）</navigator>
     </view>
+
+    <!-- 调试用
+    <view class="page-section page-section-gap">
+      <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（触发当前页面hide）</navigator>
+    </view>
+    -->
+
     <view class="page-section page-section-gap">
       <view>
         <picker class="weui-input" mode="date" fields="month" value="{{calendarMonth}}" bindchange="changeMonth">

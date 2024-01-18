@@ -4,12 +4,12 @@ const getDefaultChannelOptions = () => (
   [
     {
       value: 0,
-      name: 'channel0',
-      checked: false,
+      name: 'channel-0',
+      checked: true,
     },
     {
       value: 1,
-      name: 'channel1',
+      name: 'channel-1',
       checked: false,
     },
   ]
@@ -52,7 +52,7 @@ Component({
     ],
 
     // 1v1用
-    channels: getDefaultChannelOptions(),
+    channelOptions: getDefaultChannelOptions(),
     useChannelIds: [],
     simpleInputs: [
       {
@@ -117,6 +117,7 @@ Component({
         field: 'intercomLog',
         text: '显示对讲组件log（影响性能，谨慎开启）',
         checked: false,
+        scene: 'live',
       },
     ],
     voiceType: 'Recorder',
@@ -337,12 +338,21 @@ Component({
         simpleChecks: this.data.simpleChecks,
       });
     },
-    switchChannel(e) {
+    switchLiveChannel(e) {
       const { index } = e.currentTarget.dataset;
-      const item = this.data.channels[index];
+      const item = this.data.channelOptions[index];
       item.checked = e.detail.value;
       this.setData({
-        channels: this.data.channels,
+        channelOptions: this.data.channelOptions,
+      });
+    },
+    changePlaybackChannel(e) {
+      const { channelOptions } = this.data;
+      channelOptions.forEach((item) => {
+        item.checked = item.value === Number(e.detail.value);
+      });
+      this.setData({
+        channelOptions,
       });
     },
     changeVoiceTypeRadio(e) {
@@ -401,7 +411,7 @@ Component({
       let liveStreamDomain = '';
       let streamQuality = '';
       let flvUrl = '';
-      let useChannelIds = this.data.channels.filter(item => item.checked).map(item => item.value);
+      let useChannelIds = this.data.channelOptions.filter(item => item.checked).map(item => item.value);
 
       if (useChannelIds.length === 0) {
         useChannelIds = [0];

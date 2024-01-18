@@ -31,16 +31,17 @@
         <view wx:if="{{scene === 'live'}}">
           <view class="input-item">
             <view>通道选择</view>
-            <label wx:for="{{channels}}" wx:key="value"><switch type="checkbox" checked="{{item.checked}}" data-value="{{item.value}}" data-index="{{index}}" bindchange="switchChannel"/>{{item.name}}</label>
+            <label wx:for="{{channelOptions}}" wx:key="value" class="list-inline-item">
+              <switch type="checkbox" checked="{{item.checked}}" data-value="{{item.value}}" data-index="{{index}}" bindchange="switchLiveChannel"/>
+              <span>{{item.name}}</span>
+            </label>
           </view>
           <view class="input-item">
             <view>清晰度</view>
             <radio-group bindchange="changeQualityRadio">
-              <label wx:for="{{liveQualityList}}" wx:key="value">
-                <view class="radio-list-inline-item">
-                  <radio value="{{item.value}}" checked="{{item.checked}}" class="radio-list-item-radio"/>
-                  <span>{{item.text}}</span>
-                </view>
+              <label wx:for="{{liveQualityList}}" wx:key="value" class="list-inline-item">
+                <radio value="{{item.value}}" checked="{{item.checked}}"/>
+                <span>{{item.text}}</span>
               </label>
             </radio-group>
           </view>
@@ -69,6 +70,17 @@
                     <view wx:if="{{item.desc}}">{{item.desc}}</view>
                   </view>
                 </view>
+              </label>
+            </radio-group>
+          </view>
+        </view>
+        <view wx:if="{{scene === 'playback'}}">
+          <view class="input-item">
+            <view>通道选择</view>
+            <radio-group bindchange="changePlaybackChannel">
+              <label wx:for="{{channelOptions}}" wx:key="value" class="list-inline-item">
+                <radio value="{{item.value}}" checked="{{item.checked}}"/>
+                <span>{{item.name}}</span>
               </label>
             </radio-group>
           </view>
