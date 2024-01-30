@@ -1,4 +1,4 @@
-import { checkAuthorize } from '../utils';
+import { checkAndAuthorize } from '../utils';
 
 export const XP2P_BASE_DIR = `${wx.env.USER_DATA_PATH}/xp2p`;
 
@@ -194,9 +194,9 @@ class RecordManager {
     }
 
     try {
-      await checkAuthorize('scope.writePhotosAlbum');
+      await checkAndAuthorize('scope.writePhotosAlbum');
     } catch (err) {
-      console.log('RecordManager: saveToAlbum, checkAuthorize fail', err);
+      console.log('RecordManager: saveToAlbum, checkAndAuthorize fail', err);
       throw err;
     }
 

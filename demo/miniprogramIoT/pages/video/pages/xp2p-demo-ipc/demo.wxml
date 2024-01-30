@@ -65,7 +65,7 @@
       </view>
     </view>
     <view class="page-section page-section-gap">
-      <view class="page-section-title">【更多播放器属性】</view>
+      <view class="page-section-title">【播放器属性】</view>
       <view class="margin-left">
         <view>
           soundMode: {{soundMode}}

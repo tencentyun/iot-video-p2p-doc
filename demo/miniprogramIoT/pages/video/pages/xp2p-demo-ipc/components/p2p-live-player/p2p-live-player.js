@@ -266,7 +266,8 @@ Component({
           this.changeFullScreen();
           break;
         case 'snapshot':
-          this.snapshotAndSave();
+          // this.snapshotAndSave();
+          this.snapshotAndSaveCustom();
           break;
       }
     },
@@ -350,7 +351,37 @@ Component({
         console.error(this.userData.innerId, 'snapshotAndSave but no player component');
         return;
       }
-      this.userData.player.snapshotAndSave(params);
+      return this.userData.player.snapshotAndSave(params);
+    },
+    async snapshotAndSaveCustom() {
+      const promise = this.snapshotAndSave({ showResult: false });
+      if (!promise) {
+        // 4.1.2 才支持自定义提示并返回 Promise
+        return;
+      }
+      try {
+        await promise;
+        wx.showToast({
+          title: '截图已保存到相册',
+          icon: 'success',
+        });
+      } catch (err) {
+        /*
+          err: {
+            errType: string; // snapshotError / saveAuthError / saveError / timeout
+            errDetail?: { errMsg: string };
+          }
+        */
+        console.error(this.userData.innerId, 'snapshotAndSaveCustom error', err);
+        if (err.errType === 'saveAuthError') {
+          wx.showModal({ showCancel: false, title: '截图失败', content: '请授权小程序访问相册' });
+        } else {
+          wx.showToast({
+            title: '截图失败',
+            icon: 'error',
+          });
+        }
+      }
     },
     retryPlayer() {
       console.log(this.userData.innerId, 'retryPlayer');
@@ -387,7 +418,7 @@ Component({
             return componentInstance.userData.player.exitFullScreen(params);
           },
           snapshotAndSave(params) {
-            componentInstance.snapshotAndSave(params);
+            return componentInstance.snapshotAndSave(params);
           },
         };
       }

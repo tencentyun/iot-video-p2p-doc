@@ -73,11 +73,11 @@ export const getDeviceFlags = (xp2pInfo) => {
   return flags;
 };
 
-export const checkAuthorize = (scope) =>
+export const checkAndAuthorize = (scope) =>
   new Promise((resolve, reject) => {
     wx.getSetting({
       success(res) {
-        console.log(`checkAuthorize ${scope}, wx.getSetting success`, res);
+        console.log(`checkAndAuthorize ${scope}, wx.getSetting success`, res);
         if (!res.authSetting[scope]) {
           wx.authorize({
             scope,
@@ -95,7 +95,7 @@ export const checkAuthorize = (scope) =>
         }
       },
       fail: (err) => {
-        console.error(`checkAuthorize ${scope}, wx.getSetting fail`, err);
+        console.error(`checkAndAuthorize ${scope}, wx.getSetting fail`, err);
         reject(err);
       },
     });
@@ -137,77 +137,6 @@ export function arrayBufferToHex(input, offset, len, separator) {
     arr.push(ch);
   });
   return arr.join(separator || '');
-}
-
-export async function snapshotAndSave({ snapshot }) {
-  // 先检查权限
-  try {
-    await checkAuthorize('scope.writePhotosAlbum');
-  } catch (err) {
-    console.log('snapshot checkAuthorize fail', err);
-    const modalRes = await wx.showModal({
-      title: '',
-      content: '截图需要您授权小程序访问相册',
-      confirmText: '去授权',
-    });
-    if (modalRes.confirm) {
-      wx.openSetting();
-    }
-    return;
-  }
-
-  let timer;
-  const endSnapshot = (params) => {
-    if (timer) {
-      clearTimeout(timer);
-      timer = null;
-    }
-    wx.hideLoading();
-    wx.showModal({ showCancel: false, ...params });
-  };
-
-  timer = setTimeout(() => {
-    console.error('snapshot timeout');
-    endSnapshot({
-      title: '截图超时',
-    });
-  }, 5000);
-
-  wx.showLoading({
-    title: '截图中',
-  });
-
-  console.log('do snapshot');
-  let snapshotRes = null;
-  try {
-    snapshotRes = await snapshot();
-    console.log('snapshot success', snapshotRes);
-  } catch (err) {
-    console.error('snapshot fail', err);
-    endSnapshot({
-      title: '截图失败',
-      content: err.errMsg,
-    });
-    return;
-  }
-
-  console.log('do saveImageToPhotosAlbum');
-  try {
-    const saveRes = await wx.saveImageToPhotosAlbum({
-      filePath: snapshotRes.tempImagePath,
-    });
-    console.log('saveImageToPhotosAlbum success', saveRes);
-    endSnapshot({
-      isSuccess: true,
-      title: '已保存到相册',
-    });
-  } catch (err) {
-    console.log('saveImageToPhotosAlbum fail', err);
-    endSnapshot({
-      title: '保存到相册失败',
-      content: ~err.errMsg.indexOf('auth deny') ? '请授权小程序访问相册' : err.errMsg,
-    });
-  }
 }
 
 const userIdKey = 'userId';

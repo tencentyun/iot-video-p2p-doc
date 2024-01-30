@@ -81,6 +81,9 @@ const isDevMode = wx.getAccountInfoSync().miniProgram.envVersion === 'develop';
 const needLivePusherInfo = isDevMode;
 const showPusherVideoSize = isDevMode;
 
+// 小程序退后台关闭对讲
+const stopVoiceIfPageHide = true;
+
 Page({
   data: {
     // 这是onLoad时就固定的
@@ -144,6 +147,8 @@ Page({
     voiceState: '',
     pusherProps: {
       voiceChangerType: 0,
+      disableCameraIfPageHide: stopVoiceIfPageHide,
+      disableMicIfPageHide: stopVoiceIfPageHide,
       acceptPusherEvents: {
         netstatus: needLivePusherInfo,
       },
@@ -169,6 +174,8 @@ Page({
       // fps: 15,
       // minBitrate: 200,
       // maxBitrate: 1000,
+      disableCameraIfPageHide: stopVoiceIfPageHide,
+      disableMicIfPageHide: stopVoiceIfPageHide,
       acceptPusherEvents: {
         netstatus: needLivePusherInfo || showPusherVideoSize,
       },
@@ -237,20 +244,20 @@ Page({
     console.log('demo: onHide');
 
     // 停止对讲
-    if (this.userData.voice && this.data.voiceState !== 'VoiceIdle') {
-      this.stopVoice();
-    }
+    if (stopVoiceIfPageHide) {
+      if (this.userData.voice && this.data.voiceState !== 'VoiceIdle') {
+        this.stopVoice();
+      }
 
-    if (this.userData.intercom && this.data.intercomState !== 'IntercomIdle') {
-      this.stopIntercomCall();
+      if (this.userData.intercom && this.data.intercomState !== 'IntercomIdle') {
+        this.stopIntercomCall();
+      }
     }
 
     // 停止PTZ
     if (this.data.ptzCmd || this.userData.releasePTZTimer) {
       this.controlPTZ('ptz_release_pre');
     }
-
-    console.log('demo: onHide end');
   },
   onUnload() {
     console.log('demo: onUnload');
