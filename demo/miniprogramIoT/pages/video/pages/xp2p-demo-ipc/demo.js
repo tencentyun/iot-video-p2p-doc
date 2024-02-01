@@ -207,6 +207,8 @@ Page({
       serviceState: null,
       players: [],
       voice: null,
+      intercom: null,
+      intercomP2PWaterMark: { low: 0, high: 1 * 1024 * 1024 }, // 默认10M，最小1M，可自己调整
       pusherInfoCount: 0,
       needFixSoundMode: false,
       releasePTZTimer: null,
@@ -611,6 +613,30 @@ Page({
       }
     }
   },
+  onIntercomP2PEvent(evtName, detail) {
+    switch (evtName) {
+      case 'buffer_state_change': {
+        /*
+          buffer水位状态变化，detail: { state: -1 | 0 | 1; size: number }
+          state: 水位状态
+            - -1 水位 < low
+            - 0 水位 [low, high]
+            - 1 水位 > high
+          size: 字节数
+        */
+        console.log('demo: onIntercomP2PEvent', evtName, detail);
+        break;
+      }
+      case 'writable': {
+        // buffer水位低于 low 时会持续触发，detail: number，字节数
+        break;
+      }
+      case 'unwritable': {
+        // buffer水位高于 high 时会持续触发，detail: number，字节数
+        break;
+      }
+    }
+  },
   // voice控制
   toggleVoice() {
     console.log('demo: toggleVoice');
@@ -686,6 +712,8 @@ Page({
     }
 
     this.userData.pusherInfoCount = 0;
+    this.userData.intercom.setP2PWaterMark?.(this.userData.intercomP2PWaterMark);
+    this.userData.intercom.setP2PEventCallback?.(this.onIntercomP2PEvent.bind(this));
     this.userData.intercom.intercomCall({
       needRecord,
     });
