@@ -208,7 +208,17 @@ Page({
       players: [],
       voice: null,
       intercom: null,
-      intercomP2PWaterMark: { low: 0, high: 1 * 1024 * 1024 }, // 默认10M，最小1M，可自己调整
+      /**
+       * 视频对讲水位设置
+       * 小程序侧数据缓存水位变化时会检测堆积状态，状态变化触发 buffer_state_change 回调
+       * 缓存水位低于 low 时会持续触发 writable
+       * 缓存水位高于 high 时会持续触发 unwritable
+       * 回调参数详见 onIntercomP2PEvent
+       */
+      intercomP2PWaterMark: {
+        low: 0,
+        high: 100 * 1024, // 高水位字节数，默认10M，可根据码率和可接受延迟自行调整
+      },
       pusherInfoCount: 0,
       needFixSoundMode: false,
       releasePTZTimer: null,
@@ -623,6 +633,8 @@ Page({
             - 0 水位 [low, high]
             - 1 水位 > high
           size: 字节数
+          
+          一个简单的流控策略：水位维持在high以上（state > 0）几秒钟就降码率，维持high以下（state <= 0）几秒钟再恢复，避免跳来跳去的情况
         */
         console.log('demo: onIntercomP2PEvent', evtName, detail);
         break;
