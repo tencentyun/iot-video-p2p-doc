@@ -1,5 +1,7 @@
-import { isDevTool } from '../../../../utils';
+import { defaultShareInfo } from '../../../../config/config';
+import { isDevTool, toTimeMsString } from '../../../../utils';
 import { getXp2pManager } from '../../lib/xp2pManager';
+import { CustomPusher } from '../../lib/customPusher';
 
 // 覆盖 console
 const app = getApp();
@@ -77,9 +79,8 @@ const pusherPropConfigMap = {
 };
 
 // 影响性能，需要调试时才打开
-const isDevMode = wx.getAccountInfoSync().miniProgram.envVersion === 'develop';
-const needLivePusherInfo = isDevMode;
-const showPusherVideoSize = isDevMode;
+const needLivePusherInfo = false;
+const showPusherVideoSize = false;
 
 // 小程序退后台关闭对讲
 const stopVoiceIfPageHide = true;
@@ -171,9 +172,9 @@ Page({
       videoLongSide: 640,
       videoWidth: 480,
       videoHeight: 640,
-      // fps: 15,
-      // minBitrate: 200,
-      // maxBitrate: 1000,
+      fps: 15,
+      minBitrate: 200, // kbps
+      maxBitrate: 600, // kbps
       disableCameraIfPageHide: stopVoiceIfPageHide,
       disableMicIfPageHide: stopVoiceIfPageHide,
       acceptPusherEvents: {
@@ -189,6 +190,12 @@ Page({
       // pusherPropConfigMap.videoLongSide, // 不生效
     ],
     intercomVideoSizeClass: 'vertical_3_4',
+
+    // 用文件模拟对讲
+    customPusher: null,
+
+    // 测试刷新UI
+    testStr: '',
   },
   onLoad(query) {
     pageSeq++;
@@ -217,11 +224,16 @@ Page({
        */
       intercomP2PWaterMark: {
         low: 0,
-        high: 100 * 1024, // 高水位字节数，默认10M，可根据码率和可接受延迟自行调整
+        high: 500 * 1024, // 高水位字节数，可根据码率和可接受延迟自行调整
       },
       pusherInfoCount: 0,
       needFixSoundMode: false,
       releasePTZTimer: null,
+
+      // 测试刷新UI
+      testTimer: null,
+      startRenderTime: 0,
+      lastRenderTime: 0,
     };
 
     console.log('demo: checkReset when enter');
@@ -231,7 +243,10 @@ Page({
       // 直接传播放数据
       let detail;
       try {
-        const json = decodeURIComponent(query.json);
+        let json = query.json;
+        if (json.charAt(0) === '%') {
+          json = decodeURIComponent(query.json);
+        }
         detail = JSON.parse(json);
       } catch (err) {
         console.error('demo: parse json error', err);
@@ -275,6 +290,12 @@ Page({
     console.log('demo: onUnload');
     this.hasExited = true;
 
+    // 停止测试timer
+    if (this.userData.testTimer) {
+      clearInterval(this.userData.testTimer);
+      this.userData.testTimer = null;
+    }
+
     // 停止对讲
     if (this.userData.voice && this.data.voiceState !== 'VoiceIdle') {
       this.stopVoice();
@@ -304,6 +325,32 @@ Page({
 
     console.log('demo: onUnload end');
   },
+  onShareAppMessage() {
+    // 还在输入界面或者数据无效，分享首页
+    if (!this.userData.deviceId) {
+      console.log('demo: share home', defaultShareInfo.path);
+      return defaultShareInfo;
+    }
+    // 分享设备
+    const deviceDetail = {
+      targetId: `share_${this.userData.deviceId}`,
+      p2pMode: this.data.p2pMode,
+      sceneType: 'live',
+      deviceInfo: this.data.deviceInfo,
+      xp2pInfo: this.data.xp2pInfo,
+      liveStreamDomain: this.data.liveStreamDomain,
+      initCommand: this.data.initCommand,
+      useChannelIds: this.data.useChannelIds,
+      options: this.data.options,
+    };
+    const sharePath = `/pages/index/index?page=ipc-live&json=${encodeURIComponent(JSON.stringify(deviceDetail))}`;
+    console.log('demo: share ipc-live', sharePath);
+    return {
+      title: `XP2P 监控 ${this.userData.deviceId}`,
+      path: sharePath,
+      imageUrl: defaultShareInfo.imageUrl,
+    };
+  },
   onStartPlayer({ detail }) {
     console.log('demo: onStartPlayer', detail);
     if (detail.p2pMode !== 'ipc' || detail.sceneType !== 'live') {
@@ -317,6 +364,20 @@ Page({
       });
       return;
     }
+
+    // 测试刷新UI
+    let tmpDate = new Date();
+    let totalSec = 0;
+    this.setData({ testStr: toTimeMsString(tmpDate) });
+    this.userData.startRenderTime = tmpDate.getTime();
+    this.userData.lastRenderTime = tmpDate.getTime();
+    this.userData.testTimer = setInterval(() => {
+      tmpDate = new Date();
+      totalSec = Math.round((tmpDate.getTime() - this.userData.startRenderTime) / 1000);
+      this.setData({ testStr: `${toTimeMsString(tmpDate)}, last ${tmpDate.getTime() - this.userData.lastRenderTime}ms, total ${Math.floor(totalSec / 60)}m${totalSec % 60}s`});
+      this.userData.lastRenderTime = tmpDate.getTime();
+    }, 10000);
+
     this.userData.deviceId = detail.deviceInfo.deviceId;
     this.userData.serviceStateChangeHandler = (detail) => {
       console.log('demo: SERVICE_STATE_CHANGE', detail);
@@ -347,10 +408,15 @@ Page({
         console.error('demo: startP2PService err', err);
       });
 
+    if (!detail.useChannelIds) {
+      // 默认通道0
+      detail.useChannelIds = [0];
+    }
     console.log('demo: set deviceInfo', detail.deviceInfo, detail.useChannelIds);
 
     this.setData({
       ...detail,
+      streamQuality: detail.options.liveQuality || 'high',
       intercomType: detail.options.intercomType || 'voice',
     }, () => {
       if (detail.initCommand) {
@@ -606,6 +672,9 @@ Page({
     }
     if (tips) this.showToast(tips);
   },
+  onIntercomPreviewChange({ detail }) {
+    console.log('demo: onIntercomPreviewChange', detail);
+  },
   onIntercomLivePusherNetStatus({ detail }) {
     // console.log('demo: onIntercomLivePusherNetStatus', detail);
     if (!detail.info) {
@@ -633,7 +702,7 @@ Page({
             - 0 水位 [low, high]
             - 1 水位 > high
           size: 字节数
-          
+
           一个简单的流控策略：水位维持在high以上（state > 0）几秒钟就降码率，维持high以下（state <= 0）几秒钟再恢复，避免跳来跳去的情况
         */
         console.log('demo: onIntercomP2PEvent', evtName, detail);
@@ -663,9 +732,9 @@ Page({
     console.log('demo: startVoice, needRecord', needRecord);
 
     // 只要有一个player播放成功，就启动对讲
-    const isPlaySuccess = this.hasSuccessPlayer();
+    const canStart = this.data.useChannelIds.length === 0 || this.hasSuccessPlayer();
 
-    if (!isPlaySuccess) {
+    if (!canStart) {
       console.log('demo: startVoice err, isPlaySuccess false');
       wx.showToast({
         title: '请等待播放后再开启对讲',
@@ -676,6 +745,10 @@ Page({
 
     if (!this.userData.voice) {
       console.error('demo: startVoice but no voice component');
+      wx.showToast({
+        title: '对讲组件尚未初始化',
+        icon: 'error',
+      });
       return;
     }
 
@@ -701,14 +774,41 @@ Page({
     });
   },
   // intercom控制
-  startIntercomCall(e) {
+  startIntercomPreview() {
+    console.log('demo: startIntercomPreview');
+
+    // 检查实例是否初始化成功
+    if (!this.userData.intercom) {
+      console.error('demo: startIntercomPreview but no intercom component');
+      wx.showToast({
+        title: '对讲组件尚未初始化',
+        icon: 'error',
+      });
+      return;
+    }
+
+    this.userData.intercom.startPreview();
+  },
+  stopIntercomPreview() {
+    console.log('demo: stopIntercomPreview');
+
+    // 检查实例是否初始化成功
+    if (!this.userData.intercom) {
+      console.error('demo: stopIntercomPreview but no intercom component');
+      return;
+    }
+
+    this.userData.intercom.stopPreview();
+  },
+  async startIntercomCall(e) {
     const needRecord = parseInt(e?.currentTarget?.dataset?.needRecord, 10) > 0;
-    console.log('demo: startIntercomCall, needRecord', needRecord);
+    const needCustomPusher = parseInt(e?.currentTarget?.dataset?.needCustomPusher, 10) > 0;
+    console.log(`demo: startIntercomCall, needRecord ${needRecord}, needCustomPusher ${needCustomPusher}`);
 
     // 只要有一个player播放成功，就启动对讲
-    const isPlaySuccess = this.hasSuccessPlayer();
+    const canStart = this.data.useChannelIds.length === 0 || this.hasSuccessPlayer();
 
-    if (!isPlaySuccess) {
+    if (!canStart) {
       console.log('demo: startIntercomCall err, isPlaySuccess false');
       wx.showToast({
         title: '请等待播放后再开始呼叫',
@@ -720,7 +820,57 @@ Page({
     // 检查实例是否初始化成功
     if (!this.userData.intercom) {
       console.error('demo: startIntercomCall but no intercom component');
+      wx.showToast({
+        title: '对讲组件尚未初始化',
+        icon: 'error',
+      });
       return;
+    }
+
+    // 用文件模拟推流
+    this.userData.customPusher = null;
+    if (needCustomPusher) {
+      try {
+        const res = await wx.chooseMessageFile({
+          count: 1,
+        });
+        const file = res.tempFiles[0];
+        console.log('demo: chooseMockFlv res', file);
+        if (!file?.size) {
+          console.error('demo: chooseMockFlv empty');
+          wx.showToast({
+            title: '文件大小为空',
+            icon: 'error',
+          });
+          return;
+        }
+        if (file.size < 1024) {
+          console.error('demo: chooseMockFlv empty');
+          wx.showToast({
+            title: '文件太小',
+            icon: 'error',
+          });
+          return;
+        }
+        const customPusher = new CustomPusher({
+          file,
+          errorCallback: (err) => {
+            if (this.userData.customPusher !== customPusher) {
+              return;
+            }
+            console.error('demo: customPusher error', err);
+            wx.showToast({
+              title: 'customPusher出错，停止对讲',
+              icon: 'error',
+            });
+            this.stopIntercomCall();
+          },
+        });
+        this.userData.customPusher = customPusher;
+      } catch (err) {
+        console.error('demo: chooseMockFlv fail', err);
+        return;
+      }
     }
 
     this.userData.pusherInfoCount = 0;
@@ -728,6 +878,7 @@ Page({
     this.userData.intercom.setP2PEventCallback?.(this.onIntercomP2PEvent.bind(this));
     this.userData.intercom.intercomCall({
       needRecord,
+      customPusher: this.userData.customPusher,
     });
   },
   stopIntercomCall() {
@@ -746,6 +897,11 @@ Page({
     });
 
     this.userData.intercom.intercomHangup();
+
+    if (this.userData.customPusher) {
+      this.userData.customPusher.destroy();
+      this.userData.customPusher = null;
+    }
   },
   intercomPusherPropChange({ detail, currentTarget: { dataset } }) {
     const { field } = dataset;

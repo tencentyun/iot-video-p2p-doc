@@ -53,6 +53,10 @@
       </view>
     </p2p-live-player>
 
+    <view class="no-channel-tip" wx:if="{{!useChannelIds.length}}">
+      <view>未选择监控通道</view>
+    </view>
+
     <!-- 调试用
     <view class="page-section page-section-gap">
       <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（触发当前页面hide）</navigator>
@@ -75,6 +79,10 @@
     </view>
     -->
 
+    <view class="page-section page-section-gap">
+      <view class="page-section-title">【这里每10s刷新】</view>
+      <view class="margin-left">{{testStr}}</view>
+    </view>
     <view class="page-section page-section-gap" wx:if="{{intercomType === 'voice'}}">
       <view class="page-section-title">【语音对讲】</view>
       <view class="margin-left">
@@ -130,6 +138,7 @@
           bind:intercomsuccess="onIntercomProcess"
           bind:intercomstop="onIntercomProcess"
           bind:intercomerror="onIntercomError"
+          bind:previewchange="onIntercomPreviewChange"
           bind:netstatus="onIntercomLivePusherNetStatus"
         ></iot-p2p-intercom>
         <!-- <live-pusher
@@ -160,11 +169,22 @@
           </view>
         </view>
         <view class="group-button-area">
+          <button bindtap="startIntercomPreview" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
+            视频预览
+          </button>
+          <button bindtap="stopIntercomPreview" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
+            停止预览
+          </button>
+        </view>
+        <view class="group-button-area">
           <button bindtap="startIntercomCall" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
-            双向对讲
+            视频对讲
           </button>
           <button bindtap="startIntercomCall" data-need-record="1" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
-            双向对讲+录制
+            视频对讲+录制
+          </button>
+          <button bindtap="startIntercomCall" data-need-custom-pusher="1" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
+            文件模拟推流
           </button>
           <button bindtap="stopIntercomCall" class="group-button" type="primary" size="mini" disabled="{{!intercomState || (intercomState !== 'Calling' && intercomState !==  'Sending') }}">
             挂断对讲

@@ -136,7 +136,10 @@ Page({
       // 直接传播放数据
       let detail;
       try {
-        const json = decodeURIComponent(query.json);
+        let json = query.json;
+        if (json.charAt(0) === '%') {
+          json = decodeURIComponent(query.json);
+        }
         detail = JSON.parse(json);
       } catch (err) {
         console.error('demo: parse json error', err);

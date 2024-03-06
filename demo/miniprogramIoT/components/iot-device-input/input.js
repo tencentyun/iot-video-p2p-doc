@@ -1,4 +1,4 @@
-import { totalData } from '../../config/config';
+import { totalData, updateRecentIPC } from '../../config/config';
 import { adjustXp2pInfo, getDeviceFlags, isDevTool } from '../../utils';
 const getDefaultChannelOptions = () => (
   [
@@ -273,41 +273,41 @@ Component({
           this.showToast(errMsg);
           return;
         }
-        const arr = res.data.replace(/[^\w/=%.]/g, ' ').split(/\s+/)
-          .filter(str => str.length >= 10); // 这3个数据的长度都 >= 10
+        const arr = res.data.replace(/[^\w/+=%.]/g, ' ').split(/\s+/)
+          .filter(str => !!str
+            && !/^ProductId$/i.test(str)
+            && !/^DeviceName$/i.test(str)
+            && !/^Xp2pInfo$/i.test(str)
+          );
+        console.log('clipboard', res.data, arr);
         let productId;
         let deviceName;
         let xp2pInfo;
         arr.forEach((str) => {
-          if (/^[A-Z0-9]+$/.test(str)) {
+          if (/^[A-Z0-9]{10}\/\w+$/.test(str)) {
+            // 匹配 deviceId 规则
+            [productId, deviceName] = str.split('/');
+          } else if (/^[A-Z0-9]{10}$/.test(str)) {
             // 匹配 productId 规则
             productId = str;
-          } else if (/^[A-Za-z0-9]+_\d+_\d+$/.test(str)) {
+          } else if (/^\w+$/.test(str)) {
             // 匹配 deviceName 规则
             deviceName = str;
-          } else if (/^XP2P/.test(str)) {
+          } else if (/^XP2P[\w/+=]+%[\w.]+/.test(str)) {
             // 匹配 xp2pInfo 规则
             xp2pInfo = str;
           }
         });
-        if (!productId) {
-          this.showToast('未找到有效的 productId');
+
+        if (!productId && !deviceName && !xp2pInfo) {
+          this.showToast('未找到有效的数据');
           return;
         }
-        if (!deviceName) {
-          this.showToast('未找到有效的 deviceName');
-          return;
-        }
-        if (!xp2pInfo) {
-          this.showToast('未找到有效的 xp2pInfo');
-          return;
-        }
-        console.log('importXp2pInfo', productId, deviceName, xp2pInfo);
-        const newData = {
-          productId,
-          deviceName,
-          xp2pInfo,
-        };
+        const newData = {};
+        productId && (newData.productId = productId);
+        deviceName && (newData.deviceName = deviceName);
+        xp2pInfo && (newData.xp2pInfo = xp2pInfo);
+        console.log('importXp2pInfo', newData);
         const { simpleInputs } = this.data;
         simpleInputs.forEach(item => {
           if (item.field in newData) {
@@ -409,13 +409,13 @@ Component({
       let xp2pInfo = '';
       let initCommand = '';
       let liveStreamDomain = '';
-      let streamQuality = '';
       let flvUrl = '';
-      let useChannelIds = this.data.channelOptions.filter(item => item.checked).map(item => item.value);
+      const useChannelIds = this.data.channelOptions.filter(item => item.checked).map(item => item.value);
 
-      if (useChannelIds.length === 0) {
-        useChannelIds = [0];
-      }
+      // 可以都不选
+      // if (useChannelIds.length === 0) {
+      //   useChannelIds = [0];
+      // }
 
       if (this.data.p2pMode === 'ipc') {
         // deviceInfo
@@ -460,7 +460,6 @@ Component({
           }
           initCommand = inputValues.initCommand || '';
           liveStreamDomain = inputValues.liveStreamDomain || '';
-          streamQuality = options.liveQuality || '';
         }
         if (sceneType === 'playback') {
           if (this.data.isMjpgDevice) {
@@ -495,7 +494,6 @@ Component({
         xp2pInfo,
         initCommand,
         liveStreamDomain,
-        streamQuality,
         flvUrl,
         useChannelIds,
       };
@@ -525,17 +523,11 @@ Component({
       }
 
       if (this.data.p2pMode === 'ipc') {
-        // 注意字段和totalData的里一致
-        const recentIPC = {
-          p2pMode: 'ipc',
-          targetId: 'recentIPC',
+        updateRecentIPC({
           isMjpgDevice: this.data.isMjpgDevice,
           ...inputValues,
           options,
-        };
-        console.log(`[${this.id}]`, 'set recentIPC', recentIPC);
-        totalData.recentIPC = recentIPC;
-        wx.setStorageSync('recentIPC', recentIPC);
+        });
       }
 
       console.log(`[${this.id}]`, 'startPlayer', this.data.p2pMode, sceneType, streamData, options);

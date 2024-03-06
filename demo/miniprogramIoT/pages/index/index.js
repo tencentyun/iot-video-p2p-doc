@@ -1,4 +1,4 @@
-import { presetDevices, presetServerStreams, totalData } from '../../config/config';
+import { presetDevices, isDeviceCfgValid, presetServerStreams, totalData, updateRecentIPC, defaultShareInfo } from '../../config/config';
 import { getUserId } from '../../utils';
 
 const sysInfo = wx.getSystemInfoSync();
@@ -43,8 +43,8 @@ Page({
     // 选择的cfg
     cfg: '',
   },
-  onLoad() {
-    console.log('index: onLoad');
+  onLoad(query) {
+    console.log('index: onLoad', query);
     this.showPolicyModal();
 
     const listVideoDevices = [];
@@ -126,6 +126,35 @@ Page({
           });
       });
     }
+
+    let url = '';
+    switch (query.page) {
+      case 'ipc-live':
+        try {
+          let json = query.json;
+          if (json.charAt(0) === '%') {
+            json = decodeURIComponent(query.json);
+          }
+          const detail = JSON.parse(json);
+          console.log(`index: query.page ${query.page}, detail`, detail);
+          // 转成 config 里的格式保存
+          const deviceCfg = {
+            ...detail.deviceInfo,
+            xp2pInfo: detail.xp2pInfo,
+            initCommand: detail.initCommand,
+            liveStreamDomain: detail.liveStreamDomain,
+            options: detail.options,
+          };
+          if (isDeviceCfgValid(deviceCfg)) {
+            updateRecentIPC(deviceCfg);
+            url = `/pages/video/pages/xp2p-demo-ipc/demo?json=${encodeURIComponent(json)}`;
+          }
+        } catch (err) {
+          console.error(`index: query.page ${query.page}, parse json error`, err);
+        };
+        break;
+    }
+    url && wx.navigateTo({ url });
   },
   onUnload() {
     console.log('index: onUnload');
@@ -136,6 +165,9 @@ Page({
       xp2pManager.removeEventListener(XP2PManagerEvent.XP2P_STATE_CHANGE, this.userData.xp2pStateChangeListener);
       xp2pManager.removeEventListener(XP2PManagerEvent.XP2P_NAT_EVENT, this.userData.xp2pNatEventListener);
     }
+  },
+  onShareAppMessage() {
+    return defaultShareInfo;
   },
   onShow() {
     this.refreshRecnetIPC();

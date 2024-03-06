@@ -2,6 +2,16 @@
 @import '../../player.wxss';
 @import './ptz-panel.wxss';
 
+.no-channel-tip {
+  width: 750rpx;
+  height: 400rpx;
+  background-color: #000;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+}
 .iot-p2p-voice.voice-comp-container {
   width: 0;
   height: 0;

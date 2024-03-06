@@ -40,27 +40,29 @@ const defaultOptions = {
 
 // 这些是预置的ipc设备
 const devices = {
-  test_ipc: {
+  debug_x86_udp: {
     showInHomePageBtn: true,
-    productName: 'IPC',
+    productName: 'x86-udp',
     productId: 'SO1Z9Y787A',
-    deviceName: 'cannon_85317409_4',
-    xp2pInfo: 'XP2P4ZbW1lPiM5Jf6W1AipzB+g==%2.4.32',
+    deviceName: 'youzi_79972790_1',
+    xp2pInfo: 'XP2P4dD9bm9/NedV1w9kGrI/Ow==%2.4.43',
     options: {
       playerRTC: true,
+      playerMuted: true,
       voiceType: 'Pusher',
+      intercomType: 'video',
     },
   },
-  test_ac7916_duplexVideo: {
+  debug_x86_tcp: {
     showInHomePageBtn: true,
-    isMjpgDevice: false,
-    productName: 'ac7916',
+    productName: 'x86-tcp',
     productId: 'SO1Z9Y787A',
-    deviceName: 'cannon_85317409_3',
-    xp2pInfo: 'XP2PHuYWm+pTHW54qlcsPM4gQQ==%2.4.38',
+    deviceName: 'youzi_79972790_2',
+    xp2pInfo: 'XP2PlmS3tg+xnZTHcV1HkX6ESjQF%2.4.43',
     options: {
       playerRTC: true,
       voiceType: 'Pusher',
+      intercomType: 'voice',
     },
   },
   test_mjpglock: {

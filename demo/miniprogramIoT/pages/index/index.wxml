@@ -40,9 +40,9 @@
     </view>
   </view>
   <view class="page-section page-section-gap">
-    <view>hostInfo: {{hostInfo}}</view>
-    <view>wxVersion: wx {{wxVersion}} / sdk {{wxSDKVersion}}</view>
-    <view>pluginVersion: p2p-player {{playerVersion}} / xp2p {{xp2pVersion}}</view>
+    <view>hostInfo: <text user-select>{{hostInfo}}</text></view>
+    <view>wxVersion: <text user-select>wx {{wxVersion}} / sdk {{wxSDKVersion}}</text></view>
+    <view>pluginVersion: <text user-select>p2p-player {{playerVersion}} / xp2p {{xp2pVersion}}</text></view>
     <view>userId: <text user-select>{{userId}}</text></view>
     <view>xp2pUUID: <text user-select>{{xp2pUUID}}</text></view>
     <view>xp2pState: {{xp2pState}} <text wx:if="{{xp2pState}}">@{{xp2pStateTime}}</text></view>

@@ -109,7 +109,7 @@
       </view>
     </view>
   </view>
-  <view class="component-section" wx:if="{{isDevTool}}">
+  <view class="component-section">
     <view class="component-section-title">调试用</view>
     <view class="input-item">
       <label><switch type="checkbox" checked="{{playStreamChecked.flv}}" data-stream="flv" bindchange="switchPlayStream"/>播放flv（取消勾选则只拉数据不播放）</label>
