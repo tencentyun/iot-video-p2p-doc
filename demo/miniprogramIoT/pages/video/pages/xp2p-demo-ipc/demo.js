@@ -1,5 +1,5 @@
 import { defaultShareInfo } from '../../../../config/config';
-import { isDevTool, toTimeMsString } from '../../../../utils';
+import { isDevTool, toTimeMsString, compareVersion } from '../../../../utils';
 import { getXp2pManager } from '../../lib/xp2pManager';
 import { CustomPusher } from '../../lib/customPusher';
 
@@ -78,12 +78,36 @@ const pusherPropConfigMap = {
   },
 };
 
+// 视频对讲水位
+const intercomP2PWaterMark = {
+  low: 0,
+  high: 500 * 1024, // 高水位字节数，可根据码率和可接受延迟自行调整
+};
+// 视频对讲水位码率，默认高码率，需要流控用低码率
+const intercomBirateMap = {
+  low: {
+    fps: 10,
+    minBitrate: 200,
+    maxBitrate: 400,
+  },
+  high: {
+    fps: 15,
+    minBitrate: 200,
+    maxBitrate: 600,
+  },
+};
+// 视频对讲开启流控
+const intercomAutoBitrate = true;
+
 // 影响性能，需要调试时才打开
 const needLivePusherInfo = false;
 const showPusherVideoSize = false;
 
 // 小程序退后台关闭对讲
 const stopVoiceIfPageHide = true;
+
+// 测试卡顿
+const needTestRender = true;
 
 Page({
   data: {
@@ -172,9 +196,7 @@ Page({
       videoLongSide: 640,
       videoWidth: 480,
       videoHeight: 640,
-      fps: 15,
-      minBitrate: 200, // kbps
-      maxBitrate: 600, // kbps
+      ...intercomBirateMap.high,
       disableCameraIfPageHide: stopVoiceIfPageHide,
       disableMicIfPageHide: stopVoiceIfPageHide,
       acceptPusherEvents: {
@@ -191,10 +213,16 @@ Page({
     ],
     intercomVideoSizeClass: 'vertical_3_4',
 
+    // 对讲前预览
+    supportPreview: false,
+    isPreview: false,
+
     // 用文件模拟对讲
+    supportCustomPusher: false,
     customPusher: null,
 
     // 测试刷新UI
+    needTestRender,
     testStr: '',
   },
   onLoad(query) {
@@ -206,6 +234,11 @@ Page({
       xp2pManager = getXp2pManager();
     }
 
+    this.setData({
+      supportPreview: compareVersion(xp2pManager.XP2PVersion, '4.1.4') >= 0,
+      supportCustomPusher: compareVersion(xp2pManager.XP2PVersion, '4.1.4') >= 0,
+    });
+
     // 渲染无关的放这里
     this.userData = {
       pageId,
@@ -215,19 +248,20 @@ Page({
       players: [],
       voice: null,
       intercom: null,
+      pusherInfoCount: 0,
+      needFixSoundMode: false,
+
       /**
-       * 视频对讲水位设置
+       * 视频对讲水位设置，需要 xp2p 插件 4.1.3 以上
        * 小程序侧数据缓存水位变化时会检测堆积状态，状态变化触发 buffer_state_change 回调
        * 缓存水位低于 low 时会持续触发 writable
        * 缓存水位高于 high 时会持续触发 unwritable
        * 回调参数详见 onIntercomP2PEvent
        */
-      intercomP2PWaterMark: {
-        low: 0,
-        high: 500 * 1024, // 高水位字节数，可根据码率和可接受延迟自行调整
-      },
-      pusherInfoCount: 0,
-      needFixSoundMode: false,
+      intercomP2PWaterMark,
+      intercomBufferInfo: null, // { bitrateType, state, timer }
+
+      // PTZ
       releasePTZTimer: null,
 
       // 测试刷新UI
@@ -366,17 +400,19 @@ Page({
     }
 
     // 测试刷新UI
-    let tmpDate = new Date();
-    let totalSec = 0;
-    this.setData({ testStr: toTimeMsString(tmpDate) });
-    this.userData.startRenderTime = tmpDate.getTime();
-    this.userData.lastRenderTime = tmpDate.getTime();
-    this.userData.testTimer = setInterval(() => {
-      tmpDate = new Date();
-      totalSec = Math.round((tmpDate.getTime() - this.userData.startRenderTime) / 1000);
-      this.setData({ testStr: `${toTimeMsString(tmpDate)}, last ${tmpDate.getTime() - this.userData.lastRenderTime}ms, total ${Math.floor(totalSec / 60)}m${totalSec % 60}s`});
+    if (this.data.needTestRender) {
+      let tmpDate = new Date();
+      let totalSec = 0;
+      this.setData({ testStr: toTimeMsString(tmpDate) });
+      this.userData.startRenderTime = tmpDate.getTime();
       this.userData.lastRenderTime = tmpDate.getTime();
-    }, 10000);
+      this.userData.testTimer = setInterval(() => {
+        tmpDate = new Date();
+        totalSec = Math.round((tmpDate.getTime() - this.userData.startRenderTime) / 1000);
+        this.setData({ testStr: `${toTimeMsString(tmpDate)}, last ${tmpDate.getTime() - this.userData.lastRenderTime}ms, total ${Math.floor(totalSec / 60)}m${totalSec % 60}s`});
+        this.userData.lastRenderTime = tmpDate.getTime();
+      }, 10000);
+    }
 
     this.userData.deviceId = detail.deviceInfo.deviceId;
     this.userData.serviceStateChangeHandler = (detail) => {
@@ -660,9 +696,15 @@ Page({
   },
   onIntercomProcess({ type, detail }) {
     console.log('demo: onIntercomProcess', type, detail);
+
+    if (type === 'intercomstop' || type === 'intercomerror') {
+      this.clearIntercomBufferInfo();
+    }
   },
-  onIntercomError({ detail }) {
-    console.log('demo: onIntercomError', detail);
+  onIntercomError({ type, detail }) {
+    this.onIntercomProcess({ type, detail });
+
+    console.error('demo: onIntercomError', detail);
     let tips = '';
     if (detail.errType === 'FeedbackResult') {
       const isCalling = ['Calling', 'Sending'].includes(this.data.intercomState);
@@ -674,6 +716,11 @@ Page({
   },
   onIntercomPreviewChange({ detail }) {
     console.log('demo: onIntercomPreviewChange', detail);
+    this.setData({ isPreview: detail.preview });
+  },
+  onIntercomPreviewError({ detail }) {
+    console.error('demo: onIntercomPreviewError', detail);
+    this.showToast(detail.errMsg || '预览异常');
   },
   onIntercomLivePusherNetStatus({ detail }) {
     // console.log('demo: onIntercomLivePusherNetStatus', detail);
@@ -706,6 +753,38 @@ Page({
           一个简单的流控策略：水位维持在high以上（state > 0）几秒钟就降码率，维持high以下（state <= 0）几秒钟再恢复，避免跳来跳去的情况
         */
         console.log('demo: onIntercomP2PEvent', evtName, detail);
+        if (!intercomAutoBitrate
+          || !this.userData.intercomBufferInfo
+          || detail.state === this.userData.intercomBufferInfo.state
+        ) {
+          return;
+        }
+
+        // 水位状态变化，清理之前的timer
+        if (this.userData.intercomBufferInfo.timer) {
+          console.log('demo: clear buffer timer, old state', this.userData.intercomBufferInfo.state);
+          clearTimeout(this.userData.intercomBufferInfo.timer);
+          this.userData.intercomBufferInfo.timer = null;
+        }
+        this.userData.intercomBufferInfo.state = detail.state;
+
+        // 需要改变码率时才设timer
+        const birtateType = detail.state > 0 ? 'low' : 'high';
+        if (this.userData.intercomBufferInfo.birtateType !== birtateType) {
+          console.log(`demo: use ${birtateType} birtate after 3s`);
+          this.userData.intercomBufferInfo.timer = setTimeout(() => {
+            clearTimeout(this.userData.intercomBufferInfo.timer);
+            this.userData.intercomBufferInfo.timer = null;
+            this.userData.intercomBufferInfo.birtateType = birtateType;
+            console.log(`demo: use ${birtateType} birtate`, intercomBirateMap[birtateType]);
+            this.setData({
+              intercomPusherProps: {
+                ...this.data.intercomPusherProps,
+                ...intercomBirateMap[birtateType],
+              },
+            });
+          }, 3000);
+        }
         break;
       }
       case 'writable': {
@@ -787,6 +866,16 @@ Page({
       return;
     }
 
+    if (!this.userData.intercom.startPreview) {
+      console.error('demo: startIntercomPreview but not support');
+      wx.showToast({
+        title: '请升级插件版本',
+        icon: 'error',
+      });
+      return;
+    }
+
+    // 预览，需要 xp2p 插件 4.1.4 以上
     this.userData.intercom.startPreview();
   },
   stopIntercomPreview() {
@@ -798,6 +887,16 @@ Page({
       return;
     }
 
+    if (!this.userData.intercom.stopPreview) {
+      console.error('demo: stopIntercomPreview but not support');
+      wx.showToast({
+        title: '请升级插件版本',
+        icon: 'error',
+      });
+      return;
+    }
+
+    // 预览，需要 xp2p 插件 4.1.4 以上
     this.userData.intercom.stopPreview();
   },
   async startIntercomCall(e) {
@@ -827,7 +926,7 @@ Page({
       return;
     }
 
-    // 用文件模拟推流
+    // 用文件模拟推流，需要 xp2p 插件 4.1.4 以上
     this.userData.customPusher = null;
     if (needCustomPusher) {
       try {
@@ -837,7 +936,7 @@ Page({
         const file = res.tempFiles[0];
         console.log('demo: chooseMockFlv res', file);
         if (!file?.size) {
-          console.error('demo: chooseMockFlv empty');
+          console.error('demo: chooseMockFlv error, file empty');
           wx.showToast({
             title: '文件大小为空',
             icon: 'error',
@@ -845,7 +944,7 @@ Page({
           return;
         }
         if (file.size < 1024) {
-          console.error('demo: chooseMockFlv empty');
+          console.error('demo: chooseMockFlv error, file too small');
           wx.showToast({
             title: '文件太小',
             icon: 'error',
@@ -873,6 +972,18 @@ Page({
       }
     }
 
+    // 开始对讲时默认用高码率
+    console.log('demo: startIntercomCall, default high birtate');
+    this.userData.intercomBufferInfo = {
+      birtateType: 'high',
+    };
+    this.setData({
+      intercomPusherProps: {
+        ...this.data.intercomPusherProps,
+        ...intercomBirateMap.high,
+      },
+    });
+
     this.userData.pusherInfoCount = 0;
     this.userData.intercom.setP2PWaterMark?.(this.userData.intercomP2PWaterMark);
     this.userData.intercom.setP2PEventCallback?.(this.onIntercomP2PEvent.bind(this));
@@ -895,6 +1006,7 @@ Page({
       intercomState: 'Ready2Call',
       intercomVideoSize: '',
     });
+    this.clearIntercomBufferInfo();
 
     this.userData.intercom.intercomHangup();
 
@@ -929,6 +1041,25 @@ Page({
       intercomPusherProps: newProps,
       intercomVideoSizeClass: `${newProps.orientation}_${newProps.aspect.replace(':', '_')}`,
     });
+  },
+  clearIntercomBufferInfo() {
+    if (!this.userData.intercomBufferInfo) {
+      return;
+    }
+    console.log('demo: clearIntercomBufferInfo');
+    const { birtateType, timer } = this.userData.intercomBufferInfo;
+    this.userData.intercomBufferInfo = null;
+    if (timer) {
+      clearTimeout(timer);
+    }
+    if (birtateType !== 'high') {
+      this.setData({
+        intercomPusherProps: {
+          ...this.data.intercomPusherProps,
+          ...intercomBirateMap.high,
+        },
+      });
+    }
   },
   // ptz控制
   controlPTZ(e) {

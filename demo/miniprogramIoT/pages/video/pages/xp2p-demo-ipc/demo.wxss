@@ -12,28 +12,28 @@
   justify-content: center;
 
 }
-.iot-p2p-voice.voice-comp-container {
+.iot-p2p-voice.my-voice {
   width: 0;
   height: 0;
 }
-.iot-p2p-intercom.intercom-comp-container {
+.iot-p2p-intercom.my-intercom {
   position: fixed;
   right: 20rpx;
   top: 20rpx;
 }
-.iot-p2p-intercom.intercom-comp-container.vertical_3_4 {
+.iot-p2p-intercom.my-intercom.vertical_3_4 {
   width: 180rpx;
   height: 240rpx;
 }
-.iot-p2p-intercom.intercom-comp-container.vertical_9_16 {
+.iot-p2p-intercom.my-intercom.vertical_9_16 {
   width: 180rpx;
   height: 320rpx;
 }
-.iot-p2p-intercom.intercom-comp-container.horizontal_3_4 {
+.iot-p2p-intercom.my-intercom.horizontal_3_4 {
   width: 240rpx;
   height: 180rpx;
 }
-.iot-p2p-intercom.intercom-comp-container.horizontal_9_16 {
+.iot-p2p-intercom.my-intercom.horizontal_9_16 {
   width: 320rpx;
   height: 180rpx;
 }

@@ -23,6 +23,7 @@ Page({
     wxVersion: sysInfo.version,
     wxSDKVersion: sysInfo.SDKVersion,
     hostInfo: `${miniProgramInfo.appId}-${miniProgramInfo.envVersion}`,
+    sysInfo: `${sysInfo.platform} / ${sysInfo.system}`,
     userId: getUserId(),
     playerVersion: '',
     xp2pVersion: '',
@@ -225,7 +226,11 @@ Page({
     });
   },
   gotoPage(e) {
-    const { url } = e.currentTarget.dataset;
+    const { url, checkPlatform } = e.currentTarget.dataset;
+    if (checkPlatform && !['ios', 'android', 'devtools'].includes(sysInfo.platform)) {
+      wx.showToast({ title: `不支持当前平台: ${sysInfo.platform}`, icon: 'error' });
+      return;
+    }
     wx.navigateTo({ url });
   },
   async copyDocUrl(e) {

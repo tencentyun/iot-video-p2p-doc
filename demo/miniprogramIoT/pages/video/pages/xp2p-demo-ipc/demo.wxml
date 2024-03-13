@@ -79,17 +79,17 @@
     </view>
     -->
 
-    <view class="page-section page-section-gap">
+    <view wx:if="{{needTestRender}}" class="page-section page-section-gap">
       <view class="page-section-title">【这里每10s刷新】</view>
       <view class="margin-left">{{testStr}}</view>
     </view>
-    <view class="page-section page-section-gap" wx:if="{{intercomType === 'voice'}}">
+    <view wx:if="{{intercomType === 'voice'}}" class="page-section page-section-gap">
       <view class="page-section-title">【语音对讲】</view>
       <view class="margin-left">
         <iot-p2p-voice
           id="{{voiceId}}"
           style="display:block"
-          compClass="voice-comp-container"
+          compClass="my-voice"
           deviceInfo="{{deviceInfo}}"
           voiceType="{{options.voiceType}}"
           pusherProps="{{pusherProps}}"
@@ -122,13 +122,20 @@
         </view>
       </view>
     </view>
-    <view class="page-section page-section-gap" wx:if="{{intercomType === 'video'}}">
+    <view wx:if="{{intercomType === 'video'}}" class="page-section page-section-gap">
       <view class="page-section-title">【视频对讲】</view>
       <view class="margin-left">
+        <!--
+          这么覆盖组件大小
+            .iot-p2p-intercom.my-intercom {
+              width: xxx;
+              height: xxx;
+            }
+        -->
         <iot-p2p-intercom 
           wx:if="{{intercomType === 'video'}}"
           id="{{intercomId}}"
-          compClass="intercom-comp-container {{intercomVideoSizeClass}}"
+          compClass="my-intercom {{intercomVideoSizeClass}}"
           deviceInfo="{{deviceInfo}}"
           pusherProps="{{intercomPusherProps}}"
           showLog="{{options.intercomLog}}"
@@ -139,6 +146,7 @@
           bind:intercomstop="onIntercomProcess"
           bind:intercomerror="onIntercomError"
           bind:previewchange="onIntercomPreviewChange"
+          bind:previewerror="onIntercomPreviewError"
           bind:netstatus="onIntercomLivePusherNetStatus"
         ></iot-p2p-intercom>
         <!-- <live-pusher
@@ -168,11 +176,11 @@
             <view>{{intercomPusherProps.videoWidth}}x{{intercomPusherProps.videoHeight}}</view>
           </view>
         </view>
-        <view class="group-button-area">
-          <button bindtap="startIntercomPreview" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
+        <view wx:if="{{supportPreview}}" class="group-button-area">
+          <button bindtap="startIntercomPreview" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call' || isPreview}}">
             视频预览
           </button>
-          <button bindtap="stopIntercomPreview" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
+          <button bindtap="stopIntercomPreview" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call' || !isPreview}}">
             停止预览
           </button>
         </view>
@@ -183,7 +191,7 @@
           <button bindtap="startIntercomCall" data-need-record="1" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
             视频对讲+录制
           </button>
-          <button bindtap="startIntercomCall" data-need-custom-pusher="1" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
+          <button wx:if="{{supportCustomPusher}}" bindtap="startIntercomCall" data-need-custom-pusher="1" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
             文件模拟推流
           </button>
           <button bindtap="stopIntercomCall" class="group-button" type="primary" size="mini" disabled="{{!intercomState || (intercomState !== 'Calling' && intercomState !==  'Sending') }}">
