@@ -1,9 +1,9 @@
 {
   "appid": "wx9e8fbc98ceac2628",
-  "projectname": "iotvideo-xp2p-demo-iot",
+  "projectname": "iotvideo-xp2p-github-iot",
   "compileType": "miniprogram",
   "setting": {
-    "urlCheck": false,
+    "urlCheck": true,
     "es6": true,
     "enhance": true,
     "postcss": false,

@@ -49,7 +49,6 @@
         <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
       </view>
     </iot-p2p-common-player>
-  </view>
     <view class="component-section">
       <view>localPeername: {{localPeername}}</view>
       <view>接收p2p字节: {{p2pBytes}} Kb</view>
@@ -61,8 +60,9 @@
       <view>子节点: {{childrenStr}}</view>
       <view>父节点: {{parent}}</view>
     </view>
-      <view class="component-section">
-        <view>subscribeLog:</view>
-        <scroll-view scroll-y="true" class="log-box" style="height: 500rpx;"><text>{{subscribeLog}}</text></scroll-view>
-      </view>
+    <view class="component-section">
+      <view>subscribeLog:</view>
+      <scroll-view scroll-y="true" class="log-box" style="height: 500rpx;"><text>{{subscribeLog}}</text></scroll-view>
+    </view>
+  </view>
 </view>

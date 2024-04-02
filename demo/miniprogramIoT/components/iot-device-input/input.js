@@ -99,6 +99,12 @@ Component({
         scene: 'live',
       },
       {
+        field: 'supportCustomCommand',
+        text: '设备支持自定义信令',
+        checked: false,
+        scene: 'live',
+      },
+      {
         field: 'playerRTC',
         text: '播放使用RTC模式（需要设备采样率16k以上）',
         checked: true,
@@ -166,7 +172,7 @@ Component({
 
     // 调试用，开发者工具里不支持 live-player 和 TCPServer，默认只拉数据不播放
     isDevTool,
-    playStreamChecked: {
+    needPlayStream: {
       flv: !isDevTool,
       mjpg: !isDevTool,
     },
@@ -393,10 +399,10 @@ Component({
     },
     // 调试用
     switchPlayStream(e) {
-      const { playStreamChecked } = this.data;
-      playStreamChecked[e.currentTarget.dataset.stream] = e.detail.value;
+      const { needPlayStream } = this.data;
+      needPlayStream[e.currentTarget.dataset.stream] = e.detail.value;
       this.setData({
-        playStreamChecked,
+        needPlayStream,
       });
     },
     getStreamData(sceneType, inputValues, options) {
@@ -511,10 +517,6 @@ Component({
       this.data.simpleChecks.forEach((item) => {
         options[item.field] = item.checked;
       });
-      const onlyp2pMap = {};
-      for (const stream in this.data.playStreamChecked) {
-        onlyp2pMap[stream] = !this.data.playStreamChecked[stream];
-      }
 
       const sceneType = this.data.scene || 'live';
       const streamData = this.getStreamData(sceneType, inputValues, options);
@@ -532,6 +534,12 @@ Component({
 
       console.log(`[${this.id}]`, 'startPlayer', this.data.p2pMode, sceneType, streamData, options);
       this.setData(streamData);
+
+      // 调试用的不保存在最近记录里
+      const onlyp2pMap = {};
+      for (const stream in this.data.needPlayStream) {
+        onlyp2pMap[stream] = !this.data.needPlayStream[stream];
+      }
 
       this.triggerEvent('startPlayer', {
         p2pMode: this.data.p2pMode,

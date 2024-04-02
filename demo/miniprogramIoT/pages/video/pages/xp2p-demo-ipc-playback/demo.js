@@ -182,7 +182,11 @@ Page({
     // 断开连接
     if (this.userData.deviceId) {
       console.log('demo: stopP2PService', this.userData.deviceId);
-      xp2pManager.removeP2PServiceEventListener(this.userData.deviceId, this.userData.serviceStateChangeHandler);
+      xp2pManager.removeP2PServiceEventListener(
+        this.userData.deviceId,
+        'serviceStateChange',
+        this.userData.serviceStateChangeHandler,
+      );
       xp2pManager.stopP2PService(this.userData.deviceId, this.userData.pageId);
       this.userData.deviceId = '';
       this.userData.serviceStateChangeHandler = null;
@@ -208,15 +212,6 @@ Page({
     }
 
     this.userData.deviceId = detail.deviceInfo.deviceId;
-    this.userData.serviceStateChangeHandler = (detail) => {
-      console.log('demo: SERVICE_STATE_CHANGE', detail);
-      this.userData.serviceState = detail;
-    };
-    xp2pManager.addP2PServiceEventListener(
-      this.userData.deviceId,
-      'serviceStateChange',
-      this.userData.serviceStateChangeHandler,
-    );
 
     // 开始连接
     console.log('demo: startP2PService', this.userData.deviceId);
@@ -234,6 +229,17 @@ Page({
         // 只是提前连接，不用特别处理
         console.error('demo: startP2PService err', err);
       });
+
+    // 监听事件要在 startP2PService 之后
+    this.userData.serviceStateChangeHandler = (detail) => {
+      console.log('demo: SERVICE_STATE_CHANGE', detail);
+      this.userData.serviceState = detail;
+    };
+    xp2pManager.addP2PServiceEventListener(
+      this.userData.deviceId,
+      'serviceStateChange',
+      this.userData.serviceStateChangeHandler,
+    );
 
     const { showIcons } = this.data;
     if (detail.deviceInfo.isMjpgDevice) {
@@ -937,12 +943,13 @@ Page({
     console.log('demo: doDownloadComplete', currentFile, downloadState);
     this.clearDownloadData();
 
-    const { downloadBytes, downloadResult, avgSpeed } = downloadState;
+    const { downloadSuccess, downloadResult, downloadBytes, writeBytes, avgSpeed } = downloadState;
     wx.showModal({
-      title: '下载结束',
+      title: (downloadSuccess && writeBytes >= downloadBytes) ? '下载成功' : '下载失败',
       content: [
         currentFile.file_name,
-        `${downloadBytes}/${currentFile.file_size}`,
+        `download: ${downloadBytes}/${currentFile.file_size}`,
+        `write: ${writeBytes}/${downloadBytes}`,
         `avgSpeed: ${avgSpeed ? avgSpeed.toFixed(2) : '-'} KB/s`,
         `status: ${downloadResult?.status}, errcode: ${downloadResult?.errcode}, errmsg: ${downloadResult?.errmsg}`,
       ].join('\n'),

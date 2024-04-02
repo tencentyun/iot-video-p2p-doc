@@ -53,3 +53,12 @@
   width: 100%;
   height: 100%;
 }
+
+.prop-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.prop-item .radio {
+  margin-left: 10rpx;
+}

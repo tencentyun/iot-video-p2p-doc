@@ -15,6 +15,7 @@
  *   liveQuality: string 直播清晰度，非必填，standard | high | super，视频流设备默认 high
  *   needCheckStream: boolean 播放前先检查能否拉流，默认 false
  *   supportPTZ: boolean 是否支持PTZ，默认 false
+ *   supportCustomCommand: boolean 是否支持自定义信令，默认 false
  *   playerRTC: boolean 播放使用RTC模式，需要设备出流采样率16k以上，默认 true
  *   playerMuted: boolean 播放时默认静音，默认 false
  *   playerLog: boolean 播放log，默认 false
@@ -28,6 +29,7 @@ const defaultOptions = {
   liveQuality: 'high',
   needCheckStream: false,
   supportPTZ: false,
+  supportCustomCommand: false,
   // 小程序播放组件
   playerRTC: true,
   playerMuted: false,
@@ -45,7 +47,7 @@ const devices = {
     productName: 'x86-udp',
     productId: 'SO1Z9Y787A',
     deviceName: 'youzi_79972790_1',
-    xp2pInfo: 'XP2P4dD9bm9/NedV1w9kGrI/Ow==%2.4.43',
+    xp2pInfo: 'XP2P4dD9bm9/Nedf0DhKfLQECA==%2.4.43',
     options: {
       playerRTC: true,
       playerMuted: true,
@@ -58,9 +60,12 @@ const devices = {
     productName: 'x86-tcp',
     productId: 'SO1Z9Y787A',
     deviceName: 'youzi_79972790_2',
-    xp2pInfo: 'XP2PlmS3tg+xnZTHcV1HkX6ESjQF%2.4.43',
+    xp2pInfo: 'XP2PlmS3tg+xnZTHcW9Ao2uWICoG%2.4.43',
     options: {
+      supportPTZ: true,
+      supportCustomCommand: true,
       playerRTC: true,
+      playerMuted: true,
       voiceType: 'Pusher',
       intercomType: 'voice',
     },

@@ -1,125 +1,127 @@
-<view class="component">
-  <view class="component-section" wx:if="{{p2pMode === 'ipc'}}">
-    <view class="component-section-title">
-      【1v1-{{isMjpgDevice ? '图片流设备' : '视频流设备'}}】
-      <text wx:if="{{showCancel}}" class="text-btn float-right margin-left" bindtap="cancel">取消</text>
-      <!-- <view wx:if="{{sceneList.length > 1}}" class="float-right">
-        <radio-group bindchange="changeSceneRadio">
-          <label wx:for="{{sceneList}}" wx:key="value" class="scene-label"><radio value="{{item.value}}" checked="{{item.checked}}"/>{{item.text}}</label>
-        </radio-group>
-      </view> -->
-    </view>
-    <view class="control-info">
-      <view style="margin-bottom:20rpx">
-        设备信息:<text class="text-btn font-small" bindtap="importXp2pInfo">从剪贴板导入</text>
+<view class="component iot-device-input">
+  <view class="iot-device-input-body">
+    <view class="component-section section-ipc" wx:if="{{p2pMode === 'ipc'}}">
+      <view class="component-section-title">
+        【1v1-{{isMjpgDevice ? '图片流设备' : '视频流设备'}}】
+        <text wx:if="{{showCancel}}" class="text-btn float-right margin-left" bindtap="cancel">取消</text>
+        <!-- <view wx:if="{{sceneList.length > 1}}" class="float-right">
+          <radio-group bindchange="changeSceneRadio">
+            <label wx:for="{{sceneList}}" wx:key="value" class="scene-label"><radio value="{{item.value}}" checked="{{item.checked}}"/>{{item.text}}</label>
+          </radio-group>
+        </view> -->
       </view>
-      <view class="info-inputs">
-        <view wx:for="{{simpleInputs}}" wx:key="field" class="input-item {{(item.scene && item.scene !== scene || item.hideIfEmpty && !item.value)  ? 'hide' : ''}}">
-          <view wx:if="{{item.text}}">{{item.text}}:</view>
-          <view class="weui-cells weui-cells_after-title">
-            <view class="weui-cell weui-cell_input">
-              <input class="weui-input {{targetId ? 'disabled' : ''}}" type="text" placeholder-class="placeholder"
-                disabled="{{targetId}}"
-                placeholder="{{item.placeholder ? item.placeholder : ''}}"
-                value="{{item.value}}"
-                data-field="{{item.field}}"
-                data-index="{{index}}"
-                bindinput="inputSimpleInput" />
+      <view class="control-info">
+        <view style="margin-bottom:20rpx">
+          设备信息:<text class="text-btn font-small" bindtap="importXp2pInfo">从剪贴板导入</text>
+        </view>
+        <view class="info-inputs">
+          <view wx:for="{{simpleInputs}}" wx:key="field" class="input-item {{(item.scene && item.scene !== scene || item.hideIfEmpty && !item.value)  ? 'hide' : ''}}">
+            <view wx:if="{{item.text}}">{{item.text}}:</view>
+            <view class="weui-cells weui-cells_after-title">
+              <view class="weui-cell weui-cell_input">
+                <input class="weui-input {{targetId ? 'disabled' : ''}}" type="text" placeholder-class="placeholder"
+                  disabled="{{targetId}}"
+                  placeholder="{{item.placeholder ? item.placeholder : ''}}"
+                  value="{{item.value}}"
+                  data-field="{{item.field}}"
+                  data-index="{{index}}"
+                  bindinput="inputSimpleInput" />
+              </view>
             </view>
           </view>
-        </view>
-        <view wx:if="{{scene === 'live'}}">
-          <view class="input-item">
-            <view>通道选择</view>
-            <label wx:for="{{channelOptions}}" wx:key="value" class="list-inline-item">
-              <switch type="checkbox" checked="{{item.checked}}" data-value="{{item.value}}" data-index="{{index}}" bindchange="switchLiveChannel"/>
-              <span>{{item.name}}</span>
-            </label>
-          </view>
-          <view class="input-item">
-            <view>清晰度</view>
-            <radio-group bindchange="changeQualityRadio">
-              <label wx:for="{{liveQualityList}}" wx:key="value" class="list-inline-item">
-                <radio value="{{item.value}}" checked="{{item.checked}}"/>
-                <span>{{item.text}}</span>
-              </label>
-            </radio-group>
-          </view>
-          <view class="input-item">
-            <view>对讲方式</view>
-            <radio-group bindchange="changeIntercomTypeRadio">
-              <label wx:for="{{intercomTypeList}}" wx:key="value">
-                <view class="radio-list-item">
-                  <radio value="{{item.value}}" checked="{{item.checked}}" class="radio-list-item-radio"/>
-                  <view class="radio-list-item-text">
-                    <view>{{item.text}}</view>
-                    <view wx:if="{{item.desc}}">{{item.desc}}</view>
-                  </view>
-                </view>
-              </label>
-            </radio-group>
-          </view>
-          <view class="input-item">
-            <view>语音采集方式<text class="text-btn font-small" bindtap="copyDocUrl" data-doc="https://mp.weixin.qq.com/wxopen/plugindevdoc?appid=wx1319af22356934bf#6-">查看详细说明</text></view>
-            <radio-group bindchange="changeVoiceTypeRadio">
-              <label wx:for="{{voiceTypeList}}" wx:key="value">
-                <view class="radio-list-item">
-                  <radio value="{{item.value}}" checked="{{item.checked}}" class="radio-list-item-radio"/>
-                  <view class="radio-list-item-text">
-                    <view>{{item.text}}</view>
-                    <view wx:if="{{item.desc}}">{{item.desc}}</view>
-                  </view>
-                </view>
-              </label>
-            </radio-group>
-          </view>
-        </view>
-        <view wx:if="{{scene === 'playback'}}">
-          <view class="input-item">
-            <view>通道选择</view>
-            <radio-group bindchange="changePlaybackChannel">
+          <view wx:if="{{scene === 'live'}}">
+            <view class="input-item">
+              <view>通道选择</view>
               <label wx:for="{{channelOptions}}" wx:key="value" class="list-inline-item">
-                <radio value="{{item.value}}" checked="{{item.checked}}"/>
+                <switch type="checkbox" checked="{{item.checked}}" data-value="{{item.value}}" data-index="{{index}}" bindchange="switchLiveChannel"/>
                 <span>{{item.name}}</span>
               </label>
-            </radio-group>
+            </view>
+            <view class="input-item">
+              <view>清晰度</view>
+              <radio-group bindchange="changeQualityRadio">
+                <label wx:for="{{liveQualityList}}" wx:key="value" class="list-inline-item">
+                  <radio value="{{item.value}}" checked="{{item.checked}}"/>
+                  <span>{{item.text}}</span>
+                </label>
+              </radio-group>
+            </view>
+            <view class="input-item">
+              <view>对讲方式</view>
+              <radio-group bindchange="changeIntercomTypeRadio">
+                <label wx:for="{{intercomTypeList}}" wx:key="value">
+                  <view class="radio-list-item">
+                    <radio value="{{item.value}}" checked="{{item.checked}}" class="radio-list-item-radio"/>
+                    <view class="radio-list-item-text">
+                      <view>{{item.text}}</view>
+                      <view wx:if="{{item.desc}}">{{item.desc}}</view>
+                    </view>
+                  </view>
+                </label>
+              </radio-group>
+            </view>
+            <view class="input-item">
+              <view>语音采集方式<text class="text-btn font-small" bindtap="copyDocUrl" data-doc="https://mp.weixin.qq.com/wxopen/plugindevdoc?appid=wx1319af22356934bf#6-">查看详细说明</text></view>
+              <radio-group bindchange="changeVoiceTypeRadio">
+                <label wx:for="{{voiceTypeList}}" wx:key="value">
+                  <view class="radio-list-item">
+                    <radio value="{{item.value}}" checked="{{item.checked}}" class="radio-list-item-radio"/>
+                    <view class="radio-list-item-text">
+                      <view>{{item.text}}</view>
+                      <view wx:if="{{item.desc}}">{{item.desc}}</view>
+                    </view>
+                  </view>
+                </label>
+              </radio-group>
+            </view>
           </view>
-        </view>
-        <view>
-          <view>其它选项</view>
-          <view wx:for="{{simpleChecks}}" wx:key="field" class="input-item {{item.scene && item.scene !== scene ? 'hide' : ''}}">
-            <label><switch type="checkbox" checked="{{item.checked}}" data-field="{{item.field}}" data-index="{{index}}" bindchange="switchSimpleCheck"/>{{item.text}}</label>
+          <view wx:if="{{scene === 'playback'}}">
+            <view class="input-item">
+              <view>通道选择</view>
+              <radio-group bindchange="changePlaybackChannel">
+                <label wx:for="{{channelOptions}}" wx:key="value" class="list-inline-item">
+                  <radio value="{{item.value}}" checked="{{item.checked}}"/>
+                  <span>{{item.name}}</span>
+                </label>
+              </radio-group>
+            </view>
           </view>
-        </view>
-      </view>
-    </view>
-  </view>
-  <view class="component-section" wx:if="{{p2pMode === 'server'}}">
-    <view class="component-section-title">【1v多】</view>
-    <view class="control-info">
-      <view class="info-inputs">
-        <view class="input-item">
-          <view>streamUrl:</view>
-          <view class="weui-cells weui-cells_after-title">
-            <view class="weui-cell weui-cell_input">
-              <input class="weui-input {{targetId ? 'disabled' : ''}}" type="text" value="{{inputUrl}}" disabled="{{targetId}}" placeholder="请输入streamUrl" placeholder-class="placeholder" bindinput="inputStreamUrl" />
+          <view>
+            <view>其它选项</view>
+            <view wx:for="{{simpleChecks}}" wx:key="field" class="input-item {{item.scene && item.scene !== scene ? 'hide' : ''}}">
+              <label><switch type="checkbox" checked="{{item.checked}}" data-field="{{item.field}}" data-index="{{index}}" bindchange="switchSimpleCheck"/>{{item.text}}</label>
             </view>
           </view>
         </view>
       </view>
     </view>
-  </view>
-  <view class="component-section">
-    <view class="component-section-title">调试用</view>
-    <view class="input-item">
-      <label><switch type="checkbox" checked="{{playStreamChecked.flv}}" data-stream="flv" bindchange="switchPlayStream"/>播放flv（取消勾选则只拉数据不播放）</label>
+    <view class="component-section section-server" wx:if="{{p2pMode === 'server'}}">
+      <view class="component-section-title">【1v多】</view>
+      <view class="control-info">
+        <view class="info-inputs">
+          <view class="input-item">
+            <view>streamUrl:</view>
+            <view class="weui-cells weui-cells_after-title">
+              <view class="weui-cell weui-cell_input">
+                <input class="weui-input {{targetId ? 'disabled' : ''}}" type="text" value="{{inputUrl}}" disabled="{{targetId}}" placeholder="请输入streamUrl" placeholder-class="placeholder" bindinput="inputStreamUrl" />
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
     </view>
-    <view class="input-item {{isMjpgDevice ? '' : 'hide'}}">
-      <label><switch type="checkbox" checked="{{playStreamChecked.mjpg}}" data-stream="mjpg" bindchange="switchPlayStream"/>播放mjpg（取消勾选则只拉数据不播放）</label>
+    <view class="component-section section-debug">
+      <view class="component-section-title">调试用</view>
+      <view class="input-item">
+        <label><switch type="checkbox" checked="{{needPlayStream.flv}}" data-stream="flv" bindchange="switchPlayStream"/>播放flv（取消勾选则只拉数据不播放）</label>
+      </view>
+      <view class="input-item {{isMjpgDevice ? '' : 'hide'}}">
+        <label><switch type="checkbox" checked="{{needPlayStream.mjpg}}" data-stream="mjpg" bindchange="switchPlayStream"/>播放mjpg（取消勾选则只拉数据不播放）</label>
+      </view>
     </view>
   </view>
-  <view class="component-section">
-    <button bindtap="startPlayer" type="primary" class="primary-button">
+  <view class="iot-device-input-footer">
+    <button bindtap="startPlayer" type="primary">
       播放-{{scene}}
     </button>
   </view>

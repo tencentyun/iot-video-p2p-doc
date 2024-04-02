@@ -80,12 +80,14 @@
     -->
 
     <view wx:if="{{needTestRender}}" class="page-section page-section-gap">
-      <view class="page-section-title">【这里每10s刷新】</view>
-      <view class="margin-left">{{testStr}}</view>
+      <view class="margin-left margin-right">
+        <view>每10s刷新，如果长时间不变说明页面卡住</view>
+        <view>{{testStr }}</view>
+      </view>
     </view>
     <view wx:if="{{intercomType === 'voice'}}" class="page-section page-section-gap">
       <view class="page-section-title">【语音对讲】</view>
-      <view class="margin-left">
+      <view class="margin-left margin-right">
         <iot-p2p-voice
           id="{{voiceId}}"
           style="display:block"
@@ -124,7 +126,7 @@
     </view>
     <view wx:if="{{intercomType === 'video'}}" class="page-section page-section-gap">
       <view class="page-section-title">【视频对讲】</view>
-      <view class="margin-left">
+      <view class="margin-left margin-right">
         <!--
           这么覆盖组件大小
             .iot-p2p-intercom.my-intercom {
@@ -158,27 +160,26 @@
          /> -->
         <!-- <view>voiceState: {{voiceState || '-'}} intercomType: {{intercomType}}</view> -->
         <view class="group-button-area">
-          <view wx:for="{{intercomPusherPropConfigList}}" wx:for-item="propCfg" wx:key="field">
-            <view wx:if="{{propCfg.type === 'checkbox'}}">
-              <label><switch type="checkbox" checked="{{intercomPusherProps[propCfg.field]}}" data-field="{{propCfg.field}}" bindchange="intercomPusherPropChange"/>{{propCfg.label || propCfg.field}}</label>
-            </view>
-            <view wx:if="{{propCfg.type === 'radio-group'}}">
-              <label>{{propCfg.label || propCfg.field}}</label>
-              <radio-group data-field="{{propCfg.field}}" bindchange="intercomPusherPropChange">
-                <label class="radio" wx:for="{{propCfg.list}}" wx:for-item="radioItem" wx:key="index">
-                  <radio value="{{radioItem.value}}" checked="{{intercomPusherProps[propCfg.field] === radioItem.value}}"/>{{radioItem.label}}
-                </label>
-              </radio-group>
-            </view>
+          <view wx:for="{{intercomPusherPropConfigList}}" wx:for-item="propCfg" wx:key="field" class="prop-item {{propCfg.type}}">
+            <view>{{propCfg.label || propCfg.field}}</view>
+            <label wx:if="{{propCfg.type === 'checkbox'}}">
+              <switch type="checkbox" checked="{{intercomPusherProps[propCfg.field]}}" data-field="{{propCfg.field}}" bindchange="intercomPusherPropChange"/>
+              <text>{{propCfg.switchLabel || '开启'}}</text>
+            </label>
+            <radio-group wx:if="{{propCfg.type === 'radio-group'}}" data-field="{{propCfg.field}}" bindchange="intercomPusherPropChange">
+              <label class="radio" wx:for="{{propCfg.list}}" wx:for-item="radioItem" wx:key="index">
+                <radio value="{{radioItem.value}}" checked="{{intercomPusherProps[propCfg.field] === radioItem.value}}"/>{{radioItem.label}}
+              </label>
+            </radio-group>
           </view>
-          <view>
+          <view class="prop-item text">
             <view>expected videoSize</view>
             <view>{{intercomPusherProps.videoWidth}}x{{intercomPusherProps.videoHeight}}</view>
           </view>
         </view>
         <view wx:if="{{supportPreview}}" class="group-button-area">
           <button bindtap="startIntercomPreview" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call' || isPreview}}">
-            视频预览
+            预览
           </button>
           <button bindtap="stopIntercomPreview" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call' || !isPreview}}">
             停止预览
@@ -186,16 +187,16 @@
         </view>
         <view class="group-button-area">
           <button bindtap="startIntercomCall" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
-            视频对讲
+            对讲
           </button>
           <button bindtap="startIntercomCall" data-need-record="1" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
-            视频对讲+录制
+            对讲+录制
           </button>
           <button wx:if="{{supportCustomPusher}}" bindtap="startIntercomCall" data-need-custom-pusher="1" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
-            文件模拟推流
+            文件模拟对讲
           </button>
           <button bindtap="stopIntercomCall" class="group-button" type="primary" size="mini" disabled="{{!intercomState || (intercomState !== 'Calling' && intercomState !==  'Sending') }}">
-            挂断对讲
+            挂断
           </button>
         </view>
         <view bindtap="stopIntercomCall" class="hangup-btn" style="{{intercomState && intercomState === 'Sending' ? 'display: block;' : 'display: none;' }}">
@@ -205,7 +206,7 @@
           <view>实际 videoSize: {{intercomVideoSize}}</view>
         </view>
         <view>
-          <view>双向音视频状态流转: {{stateList.length}}</view>
+                    <view>双向音视频状态流转: {{stateList.length}}</view>
           <view wx:for="{{stateList}}" wx:key="index">
             <text>{{index}}: {{item}}</text>
           </view>
@@ -218,7 +219,7 @@
     </view>
     <view wx:if="{{options.supportPTZ}}" class="page-section page-section-gap">
       <view class="page-section-title">【PTZ控制】</view>
-      <view class="margin-left ptz-panel">
+      <view class="margin-left margin-right ptz-panel">
         <view class="ptz-controls">
           <view class="ptz-controls-top">
             <view class="ptz-position">
@@ -239,9 +240,9 @@
         </view>
       </view>
     </view>
-    <view class="page-section page-section-gap">
+    <view wx:if="{{options.supportCustomCommand}}" class="page-section page-section-gap">
       <view class="page-section-title">【自定义信令】</view>
-      <view class="margin-left">
+      <view class="margin-left margin-right">
         <view class="weui-cells weui-cells_after-title">
           <view class="weui-cell weui-cell_input">
             <input class="weui-input" type="text" value="{{inputCommand}}" placeholder="请输入command" placeholder-class="placeholder" bindinput="inputIPCCommand" />

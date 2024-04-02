@@ -22,12 +22,12 @@ wmpfVoip.onVoipEvent((event) => {
 const pusherPropConfigMap = {
   enableCamera: {
     field: 'enableCamera',
-    label: '开启摄像头',
+    label: '摄像头',
     type: 'checkbox',
   },
   enableMic: {
     field: 'enableMic',
-    label: '开启麦克风',
+    label: '麦克风',
     type: 'checkbox',
   },
   mode: {
@@ -106,8 +106,8 @@ const showPusherVideoSize = false;
 // 小程序退后台关闭对讲
 const stopVoiceIfPageHide = true;
 
-// 测试卡顿
-const needTestRender = true;
+// 测试页面刷新
+const needTestRender = wx.getAccountInfoSync().miniProgram.envVersion === 'develop';
 
 Page({
   data: {
@@ -221,7 +221,7 @@ Page({
     supportCustomPusher: false,
     customPusher: null,
 
-    // 测试刷新UI
+    // 测试页面刷新
     needTestRender,
     testStr: '',
   },
@@ -264,7 +264,7 @@ Page({
       // PTZ
       releasePTZTimer: null,
 
-      // 测试刷新UI
+      // 测试页面刷新
       testTimer: null,
       startRenderTime: 0,
       lastRenderTime: 0,
@@ -326,8 +326,7 @@ Page({
 
     // 停止测试timer
     if (this.userData.testTimer) {
-      clearInterval(this.userData.testTimer);
-      this.userData.testTimer = null;
+      this.stopTestRender();
     }
 
     // 停止对讲
@@ -347,7 +346,11 @@ Page({
     // 断开连接
     if (this.userData.deviceId) {
       console.log('demo: stopP2PService', this.userData.deviceId);
-      xp2pManager.removeP2PServiceEventListener(this.userData.deviceId, this.userData.serviceStateChangeHandler);
+      xp2pManager.removeP2PServiceEventListener(
+        this.userData.deviceId,
+        'serviceStateChange',
+        this.userData.serviceStateChangeHandler,
+      );
       xp2pManager.stopP2PService(this.userData.deviceId, this.userData.pageId);
       this.userData.deviceId = '';
       this.userData.serviceStateChangeHandler = null;
@@ -399,31 +402,12 @@ Page({
       return;
     }
 
-    // 测试刷新UI
+    // 测试页面刷新
     if (this.data.needTestRender) {
-      let tmpDate = new Date();
-      let totalSec = 0;
-      this.setData({ testStr: toTimeMsString(tmpDate) });
-      this.userData.startRenderTime = tmpDate.getTime();
-      this.userData.lastRenderTime = tmpDate.getTime();
-      this.userData.testTimer = setInterval(() => {
-        tmpDate = new Date();
-        totalSec = Math.round((tmpDate.getTime() - this.userData.startRenderTime) / 1000);
-        this.setData({ testStr: `${toTimeMsString(tmpDate)}, last ${tmpDate.getTime() - this.userData.lastRenderTime}ms, total ${Math.floor(totalSec / 60)}m${totalSec % 60}s`});
-        this.userData.lastRenderTime = tmpDate.getTime();
-      }, 10000);
+      this.startTestRender();
     }
 
     this.userData.deviceId = detail.deviceInfo.deviceId;
-    this.userData.serviceStateChangeHandler = (detail) => {
-      console.log('demo: SERVICE_STATE_CHANGE', detail);
-      this.userData.serviceState = detail;
-    };
-    xp2pManager.addP2PServiceEventListener(
-      this.userData.deviceId,
-      'serviceStateChange',
-      this.userData.serviceStateChangeHandler,
-    );
 
     // 开始连接
     console.log('demo: startP2PService', this.userData.deviceId);
@@ -443,6 +427,17 @@ Page({
         // 只是提前连接，不用特别处理
         console.error('demo: startP2PService err', err);
       });
+
+    // 监听事件要在 startP2PService 之后
+    this.userData.serviceStateChangeHandler = (detail) => {
+      console.log('demo: SERVICE_STATE_CHANGE', detail);
+      this.userData.serviceState = detail;
+    };
+    xp2pManager.addP2PServiceEventListener(
+      this.userData.deviceId,
+      'serviceStateChange',
+      this.userData.serviceStateChangeHandler,
+    );
 
     if (!detail.useChannelIds) {
       // 默认通道0
@@ -551,8 +546,8 @@ Page({
       sceneType: 'playback',
       xp2pInfo: this.data.xp2pInfo,
       liveStreamDomain: this.data.liveStreamDomain,
-      onlyp2pMap: this.data.onlyp2pMap,
       options: this.data.options,
+      onlyp2pMap: this.data.onlyp2pMap,
     };
     const url = `/pages/video/pages/xp2p-demo-ipc-playback/demo?json=${encodeURIComponent(JSON.stringify(deviceDetail))}`;
     wx.navigateTo({ url });
@@ -1151,5 +1146,39 @@ Page({
           showCancel: false,
         });
       });
+  },
+  // 测试页面刷新
+  startTestRender() {
+    if (this.userData.testTimer) {
+      return;
+    }
+
+    const now = Date.now();
+    this.userData.startRenderTime = now;
+    this.userData.lastRenderTime = now;
+
+    let tmpDate = null;
+    let totalSec = 0;
+    this.userData.testTimer = setInterval(() => {
+      tmpDate = new Date();
+      totalSec = Math.round((tmpDate.getTime() - this.userData.startRenderTime) / 1000);
+      this.setData({ testStr: `${toTimeMsString(tmpDate)}, last ${tmpDate.getTime() - this.userData.lastRenderTime}ms, total ${Math.floor(totalSec / 60)}m${totalSec % 60}s`});
+      this.userData.lastRenderTime = tmpDate.getTime();
+    }, 10000);
+
+    this.setData({ testStr: toTimeMsString(new Date()) });
+  },
+  stopTestRender() {
+    if (!this.userData.testTimer) {
+      return;
+    }
+
+    this.userData.startRenderTime = 0;
+    this.userData.lastRenderTime = 0;
+
+    clearInterval(this.userData.testTimer);
+    this.userData.testTimer = null;
+
+    this.setData({ testStr: '' });
   },
 });

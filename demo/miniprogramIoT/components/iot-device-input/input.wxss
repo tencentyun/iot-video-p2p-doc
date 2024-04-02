@@ -1,6 +1,21 @@
 @import '../../common.wxss';
 @import '../../input.wxss';
 
+.iot-device-input {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 50rpx);
+}
+
+.iot-device-input .iot-device-input-body {
+  flex: 1;
+  overflow: auto;
+}
+
+.iot-device-input .iot-device-input-footer {
+  padding-top: 20rpx;
+}
+
 .scene-label {
   margin-right: 20rpx;
 }
