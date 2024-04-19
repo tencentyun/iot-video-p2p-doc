@@ -103,8 +103,8 @@ const intercomAutoBitrate = true;
 const needLivePusherInfo = false;
 const showPusherVideoSize = false;
 
-// 小程序退后台关闭对讲
-const stopVoiceIfPageHide = true;
+// 页面隐藏自动关闭对讲
+const autoStopVoiceIfPageHide = true;
 
 // 测试页面刷新
 const needTestRender = wx.getAccountInfoSync().miniProgram.envVersion === 'develop';
@@ -167,13 +167,16 @@ Page({
     // 对讲方式，onStartPlayer 时确定
     intercomType: '', // 'voice' | 'video'
 
+    // 页面隐藏自动关闭对讲
+    autoStopVoiceIfPageHide,
+
     // intercomType: voice, 语音对讲
     voiceId: 'iot-p2p-voice',
     voiceState: '',
     pusherProps: {
       voiceChangerType: 0,
-      disableCameraIfPageHide: stopVoiceIfPageHide,
-      disableMicIfPageHide: stopVoiceIfPageHide,
+      disableCameraIfPageHide: autoStopVoiceIfPageHide,
+      disableMicIfPageHide: autoStopVoiceIfPageHide,
       acceptPusherEvents: {
         netstatus: needLivePusherInfo,
       },
@@ -197,8 +200,8 @@ Page({
       videoWidth: 480,
       videoHeight: 640,
       ...intercomBirateMap.high,
-      disableCameraIfPageHide: stopVoiceIfPageHide,
-      disableMicIfPageHide: stopVoiceIfPageHide,
+      disableCameraIfPageHide: autoStopVoiceIfPageHide,
+      disableMicIfPageHide: autoStopVoiceIfPageHide,
       acceptPusherEvents: {
         netstatus: needLivePusherInfo || showPusherVideoSize,
       },
@@ -212,6 +215,7 @@ Page({
       // pusherPropConfigMap.videoLongSide, // 不生效
     ],
     intercomVideoSizeClass: 'vertical_3_4',
+    livePusherContextReady: false,
 
     // 对讲前预览
     supportPreview: false,
@@ -305,7 +309,7 @@ Page({
     console.log('demo: onHide');
 
     // 停止对讲
-    if (stopVoiceIfPageHide) {
+    if (autoStopVoiceIfPageHide) {
       if (this.userData.voice && this.data.voiceState !== 'VoiceIdle') {
         this.stopVoice();
       }
@@ -483,7 +487,17 @@ Page({
   },
   // 初始化后再获取组件实例
   getComponents() {
-    console.log('demo: create components');
+    console.log('demo: getComponents');
+
+    const players = [];
+    this.data.useChannelIds.forEach((id) => {
+      const player = this.selectComponent(`#p2p-live-player-${id}`);
+
+      if (player) {
+        players.push(player);
+      }
+    });
+    this.userData.players = players;
 
     if (this.data.intercomType === 'video') {
       const intercom = this.selectComponent(`#${this.data.intercomId}`);
@@ -510,18 +524,6 @@ Page({
         console.error('demo: create voice error');
       }
     }
-
-    const players = [];
-
-    this.data.useChannelIds.forEach((id) => {
-      const player = this.selectComponent(`#p2p-live-player-${id}`);
-
-      if (player) {
-        players.push(player);
-      }
-    });
-
-    this.userData.players = players;
   },
   hasSuccessPlayer() {
     return (this.userData.players || []).find(player => !!player?.isPlaySuccess());
@@ -683,7 +685,7 @@ Page({
     if (tips) this.showToast(tips);
   },
   onIntercomStateChange({ detail }) {
-    console.log('demo: onIntercomStateChange: ', detail, `last intercomState ${this.data.intercomState}`);
+    console.log('demo: onIntercomStateChange: ', detail, `${this.data.intercomState} -> ${detail.state}`);
     this.setData({
       stateList: [...this.data.stateList, detail.state],
       intercomState: detail.state,
@@ -702,7 +704,7 @@ Page({
     console.error('demo: onIntercomError', detail);
     let tips = '';
     if (detail.errType === 'FeedbackResult') {
-      const isCalling = ['Calling', 'Sending'].includes(this.data.intercomState);
+      const isCalling = ['Calling', 'Sending', 'BeHangup'].includes(this.data.intercomState);
       tips = isCalling && detail.errMsg;
     } else {
       tips = detail.errMsg || '呼叫异常';
@@ -716,6 +718,11 @@ Page({
   onIntercomPreviewError({ detail }) {
     console.error('demo: onIntercomPreviewError', detail);
     this.showToast(detail.errMsg || '预览异常');
+  },
+  onIntercomLivePusherContextChange({ detail }) {
+    console.log('demo: onIntercomLivePusherContextChange', detail);
+    this.userData.livePusherContext = detail.livePusherContext;
+    this.setData({ livePusherContextReady: !!this.userData.livePusherContext });
   },
   onIntercomLivePusherNetStatus({ detail }) {
     // console.log('demo: onIntercomLivePusherNetStatus', detail);
@@ -764,18 +771,18 @@ Page({
         this.userData.intercomBufferInfo.state = detail.state;
 
         // 需要改变码率时才设timer
-        const birtateType = detail.state > 0 ? 'low' : 'high';
-        if (this.userData.intercomBufferInfo.birtateType !== birtateType) {
-          console.log(`demo: use ${birtateType} birtate after 3s`);
+        const bitrateType = detail.state > 0 ? 'low' : 'high';
+        if (this.userData.intercomBufferInfo.bitrateType !== bitrateType) {
+          console.log(`demo: use ${bitrateType} bitrate after 3s`);
           this.userData.intercomBufferInfo.timer = setTimeout(() => {
             clearTimeout(this.userData.intercomBufferInfo.timer);
             this.userData.intercomBufferInfo.timer = null;
-            this.userData.intercomBufferInfo.birtateType = birtateType;
-            console.log(`demo: use ${birtateType} birtate`, intercomBirateMap[birtateType]);
+            this.userData.intercomBufferInfo.bitrateType = bitrateType;
+            console.log(`demo: use ${bitrateType} bitrate`, intercomBirateMap[bitrateType]);
             this.setData({
               intercomPusherProps: {
                 ...this.data.intercomPusherProps,
-                ...intercomBirateMap[birtateType],
+                ...intercomBirateMap[bitrateType],
               },
             });
           }, 3000);
@@ -968,9 +975,9 @@ Page({
     }
 
     // 开始对讲时默认用高码率
-    console.log('demo: startIntercomCall, default high birtate');
+    console.log('demo: startIntercomCall, default high bitrate');
     this.userData.intercomBufferInfo = {
-      birtateType: 'high',
+      bitrateType: 'high',
     };
     this.setData({
       intercomPusherProps: {
@@ -1042,12 +1049,12 @@ Page({
       return;
     }
     console.log('demo: clearIntercomBufferInfo');
-    const { birtateType, timer } = this.userData.intercomBufferInfo;
+    const { bitrateType, timer } = this.userData.intercomBufferInfo;
     this.userData.intercomBufferInfo = null;
     if (timer) {
       clearTimeout(timer);
     }
-    if (birtateType !== 'high') {
+    if (bitrateType !== 'high') {
       this.setData({
         intercomPusherProps: {
           ...this.data.intercomPusherProps,
@@ -1055,6 +1062,25 @@ Page({
         },
       });
     }
+  },
+  switchCamera() {
+    if (!this.userData.livePusherContext) {
+      console.error('demo: switchCamera but no livePusherContext');
+      return;
+    }
+    if (!this.userData.livePusherContext.switchCamera) {
+      console.error('demo: switchCamera but no livePusherContext.switchCamera');
+      return;
+    }
+    console.log('demo: switchCamera');
+    this.userData.livePusherContext.switchCamera({
+      success: () => {
+        console.log('demo: switchCamera success');
+      },
+      fail: (error) => {
+        console.error('demo: switchCamera fail', error);
+      },
+    });
   },
   // ptz控制
   controlPTZ(e) {

@@ -10,8 +10,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
 }
+.no-channel-tip.full {
+  height: 100vh;
+}
+
 .iot-p2p-voice.my-voice {
   width: 0;
   height: 0;
