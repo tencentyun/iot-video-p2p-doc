@@ -22,9 +22,24 @@ declare interface XP2PStartServerServiceParams {
 
 declare type XP2PStartServiceParams = XP2PStartIPCServiceParams | XP2PStartServerServiceParams;
 
+declare enum XP2PServiceState {
+  ServiceIdle = 'ServiceIdle',
+  ServiceWaitInit = 'ServiceWaitInit',
+  ServicePreparing = 'ServicePreparing',
+  ServiceStarted = 'ServiceStarted',
+  ServiceStartError = 'ServiceStartError',
+  ServiceConnected = 'ServiceConnected',
+  ServiceError = 'ServiceError',
+  ServiceXp2pChanged = 'ServiceXp2pChanged',
+}
+
 declare enum XP2PServiceEvent {
   SERVICE_STATE_CHANGE = 'serviceStateChange',
   FEEDBACK_FROM_DEVICE = 'feedbackFromDevice',
+}
+
+interface XP2PServiceStateChangeListenerResult {
+  p2pState: XP2PServiceState,
 }
 
 declare enum XP2PManagerEvent {

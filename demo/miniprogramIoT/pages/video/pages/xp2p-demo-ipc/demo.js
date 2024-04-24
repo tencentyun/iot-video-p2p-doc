@@ -434,6 +434,7 @@ Page({
 
     // 监听事件要在 startP2PService 之后
     this.userData.serviceStateChangeHandler = (detail) => {
+      // detail: { p2pState: XP2PServiceState }
       console.log('demo: SERVICE_STATE_CHANGE', detail);
       this.userData.serviceState = detail;
     };
