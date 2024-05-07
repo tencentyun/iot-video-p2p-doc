@@ -627,6 +627,13 @@ Page({
     console.error('demo: onVoiceError', detail);
     this.showToast(detail.errMsg || '对讲发生错误');
   },
+  onVoiceSystemPermissionError({ detail }) {
+    console.error('demo: onVoiceSystemPermissionError', detail);
+    // 安卓微信没麦克风和相机权限时，用 live-pusher 发起对讲会在报错前触发 onPageHide，如果设置了页面隐藏自动停止对讲，检测到出错时会认为已经停止对讲，不会触发 voiceerror 事件
+    // 所以另外加个 systempermissionerror 事件通知系统权限错误，需要 xp2p 插件 4.2.5 以上
+    // 注意：安卓微信 + Pusher采集 + 页面隐藏自动停止对讲 + 第一次触发对讲，才只有 systempermissionerror 没有 voiceerror，其他情况会先后收到 systempermissionerror 和 voiceerror
+    this.showToast(detail.errMsg || '请在系统设置中允许微信访问您的麦克风和相机');
+  },
   onVoiceLivePusherNetStatus({ detail }) {
     if (!detail.info) {
       return;
@@ -743,6 +750,13 @@ Page({
     console.log('demo: onIntercomLivePusherContextChange', detail);
     this.userData.livePusherContext = detail.livePusherContext;
     this.setData({ livePusherContextReady: !!this.userData.livePusherContext });
+  },
+  onIntercomSystemPermissionError({ detail }) {
+    console.error('demo: onIntercomSystemPermissionError', detail);
+    // 安卓微信没麦克风和相机权限时，用 live-pusher 发起对讲会在报错前触发 onPageHide，如果设置了页面隐藏自动停止对讲，检测到出错时会认为已经停止对讲，不会触发 intercomerror 事件
+    // 所以另外加个 systempermissionerror 事件通知系统权限错误，需要 xp2p 插件 4.2.5 以上
+    // 注意：安卓微信 + Pusher采集 + 页面隐藏自动停止对讲 + 第一次触发对讲，才只有 systempermissionerror 没有 intercomerror，其他情况会先后收到 systempermissionerror 和 intercomerror
+    this.showToast(detail.errMsg || '请在系统设置中允许微信访问您的麦克风和相机');
   },
   onIntercomLivePusherNetStatus({ detail }) {
     // console.log('demo: onIntercomLivePusherNetStatus', detail);
