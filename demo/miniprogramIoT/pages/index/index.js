@@ -114,9 +114,10 @@ Page({
             if (this.hasExited) {
               return;
             }
-            console.log(`index: preload xp2pManager success, delay ${Date.now() - start}ms`, pkg);
+            console.log(`index: preload xp2pManager.js success, delay ${Date.now() - start}ms`, pkg);
             app.xp2pManager = pkg.getXp2pManager();
             this.userData.xp2pManager = app.xp2pManager;
+            console.log(`index: preload xp2pManager success, delay ${Date.now() - start}ms`, pkg);
             this.onXp2pLoaded();
           })
           .catch((err) => {

@@ -113,10 +113,6 @@ Page({
     const pageId = `${pageName}-${pageSeq}`;
     console.log('demo: onLoad', pageId, query);
 
-    if (!xp2pManager) {
-      xp2pManager = getXp2pManager();
-    }
-
     this.userData = {
       pageId,
       deviceId: '',
@@ -128,6 +124,10 @@ Page({
       currentFile: null,
       downloadState: null, // { status: number; headers: any; chunkCount: number; downloadBytes: number, ... }
     };
+
+    if (!xp2pManager) {
+      xp2pManager = getXp2pManager();
+    }
 
     console.log('demo: checkReset when enter');
     xp2pManager.checkReset();

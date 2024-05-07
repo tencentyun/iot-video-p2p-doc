@@ -43,6 +43,7 @@
       acceptPlayerEvents="{{acceptPlayerEvents}}"
       onlyp2pMap="{{onlyp2pMap}}"
       showLog="{{options.playerLog}}"
+      bind:playstatechagne="onPlayStateChange"
       bind:fullscreenchange="onFullScreenChange"
     >
       <view class="player-control-item">
@@ -57,10 +58,11 @@
       <view>未选择监控通道</view>
     </view>
 
-    <!-- 调试用
     <view class="page-section page-section-gap">
       <navigator url="/pages/empty/empty" style="color: blue;" hover-class="navigator-hover">打开其他页面（触发当前页面hide）</navigator>
     </view>
+
+    <!-- 调试用
     <view class="page-section page-section-gap">
       <view class="page-section-title">【查看回放】</view>
       <view class="margin-left group-button-area">
@@ -123,6 +125,7 @@
             </radio-group>
           </view>
         </view>
+        <view>voiceState: {{voiceState}}</view>
       </view>
     </view>
     <view wx:if="{{intercomType === 'video'}}" class="page-section page-section-gap">
@@ -194,11 +197,16 @@
           <button bindtap="startIntercomCall" data-need-record="1" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
             对讲+录制
           </button>
-          <button wx:if="{{supportCustomPusher}}" bindtap="startIntercomCall" data-need-custom-pusher="1" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
-            文件模拟对讲
-          </button>
           <button bindtap="stopIntercomCall" class="group-button" type="primary" size="mini" disabled="{{!intercomState || (intercomState !== 'Calling' && intercomState !==  'Sending') }}">
             挂断
+          </button>
+        </view>
+        <view wx:if="{{supportCustomPusher}}" class="group-button-area">
+          <button bindtap="startIntercomCall" data-custom-pusher="header" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
+            模拟对讲（无数据）
+          </button>
+          <button bindtap="startIntercomCall" data-custom-pusher="file" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
+            模拟对讲（文件）
           </button>
         </view>
         <view class="group-button-area">

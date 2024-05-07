@@ -185,6 +185,14 @@ Component({
     // 1v多用
     flvUrl: '',
   },
+  observers: {
+    intercomType(val) {
+      // 视频对讲只支持 Pusher 采集
+      if (val === 'video' && this.data.voiceType !== 'Pusher') {
+        this.changeVoiceTypeRadio({ detail: { value: 'Pusher' } });
+      }
+    },
+  },
   lifetimes: {
     attached() {
       // 在组件实例进入页面节点树时执行

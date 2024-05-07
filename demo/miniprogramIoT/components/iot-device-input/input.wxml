@@ -65,7 +65,7 @@
               <radio-group bindchange="changeVoiceTypeRadio">
                 <label wx:for="{{voiceTypeList}}" wx:key="value">
                   <view class="radio-list-item">
-                    <radio value="{{item.value}}" checked="{{item.checked}}" class="radio-list-item-radio"/>
+                    <radio value="{{item.value}}" checked="{{item.checked}}" disabled="{{intercomType === 'video' && item.value !== 'Pusher'}}" class="radio-list-item-radio"/>
                     <view class="radio-list-item-text">
                       <view>{{item.text}}</view>
                       <view wx:if="{{item.desc}}">{{item.desc}}</view>

@@ -180,36 +180,41 @@ Component({
     },
     onPlayStateEvent({ type, detail }) {
       console.log(this.userData.innerId, 'onPlayStateEvent', type, detail);
+      let playState;
       switch (type) {
         case 'playstart':
-          this.setData({
+          playState = {
             isPlaying: true,
             isPlaySuccess: false,
             isPlayError: false,
-          });
+          };
           break;
         case 'playsuccess':
-          this.setData({
+          playState = {
             isPlaying: true,
             isPlaySuccess: true,
             isPlayError: false,
-          });
+          };
           break;
         case 'playstop':
         case 'playend':
-          this.setData({
+          playState = {
             isPlaying: false,
             isPlaySuccess: false,
             isPlayError: false,
-          });
+          };
           break;
         case 'playerror':
-          this.setData({
+          playState = {
             isPlaying: false,
             isPlaySuccess: false,
             isPlayError: true,
-          });
+          };
           break;
+      }
+      if (playState) {
+        this.setData(playState);
+        this.triggerEvent('playstatechagne', { type, playState });
       }
     },
     onPlayError({ type, detail }) {

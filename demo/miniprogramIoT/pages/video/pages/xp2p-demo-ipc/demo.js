@@ -109,6 +109,10 @@ const autoStopVoiceIfPageHide = true;
 // 测试页面刷新
 const needTestRender = wx.getAccountInfoSync().miniProgram.envVersion === 'develop';
 
+// 模拟pusher对讲用
+// eslint-disable-next-line max-len
+const mockFlvHeader = new Uint8Array([0x46, 0x4c, 0x56, 0x01, 0x05, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00]).buffer; // FLV Header
+
 Page({
   data: {
     // 这是onLoad时就固定的
@@ -234,15 +238,6 @@ Page({
     const pageId = `${pageName}-${pageSeq}`;
     console.log('demo: onLoad', pageId, query);
 
-    if (!xp2pManager) {
-      xp2pManager = getXp2pManager();
-    }
-
-    this.setData({
-      supportPreview: compareVersion(xp2pManager.XP2PVersion, '4.1.4') >= 0,
-      supportCustomPusher: compareVersion(xp2pManager.XP2PVersion, '4.1.4') >= 0,
-    });
-
     // 渲染无关的放这里
     this.userData = {
       pageId,
@@ -273,6 +268,15 @@ Page({
       startRenderTime: 0,
       lastRenderTime: 0,
     };
+
+    if (!xp2pManager) {
+      xp2pManager = getXp2pManager();
+    }
+
+    this.setData({
+      supportPreview: compareVersion(xp2pManager.XP2PVersion, '4.1.4') >= 0,
+      supportCustomPusher: compareVersion(xp2pManager.XP2PVersion, '4.1.4') >= 0,
+    });
 
     console.log('demo: checkReset when enter');
     xp2pManager.checkReset();
@@ -338,7 +342,7 @@ Page({
       this.stopVoice();
     }
 
-    if (this.userData.intercom && this.data.intercomState !== 'IntercomIdle') {
+    if (this.userData.intercom && this.data.intercomState !== 'IntercomIdle' && this.data.intercomState !== 'Ready2Call') {
       this.stopIntercomCall();
     }
 
@@ -567,6 +571,21 @@ Page({
       soundMode: this.data.soundMode === 'ear' ? 'speaker' : 'ear',
     });
   },
+  onPlayStateChange({ currentTarget: { dataset }, detail }) {
+    const channel = Number(dataset.channel);
+    console.log(`demo: onPlayStateChange, channel ${channel}`, detail);
+
+    // 播放结束/出错，停止对讲
+    if (!detail.playState.isPlaying && !this.hasSuccessPlayer()) {
+      console.log('demo: all player stopped');
+      if (this.userData.voice && this.data.voiceState !== 'VoiceIdle') {
+        this.stopVoice();
+      }
+      if (this.userData.intercom && this.data.intercomState !== 'IntercomIdle' && this.data.intercomState !== 'Ready2Call') {
+        this.stopIntercomCall();
+      }
+    }
+  },
   onFullScreenChange({ currentTarget: { dataset }, detail }) {
     const channel = Number(dataset.channel);
     console.log(`demo: onFullScreenChange, channel ${channel} ${detail.fullScreen}`);
@@ -606,7 +625,7 @@ Page({
     this.onVoiceProcess({ type, detail });
 
     console.error('demo: onVoiceError', detail);
-    this.showToast(detail.errMsg || '启动对讲失败');
+    this.showToast(detail.errMsg || '对讲发生错误');
   },
   onVoiceLivePusherNetStatus({ detail }) {
     if (!detail.info) {
@@ -622,9 +641,9 @@ Page({
     xp2pManager.addP2PServiceEventListener(
       this.userData.deviceId,
       'feedbackFromDevice',
-      async (body) => {
+      (body) => {
         console.log('demo: FEEDBACK_FROM_DEVICE', body);
-        await wx.showModal({
+        wx.showModal({
           title: 'feedbackFromDevice',
           content: JSON.stringify(body),
         });
@@ -840,7 +859,7 @@ Page({
     });
   },
   stopVoice() {
-    console.log('demo: stopVoice');
+    console.log('demo: stopVoice in voiceState', this.data.voiceState);
 
     if (!this.userData.voice) {
       console.error('demo: stopVoice but no voice component');
@@ -904,8 +923,8 @@ Page({
   },
   async startIntercomCall(e) {
     const needRecord = parseInt(e?.currentTarget?.dataset?.needRecord, 10) > 0;
-    const needCustomPusher = parseInt(e?.currentTarget?.dataset?.needCustomPusher, 10) > 0;
-    console.log(`demo: startIntercomCall, needRecord ${needRecord}, needCustomPusher ${needCustomPusher}`);
+    const customPusherType = e?.currentTarget?.dataset?.customPusher;
+    console.log(`demo: startIntercomCall, needRecord ${needRecord}, customPusherType ${customPusherType}`);
 
     // 只要有一个player播放成功，就启动对讲
     const canStart = this.data.useChannelIds.length === 0 || this.hasSuccessPlayer();
@@ -931,7 +950,17 @@ Page({
 
     // 用文件模拟推流，需要 xp2p 插件 4.1.4 以上
     this.userData.customPusher = null;
-    if (needCustomPusher) {
+    if (customPusherType === 'header') {
+      this.userData.customPusher = {
+        start: ({ writer }) => {
+          console.log('[MockPusher] start');
+          writer.addChunk(mockFlvHeader);
+        },
+        stop: () => {
+          console.log('[MockPusher] stop');
+        },
+      };
+    } else if (customPusherType === 'file') {
       try {
         const res = await wx.chooseMessageFile({
           count: 1,
@@ -996,7 +1025,7 @@ Page({
     });
   },
   stopIntercomCall() {
-    console.log('demo: stopIntercomCall');
+    console.log('demo: stopIntercomCall in intercomState', this.data.intercomState);
 
     if (!this.userData.intercom) {
       console.error('demo: stopIntercomCall but no intercom component');
@@ -1014,7 +1043,7 @@ Page({
     this.userData.intercom.intercomHangup();
 
     if (this.userData.customPusher) {
-      this.userData.customPusher.destroy();
+      this.userData.customPusher.destroy?.();
       this.userData.customPusher = null;
     }
   },
