@@ -14,6 +14,7 @@ Component({
         fill: false,
         fullScreen: false,
         snapshot: false,
+        record: false,
       },
     },
     iconSize: {
@@ -45,6 +46,10 @@ Component({
       value: false,
     },
     fullScreen: {
+      type: Boolean,
+      value: false,
+    },
+    record: {
       type: Boolean,
       value: false,
     },

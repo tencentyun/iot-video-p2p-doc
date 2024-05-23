@@ -42,6 +42,19 @@ const defaultOptions = {
 
 // 这些是预置的ipc设备
 const devices = {
+  debug_device: {
+    showInHomePageBtn: true,
+    productId: 'J5YLI0DSZZ',
+    deviceName: 'lianlian_93028156_1',
+    xp2pInfo: 'XP2P9294QVs4JAgCItdWnyoQOg==%2.4.43',
+    options: {
+      liveQuality: 'high',
+      playerRTC: true,
+      playerMuted: true,
+      voiceType: 'Pusher',
+      intercomType: 'video',
+    },
+  },
   debug_x86_udp: {
     showInHomePageBtn: true,
     productName: 'x86-udp',

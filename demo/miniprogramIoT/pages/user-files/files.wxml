@@ -20,7 +20,8 @@
         <text class="right-btn" wx:if="{{!isLogDir}}" bindtap="removeFile" data-index="{{index}}">删除</text>
         <text class="right-btn" wx:if="{{showSendFile}}" bindtap="sendFile" data-index="{{index}}">发送</text>
         <text class="right-btn" wx:if="{{showSaveFile}}" bindtap="saveFileInDevTool" data-index="{{index}}">保存</text>
-        <text class="right-btn" wx:if="{{item.showSave}}" bindtap="saveToAlbum" data-index="{{index}}">保存到相册</text>
+        <text class="right-btn" wx:if="{{item.showSave && item.isMP4}}" bindtap="saveToAlbum" data-index="{{index}}">保存到相册</text>
+        <text class="right-btn" wx:if="{{item.showSave && !item.isMP4}}" bindtap="exportToAlbum" data-index="{{index}}">导出到相册</text>
       </view>
     </view>
   </view>

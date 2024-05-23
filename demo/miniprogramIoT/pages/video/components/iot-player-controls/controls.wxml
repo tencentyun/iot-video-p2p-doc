@@ -24,5 +24,8 @@
     <view wx:if="{{showIcons.snapshot}}" class="player-control-item" data-name="snapshot" bindtap="clickIcon">
       <mp-icon icon="camera" size="{{iconSize}}" color="white"></mp-icon>
     </view>
+    <view wx:if="{{showIcons.record}}" class="player-control-item" data-name="record" bindtap="clickIcon">
+      <text style="color: {{record ? 'red' : 'white'}}">Rec</text>
+    </view>
   </view>
 </view>

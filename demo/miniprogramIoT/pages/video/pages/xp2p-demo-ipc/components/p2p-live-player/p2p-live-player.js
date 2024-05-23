@@ -1,3 +1,6 @@
+// import { removeFileByPath } from '../../../../../../lib/recordManager';
+import { CustomParser } from '../../../../lib/customParser';
+
 const qualityList = [
   { value: 'standard', text: '标清' },
   { value: 'high', text: '高清' },
@@ -7,6 +10,14 @@ const qualityMap = {};
 qualityList.forEach(({ value, text }) => {
   qualityMap[value] = text;
 });
+
+// 录制flv配置
+const recordFlvOptions = {
+  maxFileSize: 100 * 1024 * 1024, // 单个flv文件的最大字节数，默认 100 * 1024 * 1024
+  needAutoStartNextIfFull: false, // 当文件大小达到 maxFileSize 时，是否自动开始下一个文件，但是中间可能会丢失一部分数据，默认 false
+  needSaveToAlbum: true, // 是否保存到相册，设为 true 时插件内实现转mp4再保存，默认 false
+  showLog: true,
+};
 
 // 覆盖 console
 const app = getApp();
@@ -102,6 +113,9 @@ Component({
     fullScreen: false,
     fullScreenInfo: null,
 
+    // 录制
+    record: false,
+
     // 调试
     showDebugInfo: false,
 
@@ -116,6 +130,7 @@ Component({
       fill: true,
       fullScreen: true,
       snapshot: true,
+      record: true,
     },
   },
   lifetimes: {
@@ -161,6 +176,13 @@ Component({
         console.log(this.userData.innerId, 'create player success');
         oriConsole.log(this.userData.innerId, 'player', player); // console 被覆盖了会写logger影响性能，查看组件用 oriConsole
         this.userData.player = player;
+
+        // 支持设置自定义解析器，需要在播放前设置
+        if (this.userData.player.setCustomParser) {
+          console.log(this.userData.innerId, 'setCustomParser');
+          this.userData.customParser = new CustomParser();
+          this.userData.player.setCustomParser(this.userData.customParser);
+        }
       } else {
         console.error(this.userData.innerId, 'create player error');
       }
@@ -242,6 +264,57 @@ Component({
     onMjpgPlayStateEvent({ type, detail }) {
       console.log(this.userData.innerId, 'onMjpgPlayStateEvent', type, detail);
     },
+    onRecordStateChange({ detail }) {
+      console.log(this.userData.innerId, 'onRecordStateChange', detail);
+      this.setData({
+        record: detail.record,
+      });
+    },
+    onRecordFileStateChange({ detail }) {
+      /*
+        detail: {
+          fileName: string;
+          state: string; // Start / Write / WriteSuccess / Extract / Export / Save / SaveSuccess / Error;
+          filePath?: string;
+          fileSize?: number;
+          errType?: string; // fileEmpty / writeError / extractError / exportError / saveError
+          errMsg?: string;
+        }
+      */
+      console.log(this.userData.innerId, 'onRecordFileStateChange', detail);
+      switch (detail.state) {
+        case 'Extract':
+          // 如果文件较大，转码时间会比较长，显示loading
+          if (detail.fileSize > 10 * 1024 * 1024) {
+            wx.showLoading({ title: '正在转码...' });
+          }
+          break;
+        case 'Save':
+          wx.hideLoading();
+          break;
+        case 'SaveSuccess':
+          wx.showToast({
+            title: '录像已保存到相册',
+            icon: 'success',
+          });
+          break;
+        case 'Error':
+          // 要保存到相册时，保存成功会自动删除flv文件，出错时不自动删除，可以在flv管理页里查看和删除文件
+          // 如果不需要管理出错的文件，需要自行删除，以免占用空间导致后续录像失败
+          // removeFileByPath(detail.filePath);
+          if (detail.errType === 'saveError' && /cancel/.test(detail.errMsg)) {
+            // 用户取消保存，不用提示
+            return;
+          }
+          console.error(this.userData.innerId, 'onRecordFileError', detail);
+          wx.showModal({
+            title: '录像出错',
+            content: `${detail.fileName}\n${detail.errType}: ${detail.errMsg || ''}`,
+            showCancel: false,
+          });
+          break;
+      }
+    },
     toggleDebugInfo() {
       console.log(this.userData.innerId, 'toggleDebugInfo');
       this.setData({ showDebugInfo: !this.data.showDebugInfo });
@@ -273,6 +346,9 @@ Component({
         case 'snapshot':
           // this.snapshotAndSave();
           this.snapshotAndSaveCustom();
+          break;
+        case 'record':
+          this.changeRecord();
           break;
       }
     },
@@ -387,6 +463,31 @@ Component({
           });
         }
       }
+    },
+    changeRecord() {
+      const newVal = !this.data.record;
+      console.log(this.userData.innerId, 'changeRecord', newVal);
+      if (!this.userData.player) {
+        console.error(this.userData.innerId, 'changeRecord but no player component');
+        return;
+      }
+      if (!this.userData.player.startRecordFlv) {
+        console.error(this.userData.innerId, 'changeRecord but no player.startRecordFlv');
+        wx.showToast({
+          title: '请升级插件版本',
+          icon: 'error',
+        });
+        return;
+      }
+      if (newVal) {
+        this.userData.player.startRecordFlv(recordFlvOptions);
+      } else {
+        this.userData.player.stopRecordFlv();
+      }
+      // 可能失败，onRecordStateChange 里再修改
+      // this.setData({
+      //   record: newVal,
+      // });
     },
     retryPlayer() {
       console.log(this.userData.innerId, 'retryPlayer');

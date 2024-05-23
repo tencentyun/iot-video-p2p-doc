@@ -123,6 +123,68 @@ Page({
       });
     }
   },
+  exportToAlbum(e) {
+    const { index } = e.currentTarget.dataset;
+    const fileRes = this.data.recordList[index];
+    console.log('exportToAlbum', fileRes);
+    const mediaContainer = wx.createMediaContainer();
+    const startTime = Date.now();
+    mediaContainer.extractDataSource({
+      source: fileRes.filePath,
+      success: (extractRes) => {
+        console.log('mediaContainer.extractDataSource success', `${fileRes.size}B ${Date.now() - startTime}ms`, extractRes);
+        extractRes.tracks.forEach((track) => {
+          console.log('addTrack', track.id, track.kind);
+          mediaContainer.addTrack(track);
+        });
+        mediaContainer.export({
+          success: (exportRes) => {
+            console.log('mediaContainer.export success', `${fileRes.size}B ${Date.now() - startTime}ms`, exportRes);
+            mediaContainer.destroy();
+
+            wx.saveVideoToPhotosAlbum({
+              filePath: exportRes.tempFilePath,
+              success: (saveRes) => {
+                console.log('saveVideoToPhotosAlbum success', saveRes);
+                wx.showModal({
+                  title: '已导出到相册',
+                  showCancel: false,
+                });
+              },
+              fail: (err) => {
+                console.error('saveVideoToPhotosAlbum fail', err);
+                wx.showModal({
+                  title: '导出到相册失败',
+                  content: err.errMsg || '',
+                  showCancel: false,
+                });
+              },
+            });
+          },
+          fail: (err) => {
+            console.error('mediaContainer.export fail', `${fileRes.size}B ${Date.now() - startTime}ms`, err);
+            mediaContainer.destroy();
+
+            wx.showModal({
+              title: '导出到相册失败',
+              content: err.errMsg || '',
+              showCancel: false,
+            });
+          },
+        });
+      },
+      fail: (err) => {
+        console.error('mediaContainer.extractDataSource fail', `${fileRes.size}B ${Date.now() - startTime}ms`, err);
+        mediaContainer.destroy();
+
+        wx.showModal({
+          title: '导出到相册失败',
+          content: err.errMsg || '',
+          showCancel: false,
+        });
+      },
+    });
+  },
   saveFileInDevTool(e) {
     const { index } = e.currentTarget.dataset;
     const fileRes = this.data.recordList[index];

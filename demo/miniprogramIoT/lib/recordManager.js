@@ -15,6 +15,29 @@ export const getSaveFormat = (fileName) => {
 const fileSystem = wx.getFileSystemManager();
 const xp2pBaseDir = XP2P_BASE_DIR;
 
+export const removeFileByPath = (filePath) => {
+  if (!filePath) {
+    return;
+  }
+
+  try {
+    fileSystem.accessSync(filePath);
+  } catch (err) {
+    if (~err.message.indexOf('fail no such file or directory')) {
+      // 文件不存在，算是成功
+    } else {
+      console.error('removeFileByPath access error', err);
+    }
+    return;
+  }
+
+  try {
+    fileSystem.unlinkSync(filePath);
+  } catch (err) {
+    console.error('removeFileByPath error', err);
+  }
+};
+
 class RecordManager {
   constructor(name) {
     this.name = name || 'others';
@@ -30,7 +53,7 @@ class RecordManager {
         // 目录不存在
         console.log('RecordManager: getFileList but no such directory');
       } else {
-        console.log('RecordManager: getFileList access error', err);
+        console.error('RecordManager: getFileList access error', err);
       }
       return [];
     }
@@ -61,7 +84,7 @@ class RecordManager {
         // 目录不存在
         console.log('RecordManager: removeFileList but no such directory');
       } else {
-        console.log('RecordManager: removeFileList access error', err);
+        console.error('RecordManager: removeFileList access error', err);
       }
       return;
     }
@@ -89,7 +112,7 @@ class RecordManager {
         // 文件不存在
         console.log('RecordManager: removeFile but no such file');
       } else {
-        console.log('RecordManager: removeFile access error', err);
+        console.error('RecordManager: removeFile access error', err);
       }
       return;
     }
@@ -98,7 +121,7 @@ class RecordManager {
       fileSystem.unlinkSync(filePath);
       console.log('RecordManager: removeFile success');
     } catch (err) {
-      console.log('RecordManager: removeFile error', err);
+      console.error('RecordManager: removeFile error', err);
     }
   }
 
@@ -121,7 +144,7 @@ class RecordManager {
           });
         },
         fail: (err) => {
-          // console.log('RecordManager: getFileInfo fail', fileName, err);
+          // console.error('RecordManager: getFileInfo fail', fileName, err);
           reject(err);
         },
       });
@@ -147,7 +170,7 @@ class RecordManager {
           });
         },
         fail: (err) => {
-          console.log('RecordManager: readFile fail', fileName, err);
+          console.error('RecordManager: readFile fail', fileName, err);
           reject(err);
         },
       });
@@ -201,7 +224,7 @@ class RecordManager {
       }
       return filePath;
     } catch (err) {
-      console.log('RecordManager: prepareFile error', err);
+      console.error('RecordManager: prepareFile error', err);
     }
     return null;
   }
@@ -217,14 +240,14 @@ class RecordManager {
     } else if (saveFormat === 'image') {
       api = 'saveImageToPhotosAlbum';
     } else {
-      console.log('RecordManager: saveToAlbum, invalid format');
+      console.error('RecordManager: saveToAlbum, invalid format');
       throw new Error('invalid format');
     }
 
     try {
       await checkAndAuthorize('scope.writePhotosAlbum');
     } catch (err) {
-      console.log('RecordManager: saveToAlbum, checkAndAuthorize fail', err);
+      console.error('RecordManager: saveToAlbum, checkAndAuthorize fail', err);
       throw err;
     }
 
@@ -235,7 +258,7 @@ class RecordManager {
       console.log(`RecordManager: saveToAlbum, ${api} success`, res);
       return res;
     } catch (err) {
-      console.log(`RecordManager: saveToAlbum, ${api} fail`, err);
+      console.error(`RecordManager: saveToAlbum, ${api} fail`, err);
       throw err;
     }
   }
@@ -262,7 +285,7 @@ class RecordManager {
       console.log('RecordManager: openDocument success', res);
       return res;
     } catch (err) {
-      console.log('RecordManager: openDocument fail', err);
+      console.error('RecordManager: openDocument fail', err);
       throw err;
     }
   }
@@ -283,7 +306,7 @@ class RecordManager {
       console.log('RecordManager: shareFileMessage success', res);
       return res;
     } catch (err) {
-      console.log('RecordManager: shareFileMessage fail', err);
+      console.error('RecordManager: shareFileMessage fail', err);
       throw err;
     }
   }

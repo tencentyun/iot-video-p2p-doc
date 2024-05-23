@@ -41,6 +41,8 @@
     bind:mjpgplayerror="onMjpgPlayStateEvent"
     bind:mjpgreceiveimage="onMjpgPlayerEvent"
     bind:mjpgnetstatus="onMjpgPlayerEvent"
+    bind:recordstatechange="onRecordStateChange"
+    bind:recordfilestatechange="onRecordFileStateChange"
   >
     <!--
       注意要指定slot属性，因为组件设置了 multipleSlots
@@ -60,6 +62,7 @@
         rotate="{{rotate}}"
         fill="{{fill}}"
         fullScreen="{{fullScreen}}"
+        record="{{record}}"
         bind:clickicon="clickControlIcon"
       >
         <slot></slot>
