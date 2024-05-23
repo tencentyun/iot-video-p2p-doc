@@ -47,7 +47,7 @@ const devices = {
     productName: 'x86-udp',
     productId: 'SO1Z9Y787A',
     deviceName: 'youzi_79972790_1',
-    xp2pInfo: 'XP2P4dD9bm9/Nedf0DhKfLQECA==%2.4.43',
+    xp2pInfo: 'XP2P4dDpbX8kO6ho4yx4I7oEMQ==%2.4.43',
     options: {
       playerRTC: true,
       playerMuted: true,
@@ -60,7 +60,7 @@ const devices = {
     productName: 'x86-tcp',
     productId: 'SO1Z9Y787A',
     deviceName: 'youzi_79972790_2',
-    xp2pInfo: 'XP2PlmS3tg+xnZTHcW9Ao2uWICoG%2.4.43',
+    xp2pInfo: 'XP2PlmS3tg+xnZTYcTFTsVTlQRoP%2.4.43',
     options: {
       supportPTZ: true,
       supportCustomCommand: true,

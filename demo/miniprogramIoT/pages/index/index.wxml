@@ -47,9 +47,16 @@
     <view>wxVersion: <text user-select>wx {{wxVersion}} / sdk {{wxSDKVersion}}</text></view>
     <view>pluginVersion: <text user-select>p2p-player {{playerVersion}} / xp2p {{xp2pVersion}}</text></view>
     <view>userId: <text user-select>{{userId}}</text></view>
-    <view>xp2pUUID: <text user-select>{{xp2pUUID}}</text></view>
-    <view>xp2pState: {{xp2pState}} <text wx:if="{{xp2pState}}">@{{xp2pStateTime}}</text></view>
-    <view wx:if="{{xp2pNatEvent}}" style="color: red">{{xp2pNatEvent}} @{{xp2pNatEventTime}}</view>
+    <view>
+      xp2p
+      <view class="margin-left">
+        <view wx:if="{{canToggleTcpFirst}}">tcpFirst: {{tcpFirst}} <text class="text-btn" bindtap="toggleTcpFirst">切换</text></view>
+        <view>uuid: <text user-select>{{xp2pUUID}}</text></view>
+        <view>state: {{xp2pState}} <text wx:if="{{xp2pState}}">@{{xp2pStateTime}}</text></view>
+        <view>localPeername: {{xp2pLocalPeername}}</view>
+        <view wx:if="{{xp2pNatEvent}}" style="color: red">{{xp2pNatEvent}} @{{xp2pNatEventTime}}</view>
+      </view>
+    </view>
   </view>
   <view class="page-section" wx:if="{{recentIPCItem}}">
     <view class="page-section-title">【最近查看设备】</view>

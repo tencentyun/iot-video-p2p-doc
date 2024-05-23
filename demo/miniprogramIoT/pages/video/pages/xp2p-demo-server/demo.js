@@ -143,7 +143,11 @@ Page({
     });
 
     console.log('demo: create components');
-    this.setData(detail, () => {
+    this.setData({
+      ...detail,
+      muted: detail.options.playerMuted,
+    }, () => {
+      console.log('demo: muted', this.data.muted);
       const player = this.selectComponent(`#${this.data.playerId}`);
       if (player) {
         console.log('demo: create player success');

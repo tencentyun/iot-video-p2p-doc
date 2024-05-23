@@ -74,6 +74,34 @@ class RecordManager {
     }
   }
 
+  // 删除单个文件
+  removeFile(fileName) {
+    if (!fileName) {
+      return;
+    }
+    const filePath = `${this.baseDir}/${fileName.replace(/[^A-Za-z0-9_\-.]/g, '-')}`;
+    console.log('RecordManager: removeFile', fileName, filePath);
+
+    try {
+      fileSystem.accessSync(filePath);
+    } catch (err) {
+      if (~err.message.indexOf('fail no such file or directory')) {
+        // 文件不存在
+        console.log('RecordManager: removeFile but no such file');
+      } else {
+        console.log('RecordManager: removeFile access error', err);
+      }
+      return;
+    }
+
+    try {
+      fileSystem.unlinkSync(filePath);
+      console.log('RecordManager: removeFile success');
+    } catch (err) {
+      console.log('RecordManager: removeFile error', err);
+    }
+  }
+
   getFileInfo(fileName) {
     if (!fileName) {
       return Promise.reject({ errMsg: 'param error' });

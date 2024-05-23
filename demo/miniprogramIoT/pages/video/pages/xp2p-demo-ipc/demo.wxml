@@ -49,7 +49,7 @@
       <view class="player-control-item">
         CH-{{item}}
       </view>
-      <view wx:if="{{intercomType === 'voice'}}" class="player-control-item" bindtap="toggleVoice">
+      <view wx:if="{{item === 0 && intercomType === 'voice'}}" class="player-control-item" bindtap="toggleVoice">
         <mp-icon icon="mike" size="{{iconSize}}" color="{{voiceState ? (voiceState === 'VoiceIdle' ? 'white' : 'orange') : 'grey'}}" type="{{voiceState === 'VoiceSending' ? 'field': 'outline'}}"></mp-icon>
       </view>
     </p2p-live-player>
@@ -91,6 +91,7 @@
       <view class="page-section-title">【语音对讲】</view>
       <view class="margin-left margin-right">
         <iot-p2p-voice
+          wx:if="{{voiceId}}"
           id="{{voiceId}}"
           style="display:block"
           compClass="my-voice"
@@ -140,6 +141,7 @@
             }
         -->
         <iot-p2p-intercom 
+          wx:if="{{intercomId}}"
           id="{{intercomId}}"
           compClass="my-intercom {{intercomVideoSizeClass}}"
           deviceInfo="{{deviceInfo}}"
@@ -205,7 +207,7 @@
         </view>
         <view wx:if="{{supportCustomPusher}}" class="group-button-area">
           <button bindtap="startIntercomCall" data-custom-pusher="header" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
-            模拟对讲（无数据）
+            模拟对讲（仅header）
           </button>
           <button bindtap="startIntercomCall" data-custom-pusher="file" class="group-button" type="primary" size="mini" disabled="{{!intercomState || intercomState !== 'Ready2Call'}}">
             模拟对讲（文件）

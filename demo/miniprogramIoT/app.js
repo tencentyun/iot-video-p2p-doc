@@ -1,5 +1,5 @@
 import { Logger } from './lib/logger';
-import { getUserId } from './utils';
+import { getUserId, compareVersion } from './utils';
 
 App({
   onLaunch(options) {
@@ -25,5 +25,18 @@ App({
   },
   onHide() {
     this.logger.log('App: onHide');
+  },
+  restart() {
+    if (compareVersion(wx.getSystemInfoSync().SDKVersion, '3.0.1') >= 0) {
+      wx.restartMiniProgram({
+        path: '/pages/index/index',
+      });
+    } else {
+      wx.exitMiniProgram({
+        fail: (err) => {
+          console.error('exitMiniProgram fail', err);
+        },
+      });
+    }
   },
 });

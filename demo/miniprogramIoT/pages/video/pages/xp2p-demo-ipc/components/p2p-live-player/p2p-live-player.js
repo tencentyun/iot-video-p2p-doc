@@ -88,9 +88,6 @@ Component({
     isPlaySuccess: false, // 播放成功后才能对讲
     isPlayError: false,
 
-    fullScreen: false,
-    fullScreenInfo: null,
-
     // 清晰度
     innerStreamQuality: '',
     qualityMap,
@@ -100,6 +97,10 @@ Component({
     orientation: 'vertical',
     rotate: 0,
     fill: false,
+
+    // 全屏
+    fullScreen: false,
+    fullScreenInfo: null,
 
     // 调试
     showDebugInfo: false,
@@ -153,9 +154,9 @@ Component({
   methods: {
     // 获取组件实例
     getComponents() {
-      console.log(this.userData.innerId, 'create components', this.data.playerId);
-      const player = this.selectComponent(`#${this.data.playerId}`);
+      console.log(this.userData.innerId, 'create components');
 
+      const player = this.selectComponent(`#${this.data.playerId}`);
       if (player) {
         console.log(this.userData.innerId, 'create player success');
         oriConsole.log(this.userData.innerId, 'player', player); // console 被覆盖了会写logger影响性能，查看组件用 oriConsole
@@ -165,7 +166,6 @@ Component({
       }
 
       const controls = this.selectComponent(`#${this.data.controlsId}`);
-
       if (controls) {
         console.log(this.userData.innerId, 'create controls success');
         oriConsole.log(this.userData.innerId, 'controls', controls);

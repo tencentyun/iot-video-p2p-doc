@@ -30,8 +30,13 @@ Page({
     xp2pUUID: '',
     xp2pState: '',
     xp2pStateTime: 0,
+    xp2pLocalPeername: '',
     xp2pNatEvent: '',
     xp2pNatEventTime: 0,
+
+    // tcpFirst
+    tcpFirst: false,
+    canToggleTcpFirst: false,
 
     // 这些是监控页入口
     recentIPCItem: null,
@@ -117,6 +122,12 @@ Page({
             console.log(`index: preload xp2pManager.js success, delay ${Date.now() - start}ms`, pkg);
             app.xp2pManager = pkg.getXp2pManager();
             this.userData.xp2pManager = app.xp2pManager;
+            if (app.toggleTcpFirst) {
+              this.setData({
+                tcpFirst: app.tcpFirst,
+                canToggleTcpFirst: true,
+              });
+            }
             console.log(`index: preload xp2pManager success, delay ${Date.now() - start}ms`, pkg);
             this.onXp2pLoaded();
           })
@@ -203,6 +214,7 @@ Page({
     this.setData({
       xp2pState: state,
       xp2pStateTime: Date.now(),
+      xp2pLocalPeername: this.userData.xp2pManager.localPeername,
     });
     if (state === 'initing' || state === 'reseting') {
       this.setData({
@@ -265,5 +277,12 @@ Page({
         },
       });
     }
+  },
+  toggleTcpFirst() {
+    const app = getApp();
+    if (!app.toggleTcpFirst) {
+      return;
+    }
+    app.toggleTcpFirst();
   },
 });

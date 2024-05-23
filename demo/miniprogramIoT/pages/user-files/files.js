@@ -1,4 +1,4 @@
-import { isDevTool, compareVersion } from '../../utils';
+import { isDevTool } from '../../utils';
 import { getRecordManager, getSaveFormat } from '../../lib/recordManager';
 
 const app = getApp();
@@ -23,7 +23,7 @@ const processFileItem = (item) => {
 Page({
   data: {
     baseDir: '',
-    isVideoDir: false,
+    isLogDir: false,
     isRefreshing: false,
     recordList: null,
     totalBytes: NaN,
@@ -39,7 +39,7 @@ Page({
     this.recordManager = getRecordManager(query.name);
     this.setData({
       baseDir: this.recordManager.baseDir,
-      isVideoDir: ['records', 'voices', 'downloads'].includes(query.name),
+      isLogDir: query.name === 'logs',
     });
     this.getRecordList();
   },
@@ -79,11 +79,11 @@ Page({
     }
 
     let needExit;
-    if (this.recordManager.name === 'logs') {
+    if (this.data.isLogDir) {
       // logs 特殊逻辑
       const modalRes = await wx.showModal({
         title: '确定删除log吗？',
-        content: '删除log后会重新进入小程序',
+        content: '删除log后需要重新进入小程序',
       });
       if (!modalRes || !modalRes.confirm) {
         return;
@@ -98,16 +98,7 @@ Page({
     });
 
     if (needExit) {
-      if (compareVersion(wx.getSystemInfoSync().SDKVersion, '3.0.1') >= 0) {
-        wx.restartMiniProgram({
-          path: '/pages/index/index',
-        });
-      } else {
-        app.logger?.reset('reLaunch');
-        wx.reLaunch({
-          url: '/pages/index/index',
-        });
-      }
+      app.restart();
     }
   },
   async saveToAlbum(e) {
@@ -120,6 +111,7 @@ Page({
         showCancel: false,
       });
     } catch (err) {
+      console.error('saveToAlbum fail', err);
       let content = err.errMsg || '';
       if (/invalid video/.test(content)) {
         content += '\n只支持保存 mp4 格式视频';
@@ -138,11 +130,11 @@ Page({
     wx.saveImageToPhotosAlbum({
       filePath: `${this.recordManager.baseDir}/${fileRes.fileName}`,
       success: (res) => {
-        console.log(res);
+        console.log('saveFileInDevTool success', res);
       },
-      fail: (res) => {
-        console.error(res);
-      }
+      fail: (err) => {
+        console.error('saveFileInDevTool fail', err);
+      },
     });
   },
   async sendFile(e) {
@@ -151,11 +143,18 @@ Page({
     try {
       await this.recordManager.sendFile(fileRes.fileName);
     } catch (err) {
+      console.error('sendFile fail', err);
       wx.showModal({
         title: '发送失败',
         content: err.errMsg || '',
         showCancel: false,
       });
     }
+  },
+  removeFile(e) {
+    const { index } = e.currentTarget.dataset;
+    const fileRes = this.data.recordList[index];
+    this.recordManager.removeFile(fileRes.fileName);
+    this.getRecordList();
   },
 });

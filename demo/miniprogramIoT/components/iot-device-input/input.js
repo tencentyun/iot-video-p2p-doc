@@ -169,6 +169,18 @@ Component({
 
     // 1v多用
     inputUrl: '',
+    serverChecks: [
+      {
+        field: 'playerMuted',
+        text: '默认静音',
+        checked: false,
+      },
+      {
+        field: 'playerLog',
+        text: '显示播放组件log（影响性能，谨慎开启）',
+        checked: false,
+      },
+    ],
 
     // 调试用，开发者工具里不支持 live-player 和 TCPServer，默认只拉数据不播放
     isDevTool,
@@ -405,6 +417,14 @@ Component({
         inputUrl: e.detail.value,
       });
     },
+    switchServerCheck(e) {
+      const { index } = e.currentTarget.dataset;
+      const item = this.data.serverChecks[index];
+      item.checked = e.detail.value;
+      this.setData({
+        serverChecks: this.data.serverChecks,
+      });
+    },
     // 调试用
     switchPlayStream(e) {
       const { needPlayStream } = this.data;
@@ -513,31 +533,42 @@ Component({
       };
     },
     startPlayer() {
-      const inputValues = {};
-      this.data.simpleInputs.forEach(({ field, value }) => {
-        inputValues[field] = value;
-      });
-      const options = {
-        liveQuality: this.data.liveQuality, // 清晰度
-        intercomType: this.data.intercomType, // 对讲类型
-        voiceType: this.data.voiceType, // 语音采集方式
-      };
-      this.data.simpleChecks.forEach((item) => {
-        options[item.field] = item.checked;
-      });
+      let sceneType, streamData, options;
+      if (this.data.p2pMode === 'ipc') {
+        const inputValues = {};
+        this.data.simpleInputs.forEach(({ field, value }) => {
+          inputValues[field] = value;
+        });
+        options = {
+          liveQuality: this.data.liveQuality, // 清晰度
+          intercomType: this.data.intercomType, // 对讲类型
+          voiceType: this.data.voiceType, // 语音采集方式
+        };
+        this.data.simpleChecks.forEach((item) => {
+          options[item.field] = item.checked;
+        });
 
-      const sceneType = this.data.scene || 'live';
-      const streamData = this.getStreamData(sceneType, inputValues, options);
-      if (!streamData) {
-        return;
+        sceneType = this.data.scene || 'live';
+        streamData = this.getStreamData(sceneType, inputValues, options);
+        if (streamData) {
+          updateRecentIPC({
+            isMjpgDevice: this.data.isMjpgDevice,
+            ...inputValues,
+            options,
+          });
+        }
+      } else if (this.data.p2pMode === 'server') {
+        options = {};
+        this.data.serverChecks.forEach((item) => {
+          options[item.field] = item.checked;
+        });
+
+        sceneType = 'live';
+        streamData = this.getStreamData(sceneType, null, options);
       }
 
-      if (this.data.p2pMode === 'ipc') {
-        updateRecentIPC({
-          isMjpgDevice: this.data.isMjpgDevice,
-          ...inputValues,
-          options,
-        });
+      if (!streamData) {
+        return;
       }
 
       console.log(`[${this.id}]`, 'startPlayer', this.data.p2pMode, sceneType, streamData, options);

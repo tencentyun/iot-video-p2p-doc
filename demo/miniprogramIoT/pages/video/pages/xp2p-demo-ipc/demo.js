@@ -175,7 +175,7 @@ Page({
     autoStopVoiceIfPageHide,
 
     // intercomType: voice, 语音对讲
-    voiceId: 'iot-p2p-voice',
+    voiceId: '', // 播放成功再创建
     voiceState: '',
     pusherProps: {
       voiceChangerType: 0,
@@ -188,7 +188,7 @@ Page({
     voiceChangerTypeList: pusherPropConfigMap.voiceChangerType.list,
 
     // intercomType: video, 双向音视频
-    intercomId: 'iot-p2p-intercom',
+    intercomId: '',  // 播放成功再创建
     stateList: [],
     eventList: [],
     intercomState: '',
@@ -245,6 +245,7 @@ Page({
       serviceStateChangeHandler: null,
       serviceState: null,
       players: [],
+      hasCreateOtherComponents: false,
       voice: null,
       intercom: null,
       pusherInfoCount: 0,
@@ -503,32 +504,52 @@ Page({
       }
     });
     this.userData.players = players;
+    console.log('demo: player count', players.length);
 
-    if (this.data.intercomType === 'video') {
-      const intercom = this.selectComponent(`#${this.data.intercomId}`);
-      if (intercom) {
-        console.log('demo: create intercom success');
-        oriConsole.log('demo: intercom', intercom);
-        this.userData.intercom = intercom;
-        this.setData({
-          intercomState: 'IntercomIdle',
-        });
-      } else {
-        console.error('demo: create intercom error');
-      }
-    } else if (this.data.intercomType === 'voice') {
-      const voice = this.selectComponent(`#${this.data.voiceId}`);
-      if (voice) {
-        console.log('demo: create voice success');
-        oriConsole.log('demo: voice', voice);
-        this.userData.voice = voice;
-        this.setData({
-          voiceState: 'VoiceIdle',
-        });
-      } else {
-        console.error('demo: create voice error');
-      }
+    if (players.length > 0) {
+      // 有player，播放成功再创建其他组件
+    } else {
+      // 创建其他组件
+      this.createOtherComponents();
     }
+  },
+  createOtherComponents() {
+    if (this.userData.hasCreateOtherComponents) {
+      return;
+    }
+    this.userData.hasCreateOtherComponents = true;
+
+    console.log('demo: createOtherComponents');
+    this.setData({
+      voiceId: 'iot-p2p-voice',
+      intercomId: 'iot-p2p-intercom',
+    }, () => {
+      if (this.data.intercomType === 'video') {
+        const intercom = this.selectComponent(`#${this.data.intercomId}`);
+        if (intercom) {
+          console.log('demo: create intercom success');
+          oriConsole.log('demo: intercom', intercom);
+          this.userData.intercom = intercom;
+          this.setData({
+            intercomState: 'IntercomIdle',
+          });
+        } else {
+          console.error('demo: create intercom error');
+        }
+      } else if (this.data.intercomType === 'voice') {
+        const voice = this.selectComponent(`#${this.data.voiceId}`);
+        if (voice) {
+          console.log('demo: create voice success');
+          oriConsole.log('demo: voice', voice);
+          this.userData.voice = voice;
+          this.setData({
+            voiceState: 'VoiceIdle',
+          });
+        } else {
+          console.error('demo: create voice error');
+        }
+      }
+    });
   },
   hasSuccessPlayer() {
     return (this.userData.players || []).find(player => !!player?.isPlaySuccess());
@@ -574,6 +595,11 @@ Page({
   onPlayStateChange({ currentTarget: { dataset }, detail }) {
     const channel = Number(dataset.channel);
     console.log(`demo: onPlayStateChange, channel ${channel}`, detail);
+
+    if (detail.type === 'playsuccess' && !this.userData.hasCreateOtherComponents) {
+      // 播放成功，创建其他组件
+      this.createOtherComponents();
+    }
 
     // 播放结束/出错，停止对讲
     if (!detail.playState.isPlaying && !this.hasSuccessPlayer()) {
@@ -631,7 +657,7 @@ Page({
     console.error('demo: onVoiceSystemPermissionError', detail);
     // 安卓微信没麦克风和相机权限时，用 live-pusher 发起对讲会在报错前触发 onPageHide，如果设置了页面隐藏自动停止对讲，检测到出错时会认为已经停止对讲，不会触发 voiceerror 事件
     // 所以另外加个 systempermissionerror 事件通知系统权限错误，需要 xp2p 插件 4.2.5 以上
-    // 注意：安卓微信 + Pusher采集 + 页面隐藏自动停止对讲 + 第一次触发对讲，才只有 systempermissionerror 没有 voiceerror，其他情况会先后收到 systempermissionerror 和 voiceerror
+    // 注意：安卓微信 + Pusher采集 + 页面隐藏自动停止对讲 + 第一次触发对讲，才没有 voiceerror，其他情况会先后收到 systempermissionerror 和 voiceerror
     this.showToast(detail.errMsg || '请在系统设置中允许微信访问您的麦克风和相机');
   },
   onVoiceLivePusherNetStatus({ detail }) {
@@ -755,7 +781,7 @@ Page({
     console.error('demo: onIntercomSystemPermissionError', detail);
     // 安卓微信没麦克风和相机权限时，用 live-pusher 发起对讲会在报错前触发 onPageHide，如果设置了页面隐藏自动停止对讲，检测到出错时会认为已经停止对讲，不会触发 intercomerror 事件
     // 所以另外加个 systempermissionerror 事件通知系统权限错误，需要 xp2p 插件 4.2.5 以上
-    // 注意：安卓微信 + Pusher采集 + 页面隐藏自动停止对讲 + 第一次触发对讲，才只有 systempermissionerror 没有 intercomerror，其他情况会先后收到 systempermissionerror 和 intercomerror
+    // 注意：安卓微信 + Pusher采集 + 页面隐藏自动停止对讲 + 第一次触发对讲，才没有 intercomerror，其他情况会先后收到 systempermissionerror 和 intercomerror
     this.showToast(detail.errMsg || '请在系统设置中允许微信访问您的麦克风和相机');
   },
   onIntercomLivePusherNetStatus({ detail }) {

@@ -1,5 +1,5 @@
 // 接口参考 types/index.d.ts 里的 IXp2pManager
-import { getUserId } from '../../../utils';
+import { getUserId, compareVersion } from '../../../utils';
 
 let xp2pManager = null;
 export const getXp2pManager = () => {
@@ -16,6 +16,29 @@ export const getXp2pManager = () => {
     // 开发版才打插件log
     if (app.pluginLogger && wx.getAccountInfoSync().miniProgram.envVersion === 'develop') {
       iotExports?.setPluginLogger?.(app.pluginLogger);
+    }
+
+    // 设置优先使用的打洞协议
+    if (compareVersion(wx.getSystemInfoSync().SDKVersion, '3.4.1') >= 0 && xp2pPlugin.p2p.setTcpFirst) {
+      const tcpFirstKey = 'tcpFirst';
+      const tcpFirstTime = parseInt(wx.getStorageSync(tcpFirstKey), 10);
+      const tcpFirst = !!(tcpFirstTime && (Date.now() - tcpFirstTime < 3600000 * 24)); // 24小时内有效
+      console.log('tcpFirst', tcpFirst);
+      xp2pPlugin.p2p.setTcpFirst(tcpFirst);
+
+      // 给index页用，方便测试时调整tcpFirst
+      app.tcpFirst = tcpFirst;
+      app.toggleTcpFirst = async () => {
+        const modalRes = await wx.showModal({
+          title: '确定切换 tcpFirst 吗？',
+          content: '切换后需要重新进入小程序',
+        });
+        if (!modalRes || !modalRes.confirm) {
+          return;
+        }
+        wx.setStorageSync(tcpFirstKey, tcpFirst ? '' : Date.now());
+        app.restart();
+      };
     }
 
     xp2pManager = iotExports.getXp2pManager();

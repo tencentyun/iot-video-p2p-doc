@@ -107,6 +107,11 @@
               </view>
             </view>
           </view>
+          <view>
+            <view wx:for="{{serverChecks}}" wx:key="field" class="input-item {{item.scene && item.scene !== scene ? 'hide' : ''}}">
+              <label><switch type="checkbox" checked="{{item.checked}}" data-field="{{item.field}}" data-index="{{index}}" bindchange="switchServerCheck"/>{{item.text}}</label>
+            </view>
+          </view>
         </view>
       </view>
     </view>
