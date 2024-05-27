@@ -11,6 +11,9 @@ qualityList.forEach(({ value, text }) => {
   qualityMap[value] = text;
 });
 
+// 处理流数据
+const needParseStreamData = false;
+
 // 录制flv配置
 const recordFlvOptions = {
   maxFileSize: 100 * 1024 * 1024, // 单个flv文件的最大字节数，默认 100 * 1024 * 1024
@@ -177,8 +180,8 @@ Component({
         oriConsole.log(this.userData.innerId, 'player', player); // console 被覆盖了会写logger影响性能，查看组件用 oriConsole
         this.userData.player = player;
 
-        // 支持设置自定义解析器，需要在播放前设置
-        if (this.userData.player.setCustomParser) {
+        // 如果要处理流数据，需要在播放前设置自定义解析器
+        if (needParseStreamData && this.userData.player.setCustomParser) {
           console.log(this.userData.innerId, 'setCustomParser');
           this.userData.customParser = new CustomParser();
           this.userData.player.setCustomParser(this.userData.customParser);
