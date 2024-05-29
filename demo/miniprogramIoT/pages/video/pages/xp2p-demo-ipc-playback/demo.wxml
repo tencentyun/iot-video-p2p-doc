@@ -38,6 +38,8 @@
       bind:fullscreenchange="onFullScreenChange"
       bind:supportprogresschange="onSupportProgressChange"
       bind:timeupdate="onTimeUpdate"
+      bind:recordstatechange="onRecordStateChange"
+      bind:recordfilestatechange="onRecordFileStateChange"
     >
       <!--
         注意要指定slot属性，因为组件设置了 multipleSlots
@@ -53,11 +55,9 @@
         orientation="{{orientation}}"
         fill="{{fill}}"
         fullScreen="{{fullScreen}}"
+        record="{{record}}"
         bind:clickicon="clickControlIcon"
       >
-        <view class="player-control-item">
-          CH-{{streamChannel}}
-        </view>
         <view wx:if="{{showTogglePlayIcon}}" class="player-control-item" bindtap="togglePlay">
           <mp-icon icon="{{(isPlaying && !isPaused) ? 'pause' : 'play'}}" size="{{iconSize}}" color="white" type="field"></mp-icon>
         </view>
@@ -70,6 +70,7 @@
       </view>
     </iot-p2p-playback-player>
     <view class="page-section page-section-gap">
+      <view class="page-section-title">【CH-{{streamChannel}}】</view>
       <view>
         正在播放：{{currentVideo ? (currentVideo.date + ' ' + currentVideo.text) : ''}}
       </view>

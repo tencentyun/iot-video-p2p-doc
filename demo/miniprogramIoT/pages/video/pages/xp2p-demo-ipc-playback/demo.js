@@ -1,6 +1,7 @@
 import { pad, toMonthString, toDateTimeString, toTimeString, toDateTimeFilename, isDevTool } from '../../../../utils';
-import { getRecordManager } from '../../../../lib/recordManager';
+import { getRecordManager, removeFileByPath } from '../../../../lib/recordManager';
 import { getXp2pManager } from '../../lib/xp2pManager';
+import { CustomParser } from '../../lib/customParser';
 
 // 覆盖 console
 const app = getApp();
@@ -9,6 +10,19 @@ const console = app.logger || oriConsole;
 
 let xp2pManager;
 
+// 处理流数据
+const needParseStreamData = false;
+
+// 录制flv配置
+const recordFlvOptions = {
+  maxFileSize: 100 * 1024 * 1024, // 单个flv文件的最大字节数，默认 100 * 1024 * 1024
+  needAutoStartNextIfFull: false, // 当文件大小达到 maxFileSize 时，是否自动开始下一个文件，但是中间可能会丢失一部分数据，默认 false
+  needSaveToAlbum: true, // 是否保存到相册，设为 true 时插件内实现转mp4再保存，默认 false
+  needKeepFile: wx.getAccountInfoSync().miniProgram.envVersion === 'develop', // 是否需要保存文件，设为 true 时需要自行清理文件，默认 false
+  showLog: true,
+};
+
+// 下载
 const downloadManager = getRecordManager('downloads');
 const fileSystemManager = wx.getFileSystemManager();
 
@@ -53,6 +67,7 @@ Page({
     rotate: 0,
     fill: false,
     fullScreen: false,
+    record: false,
 
     // 控件icon
     controlsId: 'controls',
@@ -65,6 +80,7 @@ Page({
       fill: true,
       fullScreen: true,
       snapshot: true,
+      record: true,
     },
 
     // 调试
@@ -270,6 +286,13 @@ Page({
         console.log('demo: create player success');
         oriConsole.log('demo: player', player); // console 被覆盖了会写logger影响性能，查看组件用 oriConsole
         this.userData.player = player;
+
+        // 如果要处理流数据，需要在播放前设置自定义解析器
+        if (needParseStreamData && this.userData.player.setCustomParser) {
+          console.log('demo: setCustomParser');
+          this.userData.customParser = new CustomParser();
+          this.userData.player.setCustomParser(this.userData.customParser);
+        }
       } else {
         console.error('demo: create player error');
       }
@@ -382,6 +405,65 @@ Page({
       this.setData({ currentSecStr });
     }
   },
+  onRecordStateChange({ detail }) {
+    console.log('demo: onRecordStateChange', detail);
+    this.setData({
+      record: detail.record,
+    });
+  },
+  onRecordFileStateChange({ detail }) {
+    /*
+      detail: {
+        fileName: string;
+        state: string; // Start / Write / WriteSuccess / Extract / Export / Save / SaveSuccess / Error;
+        filePath?: string;
+        fileSize?: number;
+        errType?: string; // fileEmpty / writeError / extractError / exportError / saveError
+        errMsg?: string;
+      }
+    */
+    console.log('demo: onRecordFileStateChange', detail.state, detail);
+    switch (detail.state) {
+      case 'Extract':
+        // 如果文件较大，转码时间会比较长，显示loading
+        if (detail.fileSize > 10 * 1024 * 1024) {
+          wx.showLoading({ title: '正在转码...' });
+        }
+        break;
+      case 'Save':
+        wx.hideLoading();
+        break;
+      case 'SaveSuccess':
+        wx.showToast({
+          title: '录像已保存到相册',
+          icon: 'success',
+        });
+        if (recordFlvOptions.needKeepFile) {
+          // needKeepFile为true时，插件不删除flv文件，需要手动删除
+          console.log('demo: removeFile', detail.filePath);
+          removeFileByPath(detail.filePath);
+        }
+        break;
+      case 'Error':
+        if (recordFlvOptions.needKeepFile) {
+          // needKeepFile为true时，插件不删除flv文件，需要手动删除
+          // FIXME demo出错时不删除，方便在flv管理页里查看和删除文件，正式版本建议删除，以免占用空间导致后续录像失败
+          // console.log('demo: removeFile', detail.filePath);
+          // removeFileByPath(detail.filePath);
+        }
+        if (detail.errType === 'saveError' && /cancel/.test(detail.errMsg)) {
+          // 用户取消保存，不用提示
+          return;
+        }
+        console.error('demo: onRecordFileError', detail);
+        wx.showModal({
+          title: '录像出错',
+          content: `${detail.fileName}\n${detail.errType}: ${detail.errMsg || ''}`,
+          showCancel: false,
+        });
+        break;
+    }
+  },
   // player控制
   togglePlay() {
     if (!this.userData.currentVideo) {
@@ -428,6 +510,9 @@ Page({
         break;
       case 'snapshot':
         this.snapshotAndSave();
+        break;
+      case 'record':
+        this.changeRecord();
         break;
     }
   },
@@ -488,6 +573,31 @@ Page({
       return;
     }
     this.userData.player.snapshotAndSave();
+  },
+  changeRecord() {
+    const newVal = !this.data.record;
+    console.log('demo: changeRecord', newVal);
+    if (!this.userData.player) {
+      console.error('demo: changeRecord but no player component');
+      return;
+    }
+    if (!this.userData.player.startRecordFlv) {
+      console.error('demo: changeRecord but no player.startRecordFlv');
+      wx.showToast({
+        title: '请升级插件版本',
+        icon: 'error',
+      });
+      return;
+    }
+    if (newVal) {
+      this.userData.player.startRecordFlv(recordFlvOptions);
+    } else {
+      this.userData.player.stopRecordFlv();
+    }
+    // 可能失败，onRecordStateChange 里再修改
+    // this.setData({
+    //   record: newVal,
+    // });
   },
   toggleDebugInfo() {
     console.log('demo: toggleDebugInfo');

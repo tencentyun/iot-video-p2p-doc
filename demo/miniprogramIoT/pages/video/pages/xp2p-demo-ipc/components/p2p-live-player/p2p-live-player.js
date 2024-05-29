@@ -1,5 +1,10 @@
-// import { removeFileByPath } from '../../../../../../lib/recordManager';
+import { removeFileByPath } from '../../../../../../lib/recordManager';
 import { CustomParser } from '../../../../lib/customParser';
+
+// 覆盖 console
+const app = getApp();
+const oriConsole = app.console;
+const console = app.logger || oriConsole;
 
 const qualityList = [
   { value: 'standard', text: '标清' },
@@ -19,13 +24,9 @@ const recordFlvOptions = {
   maxFileSize: 100 * 1024 * 1024, // 单个flv文件的最大字节数，默认 100 * 1024 * 1024
   needAutoStartNextIfFull: false, // 当文件大小达到 maxFileSize 时，是否自动开始下一个文件，但是中间可能会丢失一部分数据，默认 false
   needSaveToAlbum: true, // 是否保存到相册，设为 true 时插件内实现转mp4再保存，默认 false
+  needKeepFile: wx.getAccountInfoSync().miniProgram.envVersion === 'develop', // 是否需要保存文件，设为 true 时需要自行清理文件，默认 false
   showLog: true,
 };
-
-// 覆盖 console
-const app = getApp();
-const oriConsole = app.console;
-const console = app.logger || oriConsole;
 
 Component({
   behaviors: ['wx://component-export'],
@@ -284,7 +285,7 @@ Component({
           errMsg?: string;
         }
       */
-      console.log(this.userData.innerId, 'onRecordFileStateChange', detail);
+      console.log(this.userData.innerId, 'onRecordFileStateChange', detail.state, detail);
       switch (detail.state) {
         case 'Extract':
           // 如果文件较大，转码时间会比较长，显示loading
@@ -300,11 +301,19 @@ Component({
             title: '录像已保存到相册',
             icon: 'success',
           });
+          if (recordFlvOptions.needKeepFile) {
+            // needKeepFile为true时，插件不删除flv文件，需要手动删除
+            console.log(this.userData.innerId, 'removeFile', detail.filePath);
+            removeFileByPath(detail.filePath);
+          }
           break;
         case 'Error':
-          // 要保存到相册时，保存成功会自动删除flv文件，出错时不自动删除，可以在flv管理页里查看和删除文件
-          // 如果不需要管理出错的文件，需要自行删除，以免占用空间导致后续录像失败
-          // removeFileByPath(detail.filePath);
+          if (recordFlvOptions.needKeepFile) {
+            // needKeepFile为true时，插件不删除flv文件，需要手动删除
+            // FIXME demo出错时不删除，方便在flv管理页里查看和删除文件，正式版本建议删除，以免占用空间导致后续录像失败
+            // console.log(this.userData.innerId, 'removeFile', detail.filePath);
+            // removeFileByPath(detail.filePath);
+          }
           if (detail.errType === 'saveError' && /cancel/.test(detail.errMsg)) {
             // 用户取消保存，不用提示
             return;
