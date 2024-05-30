@@ -6,8 +6,6 @@
 
 .record-item .info {
   color: #989898;
-  /* float: right; */
-  margin-left: 20rpx;
 }
 
 .record-item .left-btn {
@@ -19,4 +17,31 @@
   color: #0052d9;
   float: right;
   margin-left: 20rpx;
+}
+
+.log-file-dialog {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+}
+.log-file-dialog .log-file-header {
+  display: flex;
+  justify-content: space-between;
+}
+.log-file-dialog .log-file-header .log-file-title {
+  font-size: 18px;
+}
+.log-file-dialog .log-file-header .btn {
+  color: #0052d9;
+}
+.log-file-dialog .log-file-content {
+  flex: 1;
+  overflow: auto;
+  font-size: 14px;
+  padding: 0 20rpx;
 }

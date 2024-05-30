@@ -15,7 +15,7 @@ const processFileItem = (item) => {
     item.isMJPG = isMJPG(item.fileName);
     item.isJPG = isJPG(item.fileName);
     item.isLOG = isLOG(item.fileName);
-    item.showSave = !!getSaveFormat(item.fileName);
+    item.showSaveToAlbum = !!getSaveFormat(item.fileName);
   }
   return item;
 };
@@ -28,8 +28,9 @@ Page({
     recordList: null,
     totalBytes: NaN,
     // 真机显示发送，开发者工具可以直接保存到磁盘
-    showSendFile: !isDevTool,
-    showSaveFile: isDevTool,
+    isDevTool,
+    // 查看log
+    logFileDetail: null,
   },
   onLoad(query) {
     console.log('user-files: onLoad', query);
@@ -156,5 +157,22 @@ Page({
     const fileRes = this.data.recordList[index];
     this.recordManager.removeFile(fileRes.fileName);
     this.getRecordList();
+  },
+  async openLogFile(e) {
+    const { index } = e.currentTarget.dataset;
+    const fileRes = this.data.recordList[index];
+    try {
+      const logFileDetail = await this.recordManager.readFile(fileRes.fileName, { encoding: 'utf-8' });
+      this.setData({
+        logFileDetail,
+      });
+    } catch (err) {
+      console.error('readFile fail', err);
+    }
+  },
+  closeLogFile() {
+    this.setData({
+      logFileDetail: null,
+    });
   },
 });

@@ -12,16 +12,25 @@
       <button bindtap="removeAllRecords" class="group-button" type="primary" size="mini" disabled="{{isRefreshing}}">清空</button>
     </view>
   </view>
-  <view wx:if="{{recordList}}" class="page-section">
+  <view wx:if="{{recordList}}" class="page-section {{logFileDetail ? 'hide' : ''}}">
     <view>共 {{recordList.length}} 个文件，{{totalBytes}} Bytes</view>
     <view wx:for="{{recordList}}" wx:key="fileName" class="record-item">
-      {{item.fileName}} <text class="info">{{item.size}}B</text>
+      <view>{{item.fileName}}</view>
       <view>
+        <text class="info">{{item.size}}B</text>
         <text class="right-btn" wx:if="{{!isLogDir}}" bindtap="removeFile" data-index="{{index}}">删除</text>
-        <text class="right-btn" wx:if="{{showSendFile}}" bindtap="sendFile" data-index="{{index}}">发送</text>
-        <text class="right-btn" wx:if="{{showSaveFile}}" bindtap="saveFileInDevTool" data-index="{{index}}">保存</text>
-        <text class="right-btn" wx:if="{{item.showSave}}" bindtap="saveToAlbum" data-index="{{index}}">保存到相册</text>
+        <text class="right-btn" wx:if="{{!isDevTool}}" bindtap="sendFile" data-index="{{index}}">发送</text>
+        <text class="right-btn" wx:if="{{isDevTool}}" bindtap="saveFileInDevTool" data-index="{{index}}">保存</text>
+        <text class="right-btn" wx:if="{{item.showSaveToAlbum}}" bindtap="saveToAlbum" data-index="{{index}}">保存到相册</text>
+        <text class="right-btn" wx:if="{{item.isLOG}}" bindtap="openLogFile" data-index="{{index}}">查看</text>
       </view>
     </view>
+  </view>
+  <view wx:if="{{logFileDetail}}" class="log-file-dialog">
+    <view class="log-file-header" bindtap="closeLogFile">
+      <text class="log-file-title">{{logFileDetail.fileName}}</text>
+      <text class="btn" bindtap="closeLogFile">关闭</text>
+    </view>
+    <text class="log-file-content">{{logFileDetail.data}}</text>
   </view>
 </view>
