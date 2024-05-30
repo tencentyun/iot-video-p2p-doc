@@ -313,16 +313,15 @@ Page({
   onHide() {
     console.log('demo: onHide');
 
-    // 停止对讲
-    if (autoStopVoiceIfPageHide) {
-      if (this.userData.voice && this.data.voiceState !== 'VoiceIdle') {
-        this.stopVoice();
-      }
-
-      if (this.userData.intercom && this.data.intercomState !== 'IntercomIdle') {
-        this.stopIntercomCall();
-      }
-    }
+    // 组件会自动停止，这里不用处理
+    // if (autoStopVoiceIfPageHide) {
+    //   if (this.userData.voice && this.data.voiceState !== 'VoiceIdle') {
+    //     this.stopVoice();
+    //   }
+    //   if (this.userData.intercom && this.data.intercomState !== 'IntercomIdle') {
+    //     this.stopIntercomCall();
+    //   }
+    // }
 
     // 停止PTZ
     if (this.data.ptzCmd || this.userData.releasePTZTimer) {
@@ -342,7 +341,6 @@ Page({
     if (this.userData.voice && this.data.voiceState !== 'VoiceIdle') {
       this.stopVoice();
     }
-
     if (this.userData.intercom && this.data.intercomState !== 'IntercomIdle' && this.data.intercomState !== 'Ready2Call') {
       this.stopIntercomCall();
     }
@@ -599,17 +597,6 @@ Page({
     if (detail.type === 'playsuccess' && !this.userData.hasCreateOtherComponents) {
       // 播放成功，创建其他组件
       this.createOtherComponents();
-    }
-
-    // 播放结束/出错，停止对讲
-    if (!detail.playState.isPlaying && !this.hasSuccessPlayer()) {
-      console.log('demo: all player stopped');
-      if (this.userData.voice && this.data.voiceState !== 'VoiceIdle') {
-        this.stopVoice();
-      }
-      if (this.userData.intercom && this.data.intercomState !== 'IntercomIdle' && this.data.intercomState !== 'Ready2Call') {
-        this.stopIntercomCall();
-      }
     }
   },
   onFullScreenChange({ currentTarget: { dataset }, detail }) {
@@ -868,9 +855,66 @@ Page({
       this.stopVoice();
     }
   },
-  startVoice(e) {
+  async createCusomPusher(customPusherType) {
+    let customPusher = null;
+    if (customPusherType === 'header') {
+      customPusher = {
+        start: ({ writer }) => {
+          console.log('[MockPusher] start');
+          writer.addChunk(mockFlvHeader);
+        },
+        stop: () => {
+          console.log('[MockPusher] stop');
+        },
+      };
+    } else if (customPusherType === 'file') {
+      try {
+        const res = await wx.chooseMessageFile({
+          count: 1,
+        });
+        const file = res.tempFiles[0];
+        console.log('demo: chooseMockFlv res', file);
+        if (!file?.size) {
+          console.error('demo: chooseMockFlv error, file empty');
+          wx.showToast({
+            title: '文件大小为空',
+            icon: 'error',
+          });
+          return;
+        }
+        if (file.size < 1024) {
+          console.error('demo: chooseMockFlv error, file too small');
+          wx.showToast({
+            title: '文件太小',
+            icon: 'error',
+          });
+          return;
+        }
+        customPusher = new CustomPusher({
+          file,
+          errorCallback: (err) => {
+            if (this.userData.customPusher !== customPusher) {
+              return;
+            }
+            console.error('demo: customPusher error', err);
+            wx.showToast({
+              title: 'customPusher出错，停止对讲',
+              icon: 'error',
+            });
+            this.stopIntercomCall();
+          },
+        });
+      } catch (err) {
+        console.error('demo: chooseMockFlv fail', err);
+        return;
+      }
+    }
+    return customPusher;
+  },
+  async startVoice(e) {
     const needRecord = parseInt(e?.currentTarget?.dataset?.needRecord, 10) > 0;
-    console.log('demo: startVoice, needRecord', needRecord);
+    const customPusherType = e?.currentTarget?.dataset?.customPusher;
+    console.log(`demo: startVoice, needRecord ${needRecord}, customPusherType ${customPusherType}`);
 
     // 只要有一个player播放成功，就启动对讲
     const canStart = this.data.useChannelIds.length === 0 || this.hasSuccessPlayer();
@@ -893,9 +937,20 @@ Page({
       return;
     }
 
+    // 模拟推流，需要 xp2p 插件 4.1.4 以上
+    this.userData.customPusher = null;
+    if (customPusherType) {
+      const customPusher = await this.createCusomPusher(customPusherType);
+      if (!customPusher) {
+        return;
+      }
+      this.userData.customPusher = customPusher;
+    }
+
     this.userData.pusherInfoCount = 0;
     this.userData.voice.startVoice({
       needRecord,
+      customPusher: this.userData.customPusher,
     });
   },
   stopVoice() {
@@ -907,6 +962,11 @@ Page({
     }
 
     this.userData.voice.stopVoice();
+
+    if (this.userData.customPusher) {
+      this.userData.customPusher.destroy?.();
+      this.userData.customPusher = null;
+    }
   },
   voiceChangerChange({ detail }) {
     const newType = Number(detail.value) || 0;
@@ -988,60 +1048,14 @@ Page({
       return;
     }
 
-    // 用文件模拟推流，需要 xp2p 插件 4.1.4 以上
+    // 模拟推流，需要 xp2p 插件 4.1.4 以上
     this.userData.customPusher = null;
-    if (customPusherType === 'header') {
-      this.userData.customPusher = {
-        start: ({ writer }) => {
-          console.log('[MockPusher] start');
-          writer.addChunk(mockFlvHeader);
-        },
-        stop: () => {
-          console.log('[MockPusher] stop');
-        },
-      };
-    } else if (customPusherType === 'file') {
-      try {
-        const res = await wx.chooseMessageFile({
-          count: 1,
-        });
-        const file = res.tempFiles[0];
-        console.log('demo: chooseMockFlv res', file);
-        if (!file?.size) {
-          console.error('demo: chooseMockFlv error, file empty');
-          wx.showToast({
-            title: '文件大小为空',
-            icon: 'error',
-          });
-          return;
-        }
-        if (file.size < 1024) {
-          console.error('demo: chooseMockFlv error, file too small');
-          wx.showToast({
-            title: '文件太小',
-            icon: 'error',
-          });
-          return;
-        }
-        const customPusher = new CustomPusher({
-          file,
-          errorCallback: (err) => {
-            if (this.userData.customPusher !== customPusher) {
-              return;
-            }
-            console.error('demo: customPusher error', err);
-            wx.showToast({
-              title: 'customPusher出错，停止对讲',
-              icon: 'error',
-            });
-            this.stopIntercomCall();
-          },
-        });
-        this.userData.customPusher = customPusher;
-      } catch (err) {
-        console.error('demo: chooseMockFlv fail', err);
+    if (customPusherType) {
+      const customPusher = await this.createCusomPusher(customPusherType);
+      if (!customPusher) {
         return;
       }
+      this.userData.customPusher = customPusher;
     }
 
     // 开始对讲时默认用高码率
