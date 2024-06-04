@@ -118,14 +118,22 @@
           <button bindtap="stopVoice" class="group-button" type="primary" size="mini" disabled="{{!voiceState || voiceState === 'VoiceIdle'}}">
             挂断
           </button>
-          <view wx:if="{{options.voiceType === 'Pusher'}}">
-            <view>变声 (基础库 2.31.0 以上)</view>
-            <radio-group bindchange="voiceChangerChange">
-              <label class="radio" wx:for="{{voiceChangerTypeList}}" wx:key="value" >
-                <radio value="{{item.value}}" checked="{{pusherProps.voiceChangerType === item.value}}"/>{{item.label}}
-              </label>
-            </radio-group>
-          </view>
+        </view>
+        <view wx:if="{{options.voiceType === 'Pusher' && supportCustomPusher}}" class="group-button-area">
+          <button bindtap="startVoice" data-custom-pusher="header" class="group-button" type="primary" size="mini" disabled="{{!voiceState || voiceState !== 'VoiceIdle'}}">
+            模拟对讲（仅header）
+          </button>
+          <button bindtap="startVoice" data-custom-pusher="file" class="group-button" type="primary" size="mini" disabled="{{!voiceState || voiceState !== 'VoiceIdle'}}">
+            模拟对讲（文件）
+          </button>
+        </view>
+        <view wx:if="{{options.voiceType === 'Pusher'}}">
+          <view>变声 (基础库 2.31.0 以上)</view>
+          <radio-group bindchange="voiceChangerChange">
+            <label class="radio" wx:for="{{voiceChangerTypeList}}" wx:key="value" >
+              <radio value="{{item.value}}" checked="{{pusherProps.voiceChangerType === item.value}}"/>{{item.label}}
+            </label>
+          </radio-group>
         </view>
         <view>voiceState: {{voiceState}}</view>
       </view>

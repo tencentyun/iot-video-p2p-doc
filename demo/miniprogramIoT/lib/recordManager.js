@@ -151,7 +151,7 @@ class RecordManager {
     });
   }
 
-  readFile(fileName) {
+  readFile(fileName, { encoding, position, length } = {}) {
     if (!fileName) {
       return Promise.reject({ errMsg: 'param error' });
     }
@@ -159,9 +159,11 @@ class RecordManager {
     console.log('RecordManager: readFile', fileName, filePath);
 
     return new Promise((resolve, reject) => {
-      const filePath = `${this.baseDir}/${fileName}`;
       fileSystem.readFile({
         filePath,
+        encoding,
+        position,
+        length,
         success: (res) => {
           resolve({
             fileName,
