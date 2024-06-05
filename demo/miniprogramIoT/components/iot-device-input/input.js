@@ -1,4 +1,4 @@
-import { totalData, updateRecentIPC } from '../../config/config';
+import { totalData, updateRecentIPC, defaultIPCOptions } from '../../config/config';
 import { adjustXp2pInfo, getDeviceFlags, isDevTool } from '../../utils';
 const getDefaultChannelOptions = () => (
   [
@@ -59,16 +59,19 @@ Component({
         field: 'productId',
         // text: 'productId',
         value: '',
+        placeholder: 'productId',
       },
       {
         field: 'deviceName',
         // text: 'deviceName',
         value: '',
+        placeholder: 'deviceName',
       },
       {
         field: 'xp2pInfo',
         // text: 'xp2pInfo',
         value: '',
+        placeholder: 'xp2pInfo',
       },
       {
         field: 'initCommand',
@@ -212,7 +215,34 @@ Component({
         this.id = 'iot-device-input';
       }
       console.log(`[${this.id}]`, 'attached', this.id, this.properties);
-      const data = this.properties.cfg && totalData[this.properties.cfg];
+      let data;
+      switch (this.properties.cfg) {
+        case 'emptyIPC':
+          data = {
+            p2pMode: 'ipc',
+            targetId: this.properties.cfg,
+            isMjpgDevice: false,
+            productId: '',
+            deviceName: '',
+            xp2pInfo: '',
+            options: defaultIPCOptions,
+          };
+          break;
+        case 'emptyIPCMjpg':
+          data = {
+            p2pMode: 'ipc',
+            targetId: this.properties.cfg,
+            isMjpgDevice: true,
+            productId: '',
+            deviceName: '',
+            xp2pInfo: '',
+            options: defaultIPCOptions,
+          };
+          break;
+        default:
+          data = this.properties.cfg && totalData[this.properties.cfg];
+          break;
+      }
       if (!data) {
         console.log(`[${this.id}]`, 'invalid cfg');
         return;

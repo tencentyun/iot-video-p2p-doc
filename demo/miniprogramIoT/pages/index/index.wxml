@@ -58,11 +58,30 @@
       </view>
     </view>
   </view>
-  <view class="page-section" wx:if="{{recentIPCItem}}">
+  <view class="page-section">
     <view class="page-section-title">【最近查看设备】</view>
-    <view class="margin-left">
+    <view class="margin-left" wx:if="{{recentIPCItem}}">
       <view class="small-tip">设备类型：{{recentIPCItem.isMjpgDevice ? '图片流设备' : '视频流设备'}}</view>
       <template is="itemInfo" data="{{ item: recentIPCItem }}" />
+    </view>
+    <view class="margin-left" wx:else>
+      <view class="small-tip">无最近查看设备，请输入设备信息后查看</view>
+      <view class="group-button-area">
+        <button type="primary" class="group-button" size="mini"
+          bindtap="gotoPage"
+          data-check-platform="1"
+          data-url="/pages/video/pages/xp2p-demo-ipc/demo?cfg=emptyIPC"
+        >
+          视频流设备监控
+        </button>
+        <button type="primary" class="group-button" size="mini"
+          bindtap="gotoPage"
+          data-check-platform="1"
+          data-url="/pages/video/pages/xp2p-demo-ipc/demo?cfg=emptyIPCMjpg"
+        >
+          图片流设备监控
+        </button>
+      </view>
     </view>
   </view>
   <view class="page-section">

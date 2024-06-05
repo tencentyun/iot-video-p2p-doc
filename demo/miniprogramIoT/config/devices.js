@@ -24,7 +24,7 @@
  *   intercomLog: boolean 对讲log，默认 false
  */
 
-const defaultOptions = {
+export const defaultOptions = {
   // 设备属性
   liveQuality: 'high',
   needCheckStream: false,
@@ -35,7 +35,7 @@ const defaultOptions = {
   playerMuted: false,
   playerLog: false,
   // 小程序对讲组件
-  voiceType: 'Recorder',
+  voiceType: 'Pusher',
   intercomType: 'voice',
   intercomLog: false,
 };
@@ -81,6 +81,18 @@ const devices = {
       playerMuted: true,
       voiceType: 'Pusher',
       intercomType: 'voice',
+    },
+  },
+  debug_mjpglock: {
+    showInHomePageBtn: true,
+    isMjpgDevice: true,
+    productId: 'I0E5RWGK66',
+    deviceName: 'lock_89736739_1',
+    xp2pInfo: 'XP2PS1UByaXy00kf2NnwV7lAtw==%2.4.29m',
+    options: {
+      playerRTC: true,
+      playerMuted: true,
+      voiceType: 'Pusher',
     },
   },
   test_mjpglock: {

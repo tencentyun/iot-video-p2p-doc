@@ -2,6 +2,8 @@
 import { presetDevices, isDeviceCfgValid } from './devices';
 import { presetServerStreams } from './streams';
 
+export { defaultOptions as defaultIPCOptions } from './devices';
+
 export const defaultShareInfo = {
   title: 'XP2P Demo',
   path: '/pages/index/index',
