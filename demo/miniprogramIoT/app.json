@@ -8,7 +8,7 @@
   ],
   "plugins": {
     "xp2p": {
-      "version": "dev-5f9706d6378c5d44034d2ab3368a59a5",
+      "version": "latest",
       "provider": "wx1319af22356934bf",
       "export": "exportForXp2pPlugin.js"
     }

@@ -18,7 +18,7 @@ const recordFlvOptions = {
   maxFileSize: 100 * 1024 * 1024, // 单个flv文件的最大字节数，默认 100 * 1024 * 1024
   needAutoStartNextIfFull: false, // 当文件大小达到 maxFileSize 时，是否自动开始下一个文件，但是中间可能会丢失一部分数据，默认 false
   needSaveToAlbum: true, // 是否保存到相册，设为 true 时插件内实现转mp4再保存，默认 false
-  needKeepFile: wx.getAccountInfoSync().miniProgram.envVersion === 'develop', // 是否需要保存文件，设为 true 时需要自行清理文件，默认 false
+  needKeepFile: wx.getAccountInfoSync().miniProgram.envVersion === 'develop', // 是否保留flv文件，设为 true 时需要自行清理文件，默认 false
   showLog: true,
 };
 
