@@ -83,6 +83,24 @@ const devices = {
       intercomType: 'voice',
     },
   },
+  debug_cloud_m3u8: {
+    showInHomePageBtn: true,
+    productId: '7QB2A6WM6O',
+    deviceName: 'dev_06',
+    xp2pInfo: 'XP2Pfu8MqN+TbaObQNZyxbcDMw==%2.4.40',
+    cloudRecords: [
+      {
+        startTime: 1717171200,
+        endTime: 1717171262,
+        videoSrc: 'https://1500005692.vod2.myqcloud.com/43843706vodtranscq1500005692/62656d94387702300542496289/v.f100240.m3u8',
+      },
+      {
+        startTime: 1717646648,
+        endTime: 1717646679,
+        videoSrc: 'https://1259367869.vod2.myqcloud.com/timeshift/live/b4d5af98-31d7-4026-833e-559e2043f4fb/timeshift.m3u8?starttime_epoch=1717646648&endtime_epoch=1717646679&t=66818100&us=287da2af95c0664fcdcda83e5f16d163&sign=52f0588ab29e8fd6299aae63984be6c6',
+      },
+    ],
+  },
   debug_mjpglock: {
     showInHomePageBtn: true,
     isMjpgDevice: true,
@@ -95,7 +113,7 @@ const devices = {
       voiceType: 'Pusher',
     },
   },
-  test_mjpglock: {
+  debug_cloud_mjpg: {
     showInHomePageBtn: true,
     isMjpgDevice: true,
     productName: 'MjpgLock',

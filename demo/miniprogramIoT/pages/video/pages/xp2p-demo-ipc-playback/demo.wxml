@@ -159,26 +159,24 @@
             <view wx:if="{{localFilesTip}}">
               {{localFilesTip}}
             </view>
-            <view wx:for="{{localFiles}}" wx:key="index" style="position: relative">
-              <button size="mini"
-                class="group-button {{currentFile && currentFile.file_name === item.file_name ? 'active' : ''}}"
-                style="text-align: left"
-                data-index="{{index}}"
-                bindtap="downloadFile"
-              >
-                <view>{{item.file_name}}</view>
-                <view>
-                  <text>{{item.text}}</text>
-                  <text style="margin-left: 40rpx">{{item.file_size}} B</text>
-                </view>
-              </button>
-              <text class="text-btn absolute-right" style="bottom: 0"
-                data-index="{{index}}"
-                data-only-download="onlyDownload"
-                bindtap="downloadFile"
-              >
-                仅下载
-              </text>
+            <view wx:for="{{localFiles}}" wx:key="index" class="file-item {{currentFile && currentFile.file_name === item.file_name ? 'active' : ''}}">
+              <view class="file-item-name">{{item.file_name}}</view>
+              <view class="file-item-info">
+                <view>{{item.text}}</view>
+                <view>{{item.file_size}} B</view>
+              </view>
+              <view class="file-item-btns">
+                <text
+                  class="text-btn"
+                  data-index="{{index}}"
+                  bindtap="downloadFile"
+                >下载到用户文件</text>
+                <text class="text-btn"
+                  data-index="{{index}}"
+                  data-only-download="onlyDownload"
+                  bindtap="downloadFile"
+                >仅下载</text>
+              </view>
             </view>
             <view wx:if="{{localFiles && localFiles.length === 0}}">
               暂无文件

@@ -125,6 +125,20 @@ class RecordManager {
     }
   }
 
+  // 删除子目录
+  removeSubDir(subDir) {
+    if (!subDir) {
+      return;
+    }
+    const dirPath = `${this.baseDir}/${subDir}`;
+    try {
+      const res = fileSystem.rmdirSync(dirPath, true);
+      console.log('RecordManager: removeSubDir success', res);
+    } catch (err) {
+      console.error('RecordManager: removeSubDir error', err);
+    }
+  }
+
   getFileInfo(fileName) {
     if (!fileName) {
       return Promise.reject({ errMsg: 'param error' });

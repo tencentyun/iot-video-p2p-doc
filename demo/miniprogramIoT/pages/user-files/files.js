@@ -3,14 +3,16 @@ import { getRecordManager, getSaveFormat } from '../../lib/recordManager';
 
 const app = getApp();
 
-const isFLV = filename => /\.flv$/i.test(filename);
 const isMP4 = filename => /\.mp4$/i.test(filename);
+const isM3U8 = filename => /\.m3u8$/i.test(filename);
+const isFLV = filename => /\.flv$/i.test(filename);
 const isMJPG = filename => /\.mjpg$/i.test(filename);
 const isJPG = filename => /\.jpg$/i.test(filename) || /\.jpeg$/i.test(filename);
 const isLOG = filename => /\.log$/i.test(filename);
 const processFileItem = (item) => {
   if (item) {
     item.isMP4 = isMP4(item.fileName);
+    item.isM3U8 = isM3U8(item.fileName);
     item.isFLV = isFLV(item.fileName);
     item.isMJPG = isMJPG(item.fileName);
     item.isJPG = isJPG(item.fileName);
@@ -61,15 +63,35 @@ Page({
     });
 
     if (files.length > 0) {
-      const pArr = files.map(fileName => this.recordManager.getFileInfo(fileName));
+      let dirCount = 0;
+      const pArr = files.map(fileName => this.recordManager.getFileInfo(fileName).catch((err) => {
+        if (/directory/.test(err.errMsg)) {
+          dirCount++;
+        }
+        return {
+          isDir: true,
+          size: 0,
+        };
+      }));
       try {
         const infos = await Promise.all(pArr);
-        const total = infos.reduce((prev, { size }) => (prev + size), 0);
-        this.setData({
-          recordList: infos.map((info, i) => ({ ...recordList[i], ...info })),
-          totalBytes: total,
+        const sortedRecordList = infos.map((info, i) => ({ ...recordList[i], ...info })).sort((a, b) => {
+          if (a.isDir && !b.isDir) return -1;
+          if (!a.isDir && b.isDir) return 1;
+          if (a.fileName < b.fileName) return 1;
+          if (a.fileName > b.fileName) return -1;
+          return 0;
         });
-      } catch (err) {}
+        const totalBytes = sortedRecordList.reduce((prev, { size }) => (prev + size), 0);
+        console.log('dirCount', dirCount);
+        console.log('sortedRecordList', sortedRecordList);
+        this.setData({
+          recordList: sortedRecordList,
+          totalBytes,
+        });
+      } catch (err) {
+        console.error('get infos error', err);
+      }
     }
 
     this.setData({ isRefreshing: false });
@@ -218,6 +240,12 @@ Page({
     const { index } = e.currentTarget.dataset;
     const fileRes = this.data.recordList[index];
     this.recordManager.removeFile(fileRes.fileName);
+    this.getRecordList();
+  },
+  removeDir(e) {
+    const { index } = e.currentTarget.dataset;
+    const fileRes = this.data.recordList[index];
+    this.recordManager.removeSubDir(fileRes.fileName);
     this.getRecordList();
   },
   async openLogFile(e) {

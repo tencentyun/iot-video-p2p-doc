@@ -9,8 +9,7 @@ Page({
   data: {
     playerId: defaultCustomCache ? 'customPlayer' : 'player',
     customCache: defaultCustomCache,
-    inputSrc: 'https://zylcb.iotvideo.tencentcs.com/timeshift/live/21b9c5e8-ecfa-482a-a776-8fe9d2e6da5d/timeshift.m3u8?starttime_epoch=1673494053&endtime_epoch=1673494113&t=63c0cff5&us=d393d84a80ead0e38715b8c4280f7319&sign=c174bfccbcd119a46d9d1b2a23f7ab54',
-    // inputSrc: 'http://devimages.apple.com/iphone/samples/bipbop/bipbopall.m3u8',
+    inputSrc: 'https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8',
     src: '',
     ctx: null,
     errMsg: '',
@@ -97,11 +96,6 @@ Page({
         return;
       }
     }
-
-    // videoManager.prepareDir();
-    // const fileName = file.name || `noname.${Date.now()}.mp4`;
-    // const filePath = `${videoManager.baseDir}/${fileName}`;
-    // fileSystem.saveFileSync(file.path || file.tempFilePath, filePath);
 
     this.setData({
       inputSrc: filePath,

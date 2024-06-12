@@ -62,7 +62,7 @@
     </view>
     <view class="page-section page-section-gap">
       <view>录像列表</view>
-      <view class="group-button-area" style="padding: 0 20rpx">
+      <view style="padding: 0 20rpx">
         <view wx:for="{{recordVideos}}" wx:key="index" >
           <button size="mini"
             class="group-button {{currentVideo && currentVideo.startTime === item.startTime ? 'active' : ''}}"

@@ -11,3 +11,28 @@
   font-size: medium;
   font-weight: bold;
 }
+
+.file-item {
+  position: relative;
+  box-sizing: border-box;
+  background-color: #f8f8f8;
+  border: 2rpx solid #dddddd;
+  border-radius: 10rpx;
+  font-size: 13px;
+  padding: 0 1.34em;
+  margin-bottom: 20rpx;
+}
+.file-item.active .file-item-name {
+  font-weight: bold;
+}
+.file-item-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.file-item-btns {
+  text-align: right;
+}
+.file-item-btns .text-btn {
+  margin: 0 0 0 20rpx;
+}

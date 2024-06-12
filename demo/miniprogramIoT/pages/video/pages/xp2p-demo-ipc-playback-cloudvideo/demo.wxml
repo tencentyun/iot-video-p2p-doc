@@ -4,6 +4,83 @@
   </view>
   <view wx:elif="{{deviceInfo.isMjpgDevice}}">only for video device</view>
   <view wx:else class="page-body">
-    视频流云存直接用 video 组件播放
+    <view class="player-container">
+      <video
+        wx:if="{{playerId}}"
+        id="{{playerId}}"
+        customCache
+        src="{{currentVideo ? currentVideo.videoSrc : ''}}"
+        autoplay
+        bindplay="onVideoEvent"
+        bindpause="onVideoEvent"
+        bindended="onVideoEvent"
+        bindwaiting="onVideoEvent"
+        bindloadedmetadata="onVideoEvent"
+        binderror="onVideoError"
+      />
+    </view>
+    <view class="page-section page-section-gap">
+      <view>
+        正在播放
+        <view style="padding: 0 20rpx">{{currentVideo ? currentVideo.text : '-'}}</view>
+      </view>
+      <view class="align-right">
+        <text class="text-btn {{currentVideo ? '' : 'disabled'}}" bindtap="stopVideo">取消</text>
+      </view>
+      <view>
+        正在下载
+        <view style="padding: 0 20rpx">{{currentDownload ? currentDownload.text : '-'}}</view>
+      </view>
+      <view class="align-right">
+        <text class="text-btn {{currentDownload ? '' : 'disabled'}}" bindtap="stopDownload">取消</text>
+      </view>
+    </view>
+    <view class="page-section page-section-gap">
+      <view>录像列表</view>
+      <view style="padding: 0 20rpx">
+        <view wx:for="{{recordVideos}}" wx:key="index" class="record-item">
+          <button size="mini"
+            class="group-button {{currentVideo && currentVideo.startTime === item.startTime ? 'active' : ''}}"
+            data-index="{{index}}"
+            bindtap="changeVideo"
+          >
+            <text class="text">{{item.text || item.startTime}}</text>
+          </button>
+          <view data-index="{{index}}" bindtap="downloadVideo">
+            <mp-icon
+              icon="download"
+              size="25"
+              color="{{currentDownload && currentDownload.startTime === item.startTime ? '#0052d9' : 'black'}}"
+              type="{{currentDownload && currentDownload.startTime === item.startTime ? 'field': 'outline'}}"
+            />
+          </view>
+        </view>
+        <view wx:if="{{recordVideos && recordVideos.length === 0}}">
+          暂无录像
+        </view>
+      </view>
+    </view>
+    <view class="page-section page-section-gap">
+      <view>自定义录像</view>
+      <view style="padding: 0 20rpx">
+        <view class="input-item">
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_input">
+              <input class="weui-input" type="text" placeholder="record show text" value="{{inputText}}" bindinput="bindInputText" />
+            </view>
+          </view>
+        </view>
+        <view class="input-item">
+          <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_input">
+              <input class="weui-input" type="text" maxlength="-1" placeholder="record video src" value="{{inputSrc}}" bindinput="bindInputSrc" />
+            </view>
+          </view>
+        </view>
+        <view class="group-button-area">
+          <button bindtap="bindAddRecord" class="group-button" type="primary" size="mini" disabled="{{!inputText || !inputSrc}}">添加</button>
+        </view>
+      </view>
+    </view>
   </view>
 </view>

@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "云存 Video 回放"
+  "navigationBarTitleText": "云存 Video 回放",
+  "usingComponents": {
+    "mp-icon": "weui-miniprogram/icon/icon"
+  }
 }

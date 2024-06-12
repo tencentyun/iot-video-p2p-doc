@@ -104,10 +104,11 @@
   </view>
   <view class="page-section">
     <navigator url="/pages/user-files/files?name=logs" hover-class="navigator-hover">跳转到 Log 管理页</navigator>
-    <navigator url="/pages/user-files/files?name=flvs" hover-class="navigator-hover">跳转到 flv录像管理页</navigator>
-    <navigator url="/pages/user-files/files?name=streams" hover-class="navigator-hover">跳转到 stream录像管理页</navigator>
-    <navigator url="/pages/user-files/files?name=voices" hover-class="navigator-hover">跳转到 对讲管理页</navigator>
-    <navigator url="/pages/user-files/files?name=downloads" hover-class="navigator-hover">跳转到 下载管理页</navigator>
+    <navigator url="/pages/user-files/files?name=flvs" hover-class="navigator-hover">跳转到 P2P-flv录像管理页</navigator>
+    <navigator url="/pages/user-files/files?name=streams" hover-class="navigator-hover">跳转到 P2P-stream录像管理页</navigator>
+    <navigator url="/pages/user-files/files?name=voices" hover-class="navigator-hover">跳转到 P2P-对讲管理页</navigator>
+    <navigator url="/pages/user-files/files?name=downloads" hover-class="navigator-hover">跳转到 P2P-下载管理页</navigator>
+    <navigator url="/pages/user-files/files?name=cloud" hover-class="navigator-hover">跳转到 Cloud-下载管理页</navigator>
     <navigator url="/pages/test-video/test" hover-class="navigator-hover">跳转到 Video 测试页</navigator>
     <navigator url="/pages/video/pages/voip/voip" hover-class="navigator-hover">跳转到 voip 测试页面</navigator>
   </view>

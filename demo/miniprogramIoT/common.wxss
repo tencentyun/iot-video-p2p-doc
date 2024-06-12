@@ -1,6 +1,6 @@
 .page-body {
   position: relative;
-  /* padding: 20rpx 0; */
+  padding-bottom: 20rpx;
 }
 
 .page-body-padding {
@@ -45,7 +45,7 @@
 .group-button-area .group-button {
   margin-right: 10rpx;
 }
-.group-button-area .group-button.active {
+.group-button.active {
   color: #0052d9;
 }
 

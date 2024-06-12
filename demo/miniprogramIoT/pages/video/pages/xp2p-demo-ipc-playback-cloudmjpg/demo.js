@@ -15,7 +15,7 @@ Page({
     cfg: '',
 
     // 这些是控制player和p2p的
-    playerId: 'iot-cloud-player',
+    playerId: 'iot-cloudmjpg-player',
 
     // 设备信息，在input组件里填
     targetId: '',
