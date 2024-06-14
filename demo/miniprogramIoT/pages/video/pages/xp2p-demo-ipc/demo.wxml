@@ -140,7 +140,7 @@
     </view>
     <view wx:if="{{intercomType === 'video'}}" class="page-section page-section-gap">
       <view class="page-section-title">【视频对讲】</view>
-      <view class="margin-left margin-right">
+      <view class="intercom-container">
         <!--
           这么覆盖组件大小
             .iot-p2p-intercom.my-intercom {
@@ -174,8 +174,14 @@
           autopush
           bindstatechange="statechange"
           style="width: 375rpx; height: 500rpx; position: fixed; z-index: 99; bottom: 0; right: 0;"
-         /> -->
+        /> -->
         <!-- <view>voiceState: {{voiceState || '-'}} intercomType: {{intercomType}}</view> -->
+        <view wx:if="{{intercomShowPusherInfo}}" class="intercom-info" style="{{intercomState === 'Sending' ? 'display: block;' : 'display: none;' }}">
+          <view>{{intercomVideoSize}}</view>
+          <text>{{intercomOtherInfo}}</text>
+        </view>
+      </view>
+      <view class="margin-left margin-right">
         <view class="group-button-area">
           <view wx:for="{{intercomPusherPropConfigList}}" wx:for-item="propCfg" wx:key="field" class="prop-item {{propCfg.type}}">
             <view>{{propCfg.label || propCfg.field}}</view>
@@ -228,9 +234,6 @@
         </view>
         <view bindtap="stopIntercomCall" class="hangup-btn" style="{{intercomState === 'Sending' ? 'display: block;' : 'display: none;' }}">
           <image alt="" src="data:image/svg+xml;base64,PHN2ZyBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgY2xhc3M9ImRlc2lnbi1pY29uZm9udCI+CiAgPHBhdGggZD0iTTI5LjE0OTcgMTguNjE4MUMyOC43MDIzIDIwLjM3NDQgMjcuNTQ4MSAyMC44NzQ2IDI1LjY0OTEgMjAuNTkyN0MyMy40MTcyIDIwLjI2MTEgMjEuNTI4NyAxOS42MzIzIDIxLjY2NjggMTcuNjA4QzIxLjgwNSAxNS41ODM2IDIxLjg0MzIgMTUuNDI4OSAxNi40MTMzIDE1LjI2M0MxMC4wNzY2IDE1LjA5MTcgMTAuMzQ5IDE1LjI5NjIgMTAuMzQ2NCAxNy42NzI5QzEwLjM0MzggMjAuMDQ5NyA4Ljc4MDM1IDIwLjE4MDkgNi41NTM2NCAyMC41MjkxQzQuMzI1NjIgMjAuODc3NCAyLjk2MzUzIDIwLjI5NyAyLjY4OTggMTcuNjk5MkMyLjE2MDc2IDEyLjY5MTUgMTAuODc1NSAxMS4zODU2IDE0LjY5ODUgMTEuMzM1OUMxNC42OTg1IDExLjMzNTkgMjAuNTI4NSAxMS4yNDMzIDIzLjMyMjQgMTIuMTA1NkwyNC44MjY2IDEyLjU1NDdDMjYuOTIzIDEzLjI2NjMgMjguODA0OSAxNC41NjExIDI5LjI0MTkgMTYuNDAzQzI5LjI0MTkgMTYuNDAzIDI5LjQ5OTggMTcuMjQxOCAyOS4xNDk3IDE4LjYxODFaIiBmaWxsPSIjZmZmIi8+Cjwvc3ZnPgo=" />
-        </view>
-        <view wx:if="{{showPusherVideoSize}}">
-          <view>实际 videoSize: {{intercomVideoSize}}</view>
         </view>
         <view>
           <view>双向音视频状态流转: {{stateList.length}}</view>

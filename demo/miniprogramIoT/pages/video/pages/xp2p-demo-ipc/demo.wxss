@@ -19,10 +19,11 @@
   width: 0;
   height: 0;
 }
-.iot-p2p-intercom.my-intercom {
+
+.intercom-container {
   position: fixed;
   right: 20rpx;
-  top: 20rpx;
+  top: 90rpx;
 }
 .iot-p2p-intercom.my-intercom.vertical_3_4 {
   width: 180rpx;
@@ -39,6 +40,10 @@
 .iot-p2p-intercom.my-intercom.horizontal_9_16 {
   width: 320rpx;
   height: 180rpx;
+}
+.intercom-info {
+  background-color: rgba(0, 0, 0, 0.3);
+  color: white;
 }
 .hangup-btn {
   width: 100rpx;

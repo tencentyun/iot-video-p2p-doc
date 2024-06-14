@@ -19,6 +19,9 @@ wmpfVoip.onVoipEvent((event) => {
   console.info('demo onVoipEvent', event.eventName);
 });
 
+const sysInfo = wx.getSystemInfoSync();
+const pusherSupportLowResolution = (sysInfo.platform === 'ios' && compareVersion(sysInfo.version, '8.0.49') >= 0)
+  || (sysInfo.platform === 'android' && compareVersion(sysInfo.version, '8.0.50') >= 0);
 const pusherPropConfigMap = {
   enableCamera: {
     field: 'enableCamera',
@@ -33,12 +36,15 @@ const pusherPropConfigMap = {
   mode: {
     field: 'mode',
     type: 'radio-group',
-    list: [
-      { value: 'RTC', label: '实时通话' },
-      { value: 'SD', label: '标清' },
-      { value: 'HD', label: '高清' },
-      { value: 'FHD', label: '超清' },
-    ],
+    list: pusherSupportLowResolution
+      ? [
+        { value: 'RTC', label: '实时通话' },
+        { value: 'HVGA', label: 'HVGA' },
+        { value: 'QVGA', label: 'QVGA' },
+      ]
+      : [
+        { value: 'RTC', label: '实时通话' },
+      ],
   },
   orientation: {
     field: 'orientation',
@@ -56,19 +62,10 @@ const pusherPropConfigMap = {
       { value: '9:16', label: '9:16' },
     ],
   },
-  videoLongSide: {
-    field: 'videoLongSide',
-    type: 'radio-group',
-    list: [
-      { value: 480, label: '480' },
-      { value: 640, label: '640' },
-      { value: 1280, label: '1280' },
-      { value: 1920, label: '1920' },
-    ],
-  },
   voiceChangerType: {
     field: 'voiceChangerType',
     type: 'radio-group',
+    valueType: 'number',
     list: [
       { value: 0, label: '关闭' },
       { value: 1, label: '熊孩子' },
@@ -76,6 +73,15 @@ const pusherPropConfigMap = {
       { value: 3, label: '大叔' },
     ],
   },
+};
+
+const pusherMode2VideoLongSide = {
+  SD: 640,
+  HD: 960,
+  FHD: 1280,
+  RTC: 640,
+  HVGA: 480,
+  QVGA: 320,
 };
 
 // 视频对讲水位
@@ -100,8 +106,7 @@ const intercomBirateMap = {
 const intercomAutoBitrate = true;
 
 // 影响性能，需要调试时才打开
-const needLivePusherInfo = false;
-const showPusherVideoSize = false;
+const intercomShowPusherInfo = true;
 
 // 页面隐藏自动关闭对讲
 const autoStopVoiceIfPageHide = true;
@@ -182,7 +187,7 @@ Page({
       disableCameraIfPageHide: autoStopVoiceIfPageHide,
       disableMicIfPageHide: autoStopVoiceIfPageHide,
       acceptPusherEvents: {
-        netstatus: needLivePusherInfo,
+        netstatus: false,
       },
     },
     voiceChangerTypeList: pusherPropConfigMap.voiceChangerType.list,
@@ -192,31 +197,30 @@ Page({
     stateList: [],
     eventList: [],
     intercomState: '',
-    showPusherVideoSize,
+    intercomShowPusherInfo,
     intercomVideoSize: '', // 从netstatus事件里解析出来的实际size，有一定延迟
+    intercomOtherInfo: '',
     intercomPusherProps: {
       enableCamera: true,
       enableMic: true,
       mode: 'RTC',
       orientation: 'vertical', // vertical / horizontal
       aspect: '3:4', // 3:4 / 9:16
-      videoLongSide: 640,
       videoWidth: 480,
       videoHeight: 640,
       ...intercomBirateMap.high,
       disableCameraIfPageHide: autoStopVoiceIfPageHide,
       disableMicIfPageHide: autoStopVoiceIfPageHide,
       acceptPusherEvents: {
-        netstatus: needLivePusherInfo || showPusherVideoSize,
+        netstatus: intercomShowPusherInfo,
       },
     },
     intercomPusherPropConfigList: [
       pusherPropConfigMap.enableCamera,
       pusherPropConfigMap.enableMic,
-      // pusherPropConfigMap.mode, // 只有 RTC 才支持设置 aspect
+      pusherPropConfigMap.mode,
       pusherPropConfigMap.orientation,
       pusherPropConfigMap.aspect,
-      // pusherPropConfigMap.videoLongSide, // 不生效
     ],
     intercomVideoSizeClass: 'vertical_3_4',
     livePusherContextReady: false,
@@ -787,6 +791,15 @@ Page({
         this.setData({ intercomVideoSize });
       }
     }
+    const intercomOtherInfo = [
+      `fps: ${detail.info.videoFPS}`,
+      `gop: ${detail.info.videoGOP}`,
+      `br-v: ${detail.info.videoBitrate}`,
+      `br-a: ${detail.info.audioBitrate}`,
+    ].join('\n');
+    if (intercomOtherInfo !== this.data.intercomOtherInfo) {
+      this.setData({ intercomOtherInfo });
+    }
   },
   onIntercomP2PEvent(evtName, detail) {
     switch (evtName) {
@@ -1103,16 +1116,14 @@ Page({
   },
   intercomPusherPropChange({ detail, currentTarget: { dataset } }) {
     const { field } = dataset;
-    let value = detail.value;
-    if (field === 'videoLongSide') {
-      value = Number(detail.value) || 640;
-    }
+    const { valueType } = pusherPropConfigMap[field];
+    const value = valueType === 'number' ? Number(detail.value) : detail.value;
     const newProps = {
       ...this.data.intercomPusherProps,
       [field]: value,
     };
-    if (field === 'orientation' || field === 'aspect' || field === 'videoLongSide') {
-      const longSide = newProps.videoLongSide;
+    if (field === 'mode' || field === 'orientation' || field === 'aspect') {
+      const longSide = pusherMode2VideoLongSide[newProps.mode];
       const shortSide = (newProps.aspect === '3:4') ? (longSide / 4 * 3) : (longSide / 16 * 9);
       if (newProps.orientation === 'horizontal') {
         newProps.videoWidth = longSide;
@@ -1122,7 +1133,7 @@ Page({
         newProps.videoHeight = longSide;
       }
     }
-    console.log('demo: intercomPusherPropChange', field, detail.value, newProps);
+    console.log('demo: intercomPusherPropChange', field, value, newProps);
     this.setData({
       intercomPusherProps: newProps,
       intercomVideoSizeClass: `${newProps.orientation}_${newProps.aspect.replace(':', '_')}`,
