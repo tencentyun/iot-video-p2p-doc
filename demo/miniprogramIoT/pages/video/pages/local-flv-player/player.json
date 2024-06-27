@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "LocalFlvPlayer 测试页",
+  "usingComponents": {
+    "local-flv-player": "plugin://wechat-p2p-player/local-flv-player",
+    "mp-icon": "weui-miniprogram/icon/icon",
+    "iot-player-controls": "../../components/iot-player-controls/controls"
+  }
+}

@@ -22,6 +22,7 @@
         "pages/xp2p-demo-ipc-playback-cloudmjpg/demo",
         "pages/xp2p-demo-ipc-playback-cloudvideo/demo",
         "pages/xp2p-demo-server/demo",
+        "pages/local-flv-player/player",
         "pages/voip/voip"
       ],
       "plugins": {

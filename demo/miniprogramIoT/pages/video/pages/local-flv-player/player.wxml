@@ -1,0 +1,77 @@
+<view class="page-body">
+  <view class="page-section">
+    <view class="player-container">
+      <local-flv-player
+        wx:if="{{playerId}}"
+        id="{{playerId}}"
+        mode="{{playerProps.mode}}"
+        minCache="{{playerProps.minCache}}"
+        maxCache="{{playerProps.maxCache}}"
+        muted="{{muted}}"
+        orientation="{{orientation}}"
+        objectFit="{{fill ? 'fillCrop' : 'contain'}}"
+        src="{{playerSrc}}"
+        chunkSize="{{chunkSize}}"
+        chunkInterval="{{chunkInterval}}"
+        showLog="{{showLog}}"
+        bind:playerready="onPlayerReady"
+        bind:playererror="onPlayerError"
+        bind:play="onPlay"
+        bind:stop="onStop"
+        bind:ended="onEnded"
+        bind:error="onError"
+        bind:streamerror="onSimpleEvent"
+        bind:liveplayererror="onLivePlayerError"
+        bind:fullscreenchange="onLivePlayerFullScreenChange"
+        bind:statechange="onSimpleEvent"
+      >
+        <iot-player-controls
+          id="{{controlsId}}"
+          showIcons="{{showIcons}}"
+          iconSize="{{iconSize}}"
+          muted="{{muted}}"
+          orientation="{{orientation}}"
+          fill="{{fill}}"
+          fullScreen="{{fullScreen}}"
+          bind:clickicon="clickControlIcon"
+        >
+          <view wx:if="{{fullScreen}}" class="player-control-item" bindtap="bindDestroyPlayer">销毁</view>
+        </iot-player-controls>
+      </local-flv-player>
+    </view>
+  </view>
+  <view class="page-section">
+    <view wx:if="{{localFilePath}}">localFilePath: {{localFilePath}}</view>
+    <view>playerHasSrc: {{!!playerSrc}}</view>
+    <view>playStatus: {{playStatus}}</view>
+  </view>
+  <view class="page-section">
+    <view class="page-section-title">【Player】</view>
+    <view class="group-button-area">
+      <view wx:for="{{playerPropConfigList}}" wx:for-item="propCfg" wx:key="field" class="prop-item {{propCfg.type}}">
+        <view>{{propCfg.label || propCfg.field}}</view>
+        <label wx:if="{{propCfg.type === 'checkbox'}}">
+          <switch type="checkbox" checked="{{playerProps[propCfg.field]}}" data-field="{{propCfg.field}}" disabled="{{playerId}}" bindchange="bindPlayerPropsChange"/>
+          <text>{{propCfg.switchLabel || '开启'}}</text>
+        </label>
+        <radio-group wx:if="{{propCfg.type === 'radio-group'}}" data-field="{{propCfg.field}}" disabled="{{playerId}}" bindchange="bindPlayerPropsChange">
+          <label class="radio" wx:for="{{propCfg.list}}" wx:for-item="radioItem" wx:key="index">
+            <radio value="{{radioItem.value}}" checked="{{playerProps[propCfg.field] === radioItem.value}}" disabled="{{playerId}}"/>{{radioItem.label}}
+          </label>
+        </radio-group>
+      </view>
+    </view>
+    <view class="group-button-area">
+      <button bindtap="bindCreatePlayer" class="group-button" type="primary" size="mini" disabled="{{playerId}}">创建</button>
+      <button bindtap="bindDestroyPlayer" class="group-button" type="primary" size="mini" disabled="{{!playerId}}">销毁</button>
+    </view>
+    <view wx:if="{{needChooseFlv}}" class="group-button-area">
+      <button bindtap="bindChoose" data-field="playerSrc" data-ext="flv" class="group-button" type="primary" size="mini" disabled="{{!playerReady || playerSrc || playStatus}}">从聊天文件中选择FLV</button>
+      <button bindtap="bindClear" class="group-button" type="primary" size="mini" disabled="{{!playerReady || (!playerSrc)}}">清除选择</button>
+    </view>
+    <view class="group-button-area">
+      <button bindtap="bindPlay" class="group-button" type="primary" size="mini" disabled="{{!playerReady || !playerSrc || playStatus}}">{{needLimitSpeed ? '限速播放' : '播放'}}</button>
+      <button bindtap="bindStop" class="group-button" type="primary" size="mini" disabled="{{!playerReady || !playerSrc || !playStatus}}">停止</button>
+    </view>
+  </view>
+</view>

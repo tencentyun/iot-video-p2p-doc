@@ -27,6 +27,7 @@
         <text class="right-btn" wx:if="{{isDevTool}}" bindtap="saveFileInDevTool" data-index="{{index}}">保存</text>
         <text class="right-btn" wx:if="{{item.showSaveToAlbum && item.isMP4}}" bindtap="saveToAlbum" data-index="{{index}}">保存到相册</text>
         <text class="right-btn" wx:if="{{item.showSaveToAlbum && !item.isMP4}}" bindtap="exportToAlbum" data-index="{{index}}">导出到相册</text>
+        <text class="right-btn" wx:if="{{item.showPlay}}" bindtap="playFile" data-index="{{index}}">播放</text>
         <text class="right-btn" wx:if="{{item.isLOG}}" bindtap="openLogFile" data-index="{{index}}">查看</text>
       </view>
     </view>

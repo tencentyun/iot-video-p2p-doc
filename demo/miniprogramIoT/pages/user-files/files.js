@@ -17,6 +17,7 @@ const processFileItem = (item) => {
     item.isMJPG = isMJPG(item.fileName);
     item.isJPG = isJPG(item.fileName);
     item.isLOG = isLOG(item.fileName);
+    item.showPlay = item.isMP4 || item.isM3U8 || item.isFLV;
     item.showSaveToAlbum = !!getSaveFormat(item.fileName);
   }
   return item;
@@ -122,6 +123,32 @@ Page({
 
     if (needExit) {
       app.restart();
+    }
+  },
+  playFile(e) {
+    const { index } = e.currentTarget.dataset;
+    const fileRes = this.data.recordList[index];
+    if (!(fileRes.size > 0)) {
+      wx.showToast({
+        title: '文件为空或读取失败',
+        icon: 'none',
+      });
+      return;
+    }
+    if (fileRes.isMP4 || fileRes.isM3U8) {
+      wx.navigateTo({
+        url: `/pages/test-video/test?localfilepath=${encodeURIComponent(fileRes.filePath)}`,
+      });
+    } else if (fileRes.isFLV) {
+      wx.navigateTo({
+        url: `/pages/video/pages/local-flv-player/player?localfilepath=${encodeURIComponent(fileRes.filePath)}`,
+      });
+    } else {
+      console.error('can not play record', fileRes);
+      wx.showToast({
+        title: '不支持的文件类型',
+        icon: 'none',
+      });
     }
   },
   async saveToAlbum(e) {

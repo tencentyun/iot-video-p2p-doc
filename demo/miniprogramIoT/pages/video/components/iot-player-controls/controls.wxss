@@ -1,0 +1,32 @@
+.player-controls-container {
+  box-sizing: border-box;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20rpx;
+  background-color: rgba(0, 0, 0, 0.3);
+  color: white;
+  display: flex;
+  align-items: center;
+}
+.player-controls-container .player-controls {
+  display: flex;
+}
+.player-controls-container .player-controls.left {
+  flex: 1;
+}
+.player-controls-container .player-controls .player-control-item {
+  position: inline-block;
+  text-align: center;
+  vertical-align: center;
+  min-width: 50rpx;
+  height: 50rpx;
+  line-height: 50rpx;
+}
+.player-controls-container .player-controls.left .player-control-item {
+  margin-right: 20rpx;
+}
+.player-controls-container .player-controls.right .player-control-item {
+  margin-left: 20rpx;
+}

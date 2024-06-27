@@ -9,10 +9,27 @@ Page({
   data: {
     playerId: defaultCustomCache ? 'customPlayer' : 'player',
     customCache: defaultCustomCache,
-    inputSrc: 'https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8',
+    inputSrc: 'https://1500005692.vod2.myqcloud.com/43843706vodtranscq1500005692/62656d94387702300542496289/v.f100240.m3u8',
     src: '',
     ctx: null,
     errMsg: '',
+  },
+  onLoad(query) {
+    if (query.localfilepath) {
+      let localFilePath = query.localfilepath;
+      if (query.localfilepath.indexOf('/') === -1) {
+        // encode过的路径
+        try {
+          localFilePath = decodeURIComponent(query.localfilepath);
+        } catch (err) {
+          console.error('decode query.localfilepath error', err);
+        };
+      }
+      console.log('localFilePath', localFilePath);
+      this.setData({
+        inputSrc: localFilePath,
+      });
+    }
   },
   onReady() {
     this.setData({
