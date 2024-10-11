@@ -1,0 +1,6 @@
+@import "../../../../common.wxss";
+
+.basic-info-title {
+  margin-top: -15px;
+  color: blue;
+}

@@ -1,0 +1,126 @@
+<block>
+  <view class="intercom-call-box" wx:if="{{ deviceInfo.xp2pInfo }}">
+    <iot-p2p-player-with-mjpg
+      id="{{ playerId }}"
+      class="intercom-call-player {{ calling === 'sending' ? 'intercom-call-player-calling full' : '' }}"
+      deviceInfo="{{ deviceInfo }}"
+      xp2pInfo="{{ deviceInfo.xp2pInfo || '' }}"
+      needCheckStream="{{ needCheckStream }}"
+      sceneType="live"
+      streamChannel="{{ 0 }}"
+      streamQuality="{{ innerStreamQuality }}"
+      streamParams="{{ streamParams }}"
+      mode="{{ mode }}"
+      muted="{{ muted }}"
+      acceptPlayerEvents="{{ acceptPlayerEvents }}"
+      liveStreamDomain=""
+      orientation=""
+      rotate="{{ 0 }}"
+      soundMode=""
+      showLog="{{ showLog }}"
+      showDebugInfo="{{ showDebugInfo }}"
+      onlyp2pMap="{{ onlyp2pMap }}"
+      bind:domready="onPlayerEvent"
+      bind:playerstatechange="onPlayerEvent"
+      bind:streamstatechange="onPlayerEvent"
+      bind:playstart="onPlayStateEvent"
+      bind:playsuccess="onPlayStateEvent"
+      bind:playstop="onPlayStateEvent"
+      bind:playend="onPlayStateEvent"
+      bind:playerror="onPlayError"
+      bind:receiveidr="onPlayerEvent"
+      bind:statechange="onPlayerEvent"
+      bind:netstatus="onPlayerEvent"
+      bind:fullscreenchange="onFullScreenChange"
+      bind:mjpgplayerstatechange="onMjpgPlayerEvent"
+      bind:mjpgstreamstatechange="onMjpgPlayerEvent"
+      bind:mjpgplaystart="onMjpgPlayStateEvent"
+      bind:mjpgplaysuccess="onMjpgPlayStateEvent"
+      bind:mjpgplaystop="onMjpgPlayStateEvent"
+      bind:mjpgplayend="onMjpgPlayStateEvent"
+      bind:mjpgplayerror="onMjpgPlayStateEvent"
+      bind:mjpgreceiveimage="onMjpgPlayerEvent"
+      bind:mjpgnetstatus="onMjpgPlayerEvent"
+      bind:recordstatechange="onRecordStateChange"
+      bind:recordfilestatechange="onRecordFileStateChange"
+    >
+      <!--
+        注意要指定slot属性，因为组件设置了 multipleSlots
+        flvInner: 放在 live-player 内部，全屏时可见，随 live-player 销毁，视频流设备用
+        mjpgInner: 放在 image 后面，随 image 销毁，图片流设备用
+        after: 放在 live-player/image 后面，全屏时不可见，live-player/image 销毁后依然存在
+      -->
+      <view slot="{{ deviceInfo.isMjpgDevice ? 'mjpgInner' : 'flvInner' }}">
+        <iot-player-controls
+          id="{{ controlsId }}"
+          showIcons="{{ showIcons }}"
+          iconSize="{{ iconSize }}"
+          qualityMap="{{ qualityMap }}"
+          quality="{{ innerStreamQuality }}"
+          muted="{{ muted }}"
+          orientation="{{ orientation }}"
+          rotate="{{ rotate }}"
+          fill="{{ fill }}"
+          fullScreen="{{ fullScreen }}"
+          record="{{ record }}"
+          bind:clickicon="clickControlIcon"
+        >
+          <slot></slot>
+        </iot-player-controls>
+      </view>
+
+      <view slot="mjpgDebug">
+        <view>【I'm mjpgDebug】</view>
+      </view>
+
+      <view slot="flvDebug">
+        <view>【I'm flvDebug】</view>
+      </view>
+
+      <view slot="after" class="debug-info-switch-container">
+        <view class="debug-info-switch" bindtap="toggleDebugInfo">调试信息</view>
+      </view>
+    </iot-p2p-player-with-mjpg>
+  </view>
+
+  <view class="intercom-call-preview">
+    <iot-p2p-intercom
+      wx:if="{{ intercomId && deviceInfo.xp2pInfo }}"
+      id="{{ intercomId }}"
+      compClass="my-intercom vertical_9_16"
+      deviceInfo="{{ deviceInfo }}"
+      pusherProps="{{ intercomPusherProps }}"
+      autoStopIfPageHide="{{ autoStopVoiceIfPageHide }}"
+      showLog="{{ true }}"
+      bind:intercomeventchange="onIntercomEventChange"
+      bind:intercomstatechange="onIntercomStateChange"
+      bind:intercomstart="onIntercomProcess"
+      bind:intercomsuccess="onIntercomProcess"
+      bind:intercomstop="onIntercomProcess"
+      bind:intercomerror="onIntercomError"
+      bind:previewchange="onIntercomPreviewChange"
+      bind:previewerror="onIntercomPreviewError"
+      bind:livepushercontextchange="onIntercomLivePusherContextChange"
+      bind:systempermissionerror="onIntercomSystemPermissionError"
+      bind:netstatus="onIntercomLivePusherNetStatus"
+    ></iot-p2p-intercom>
+  </view>
+
+  <view wx:if="{{ !errMsg }}">
+    <!-- 发起呼叫 -->
+    <ui-button size="mini" bindtap="call">发起呼叫</ui-button>
+
+    <view class="demo-call-panel" wx:if="{{ calling === 'calling' }}">
+      <view class="demo-call-panel-listener-name">{{ deviceInfo.deviceName }}</view>
+      <view wx:if="{{ !!errMsg }}" class="caller-msg">{{ errMsg }}</view>
+      <image class="caller-hanup-icon" bindtap="callerCanel" src="../../assets/hangup.svg"></image>
+    </view>
+  </view>
+
+  <image
+    class="demo-sending-hangup-btn"
+    wx:if="{{ calling === 'sending' }}"
+    bindtap="callerHangup"
+    src="../../assets/hangup.svg"
+  ></image>
+</block>

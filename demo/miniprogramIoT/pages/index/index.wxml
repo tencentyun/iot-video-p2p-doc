@@ -1,117 +1,39 @@
-<template name="itemInfo">
-  <view class="item-info">
-    <view class="item-title">{{item.title}}</view>
-    <view class="item-btns group-button-area">
-      <button type="primary" class="group-button" size="mini"
-        bindtap="gotoPage"
-        data-check-platform="1"
-        data-url="/pages/video/pages/xp2p-demo-{{item.p2pMode === 'server' ? 'server' : 'ipc'}}/demo?cfg={{item.cfg}}"
-      >
-        P2P监控
-      </button>
-      <block wx:if="{{item.p2pMode !== 'server'}}">
-        <button type="primary" class="group-button {{item.isMjpgDevice ? 'disabled' : ''}}" size="mini"
-          disabled="{{item.isMjpgDevice}}"
-          bindtap="gotoPage"
-          data-check-platform="1"
-          data-url="/pages/video/pages/xp2p-demo-ipc-playback/demo?cfg={{item.cfg}}"
-        >
-          P2P回放
-        </button>
-        <button wx:if="{{item.targetId !== 'recentIPC'}}" type="primary" class="group-button {{(item.cloudRecords && item.cloudRecords.length) ? '' : 'disabled'}}" size="mini"
-          disabled="{{!(item.cloudRecords && item.cloudRecords.length)}}"
-          bindtap="gotoPage"
-          data-url="/pages/video/pages/xp2p-demo-ipc-playback-{{item.isMjpgDevice ? 'cloudmjpg' : 'cloudvideo'}}/demo?cfg={{item.cfg}}"
-        >
-          {{(item.cloudRecords && item.cloudRecords.length) ? '云存回放' : '暂无录像'}}
-        </button>
+<!-- <view class="page-body" style="padding-bottom: 20rpx" > -->
+<block>
+  <ui-card plaintext full l-class="custom-card">
+    <ui-collapse>
+      <ui-collapse-item title="使用指南和隐私申明">
+        <demo-privacy />
+      </ui-collapse-item>
+      <ui-collapse-item title="基本信息">
+        <demo-basicinfo
+          playerVersion="{{ playerVersion }}"
+          xp2pVersion="{{ xp2pVersion }}"
+          canToggleTcpFirst="{{ canToggleTcpFirst }}"
+          tcpFirst="{{ tcpFirst }}"
+          xp2pUuid="{{ xp2pUUID }}"
+          xp2pState="{{ xp2pState }}"
+          xp2pStateTime="{{ xp2pStateTime }}"
+          xp2pLocalPeername="{{ xp2pLocalPeername }}"
+          xp2pNatEvent="{{ xp2pNatEvent }}"
+          xp2pNatEventTime="{{ xp2pNatEventTime }}"
+        />
+      </ui-collapse-item>
+    </ui-collapse>
+  </ui-card>
+
+  <view class="mt-20" style="height: 1px"></view>
+  <demo-device-selector full />
+
+  <view class="mt-20" style="height: 1px"></view>
+  <ui-card plaintext full>
+    <ui-grid show-border>
+      <block wx:for="{{ navigators }}" wx:key="index">
+        <ui-grid-item key="{{ index }}" slot="{{ index }}" bind:linitemtap="handleNavigate">
+          <ui-icon name="{{ item.icon }}" size="50" />
+          <view class="text">{{ item.title }}</view>
+        </ui-grid-item>
       </block>
-    </view>
-  </view>
-</template>
-
-<view class="page-body" style="padding-bottom: 20rpx">
-  <view class="page-section page-section-gap">
-    <view class="notice-box">
-      <view>· 真机体验请使用已上传版本或二维码预览，<text style="color: red">不支持真机调试，不支持PC</text></view>
-      <view>· 开发者工具中仅支持获取p2p数据，<text style="color: red">不支持播放</text></view>
-      <view>· 使用期间需保持设备在线且 xp2pinfo 有效，可以在<text class="text-btn" bindtap="copyDocUrl" data-doc="https://cloud.tencent.com/document/product/1131/52739">控制台云日志</text>查看设备 _sys_xp2p_info 属性</view>
-      <view>· 如果遇到问题，可以查看<text class="text-btn" bindtap="copyDocUrl" data-doc="https://mp.weixin.qq.com/wxopen/plugindevdoc?appid=wx1319af22356934bf">插件开发文档</text>中的常见问题部分，或者提供 xp2pUUID 和出现时间给我们</view>
-      <view>· <text class="text-btn" bindtap="openSetting">《小程序设置》</text></view>
-      <view>· <text class="text-btn" bindtap="gotoPage" data-url="/pages/private-policy/private-policy">《小程序服务声明》</text></view>
-    </view>
-  </view>
-  <view class="page-section page-section-gap">
-    <view>hostInfo: <text user-select>{{hostInfo}}</text></view>
-    <view>sysInfo: <text user-select>{{sysInfo}}</text></view>
-    <view>wxVersion: <text user-select>wx {{wxVersion}} / sdk {{wxSDKVersion}}</text></view>
-    <view>pluginVersion: <text user-select>p2p-player {{playerVersion}} / xp2p {{xp2pVersion}}</text></view>
-    <view>userId: <text user-select>{{userId}}</text></view>
-    <view>
-      xp2p
-      <view class="margin-left">
-        <view wx:if="{{canToggleTcpFirst}}">tcpFirst: {{tcpFirst}} <text class="text-btn" bindtap="toggleTcpFirst">切换</text></view>
-        <view>uuid: <text user-select>{{xp2pUUID}}</text></view>
-        <view>state: {{xp2pState}} <text wx:if="{{xp2pState}}">@{{xp2pStateTime}}</text></view>
-        <view>localPeername: {{xp2pLocalPeername}}</view>
-        <view wx:if="{{xp2pNatEvent}}" style="color: red">{{xp2pNatEvent}} @{{xp2pNatEventTime}}</view>
-      </view>
-    </view>
-  </view>
-  <view class="page-section">
-    <view class="page-section-title">【最近查看设备】</view>
-    <view class="margin-left" wx:if="{{recentIPCItem}}">
-      <view class="small-tip">设备类型：{{recentIPCItem.isMjpgDevice ? '图片流设备' : '视频流设备'}}</view>
-      <template is="itemInfo" data="{{ item: recentIPCItem }}" />
-    </view>
-    <view class="margin-left" wx:else>
-      <view class="small-tip">无最近查看设备，请输入设备信息后查看</view>
-      <view class="group-button-area">
-        <button type="primary" class="group-button" size="mini"
-          bindtap="gotoPage"
-          data-check-platform="1"
-          data-url="/pages/video/pages/xp2p-demo-ipc/demo?cfg=emptyIPC"
-        >
-          视频流设备监控
-        </button>
-        <button type="primary" class="group-button" size="mini"
-          bindtap="gotoPage"
-          data-check-platform="1"
-          data-url="/pages/video/pages/xp2p-demo-ipc/demo?cfg=emptyIPCMjpg"
-        >
-          图片流设备监控
-        </button>
-      </view>
-    </view>
-  </view>
-  <view class="page-section">
-    <view class="page-section-title">【1v1-视频流设备】</view>
-    <view class="margin-left">
-      <template is="itemInfo" wx:for="{{listVideoDevices}}" wx:key="cfg" data="{{ item }}" />
-    </view>
-  </view>
-  <view class="page-section">
-    <view class="page-section-title">【1v1-图片流设备】</view>
-    <view class="margin-left">
-      <template is="itemInfo" wx:for="{{listMjpgDevices}}" wx:key="cfg" data="{{ item }}" />
-    </view>
-  </view>
-  <view class="page-section">
-    <view class="page-section-title">【1v多】</view>
-    <view class="margin-left">
-      <template is="itemInfo" wx:for="{{listServerStreams}}" wx:key="cfg" data="{{ item }}" />
-    </view>
-  </view>
-  <view class="page-section">
-    <navigator url="/pages/user-files/files?name=logs" hover-class="navigator-hover">跳转到 Log 管理页</navigator>
-    <navigator url="/pages/user-files/files?name=flvs" hover-class="navigator-hover">跳转到 P2P-flv录像管理页</navigator>
-    <navigator url="/pages/user-files/files?name=streams" hover-class="navigator-hover">跳转到 P2P-stream录像管理页</navigator>
-    <navigator url="/pages/user-files/files?name=voices" hover-class="navigator-hover">跳转到 P2P-对讲管理页</navigator>
-    <navigator url="/pages/user-files/files?name=downloads" hover-class="navigator-hover">跳转到 P2P-下载管理页</navigator>
-    <navigator url="/pages/user-files/files?name=cloud" hover-class="navigator-hover">跳转到 Cloud-下载管理页</navigator>
-    <navigator url="/pages/test-video/test" hover-class="navigator-hover">跳转到 Video 测试页</navigator>
-    <navigator url="/pages/video/pages/local-flv-player/player" hover-class="navigator-hover">跳转到 LocalFlvPlayer 测试页</navigator>
-    <navigator url="/pages/video/pages/voip/voip" hover-class="navigator-hover">跳转到 voip 测试页面</navigator>
-  </view>
-</view>
-
+    </ui-grid>
+  </ui-card>
+</block>

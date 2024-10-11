@@ -16,3 +16,9 @@ navigator {
 .item-info .item-btns {
   text-align: right;
 }
+
+.l-class,
+.custom-card {
+  padding-left: 0;
+  padding-right: 0;
+}

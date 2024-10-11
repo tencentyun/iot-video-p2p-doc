@@ -23,7 +23,8 @@
         "pages/xp2p-demo-ipc-playback-cloudvideo/demo",
         "pages/xp2p-demo-server/demo",
         "pages/local-flv-player/player",
-        "pages/voip/voip"
+        "pages/voip/voip",
+        "pages/xp2p-intercom-call/demo"
       ],
       "plugins": {
         "wechat-p2p-player": {
@@ -38,6 +39,9 @@
       }
     }
   ],
+  "window": {
+    "backgroundColor" : "#f5f5f5"
+  },
   "preloadRule": {
     "pages/index/index": {
       "network": "all",

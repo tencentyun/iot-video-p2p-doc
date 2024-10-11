@@ -2,6 +2,7 @@ import { defaultShareInfo } from '../../../../config/config';
 import { isDevTool, toTimeMsString, compareVersion } from '../../../../utils';
 import { getXp2pManager } from '../../lib/xp2pManager';
 import { CustomPusher } from '../../lib/customPusher';
+import { STORE } from '../../../../lib/demo-storage-store';
 
 // 覆盖 console
 const app = getApp();
@@ -121,7 +122,7 @@ const mockFlvHeader = new Uint8Array([0x46, 0x4c, 0x56, 0x01, 0x05, 0x00, 0x00, 
 Page({
   data: {
     // 这是onLoad时就固定的
-    cfg: '',
+    deviceId: '',
     loadErrMsg: '',
 
     // 设备信息，在input组件里填
@@ -306,16 +307,18 @@ Page({
       return;
     }
 
-    const cfg = query.cfg || '';
-    this.setData({
-      cfg,
-    });
+    const deviceId = query.deviceId || '';
+    const deviceInfo = STORE.getDeviceById(deviceId);
+    if (deviceInfo) {
+      this.setData({ deviceId, deviceInfo });
+      this.onStartPlayer({ detail: { ...deviceInfo, targetId: deviceId } });
+    }
   },
   onShow() {
-    console.log('demo: onShow');
+    console.log('demo: ipc live demo onShow');
   },
   onHide() {
-    console.log('demo: onHide');
+    console.log('demo: ipc live demo onHide');
 
     // 组件会自动停止，这里不用处理
     // if (autoStopVoiceIfPageHide) {
@@ -406,7 +409,12 @@ Page({
       console.log('demo: info error');
       this.setData({
         targetId: detail.targetId,
-        deviceInfo: detail.deviceInfo,
+        deviceInfo: {
+          deviceId: detail.deviceId,
+          productId: detail.productId,
+          deviceName: detail.deviceName,
+        },
+        xp2pInfo: detail.xp2pInfo,
         p2pMode: detail.p2pMode,
         sceneType: detail.sceneType,
       });
@@ -418,13 +426,17 @@ Page({
       this.startTestRender();
     }
 
-    this.userData.deviceId = detail.deviceInfo.deviceId;
+    this.userData.deviceId = detail.deviceId;
 
     // 开始连接
     console.log('demo: startP2PService', this.userData.deviceId);
     const servicePromise = xp2pManager.startP2PService({
       p2pMode: detail.p2pMode,
-      deviceInfo: detail.deviceInfo,
+      deviceInfo: {
+        deviceId: detail.deviceId,
+        productId: detail.productId,
+        deviceName: detail.deviceName,
+      },
       xp2pInfo: detail.xp2pInfo,
       liveStreamDomain: detail.liveStreamDomain,
       caller: this.userData.pageId,
@@ -455,7 +467,7 @@ Page({
       // 默认通道0
       detail.useChannelIds = [0];
     }
-    console.log('demo: set deviceInfo', detail.deviceInfo, detail.useChannelIds);
+    console.log('demo: set deviceInfo', detail, detail.useChannelIds || []);
 
     this.setData({
       ...detail,
@@ -564,6 +576,7 @@ Page({
     });
   },
   showModal(params) {
+    console.log('[demo] showModal params: ', params);
     !this.hasExited && wx.showModal(params);
   },
 
@@ -585,7 +598,7 @@ Page({
   gotoCloudPlayback() {
     console.log('demo: gotoCloudPlayback');
     const { isMjpgDevice } = this.data.deviceInfo;
-    const url = `/pages/video/pages/xp2p-demo-ipc-playback-${isMjpgDevice ? 'cloudmjpg' : 'cloudvideo'}/demo?cfg=${this.data.cfg}`;
+    const url = `/pages/video/pages/xp2p-demo-ipc-playback-${isMjpgDevice ? 'cloudmjpg' : 'cloudvideo'}/demo?deviceId=${this.data.deviceId}`;
     wx.navigateTo({ url });
   },
   changeSoundMode() {
@@ -667,10 +680,10 @@ Page({
       'feedbackFromDevice',
       (body) => {
         console.log('demo: FEEDBACK_FROM_DEVICE', body);
-        wx.showModal({
-          title: 'feedbackFromDevice',
-          content: JSON.stringify(body),
-        });
+        // wx.showModal({
+        //   title: 'feedbackFromDevice',
+        //   content: JSON.stringify(body),
+        // });
       },
     );
   },
@@ -1283,7 +1296,7 @@ Page({
     this.userData.testTimer = setInterval(() => {
       tmpDate = new Date();
       totalSec = Math.round((tmpDate.getTime() - this.userData.startRenderTime) / 1000);
-      this.setData({ testStr: `${toTimeMsString(tmpDate)}, last ${tmpDate.getTime() - this.userData.lastRenderTime}ms, total ${Math.floor(totalSec / 60)}m${totalSec % 60}s`});
+      this.setData({ testStr: `${toTimeMsString(tmpDate)}, last ${tmpDate.getTime() - this.userData.lastRenderTime}ms, total ${Math.floor(totalSec / 60)}m${totalSec % 60}s` });
       this.userData.lastRenderTime = tmpDate.getTime();
     }, 10000);
 

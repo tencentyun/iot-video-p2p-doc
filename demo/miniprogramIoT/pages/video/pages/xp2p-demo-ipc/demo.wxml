@@ -2,8 +2,8 @@
   <view wx:if="{{loadErrMsg}}">{{loadErrMsg}}</view>
   <view wx:elif="{{!deviceInfo}}" class="page-body page-body-padding">
     <iot-device-input
-      wx:if="{{cfg}}"
-      cfg="{{cfg}}"
+      wx:if="{{deviceId}}"
+      deviceId="{{deviceId}}"
       bind:startPlayer="onStartPlayer"
     />
   </view>

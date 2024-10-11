@@ -1,0 +1,132 @@
+@import '../../../../common.wxss';
+@import '../../player.wxss';
+
+.add-device-btns {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  height: 64px;
+}
+
+.right-section {
+  display: flex;
+  justify-content: right;
+  align-items: center;
+  margin-right: 20px;
+}
+
+.player-controls-container {
+  box-sizing: border-box;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 20rpx;
+  background-color: rgba(0, 0, 0, 0.3);
+  color: white;
+  display: flex;
+  align-items: center;
+}
+
+.player-controls-container .player-controls {
+  display: flex;
+}
+
+.player-controls-container .player-controls.left {
+  flex: 1;
+}
+
+.player-controls-container .player-controls .player-control-item {
+  position: inline-block;
+  text-align: center;
+  vertical-align: center;
+  min-width: 50rpx;
+  height: 50rpx;
+  line-height: 50rpx;
+}
+
+.player-controls-container .player-controls.left .player-control-item {
+  margin-right: 20rpx;
+}
+
+.player-controls-container .player-controls.right .player-control-item {
+  margin-left: 20rpx;
+}
+
+/* 发起呼叫 */
+.demo-call-panel {
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* background-color: rgba(0, 0, 0, 0.3); */
+  background-color: rgba(0, 0, 0);
+  color: #fff;
+  /* display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center; */
+}
+
+.demo-call-panel .demo-call-panel-listener-name {
+  margin-top: 25%;
+  text-align: center;
+}
+
+.demo-call-panel .caller-msg {
+  position: fixed;
+  top: 50%;
+  left: 0;
+  text-align: center;
+  color: #fff;
+}
+
+.demo-call-panel .caller-hanup-icon {
+  width: 60px;
+  height: 60px;
+  position: fixed;
+  bottom: 10%;
+  text-align: center;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.intercom-call-player-calling {
+  height: 100vh;
+  width: 100vw;
+}
+
+.intercom-call-preview {
+  position: fixed;
+  right: 20px;
+  top: 90px;
+}
+.iot-p2p-intercom.my-intercom.vertical_3_4 {
+  width: 180rpx;
+  height: 240rpx;
+}
+.iot-p2p-intercom.my-intercom.vertical_9_16 {
+  width: 180rpx;
+  height: 320rpx;
+}
+.iot-p2p-intercom.my-intercom.horizontal_3_4 {
+  width: 240rpx;
+  height: 180rpx;
+}
+.iot-p2p-intercom.my-intercom.horizontal_9_16 {
+  width: 320rpx;
+  height: 180rpx;
+}
+
+.demo-sending-hangup-btn {
+  position: fixed;
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 60px;
+  text-align: center;
+}

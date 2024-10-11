@@ -1,8 +1,8 @@
 /* eslint-disable */
-import { presetDevices, isDeviceCfgValid } from './devices';
+import { presetDevices, isDeviceCfgValid, updateStorageIPC, totalData } from './devices';
 import { presetServerStreams } from './streams';
 
-export { defaultOptions as defaultIPCOptions } from './devices';
+export { defaultOptions as defaultIPCOptions, demoDevices, totalData, genDeviceCfg } from './devices';
 
 export const defaultShareInfo = {
   title: 'XP2P Demo',
@@ -14,12 +14,9 @@ export const defaultShareInfo = {
 export { presetDevices, isDeviceCfgValid } from './devices';
 export { presetServerStreams } from './streams';
 
-export const totalData = {};
-
 // 最近查看的ipc设备
 const recentIPC = wx.getStorageSync('recentIPC');
 if (recentIPC && isDeviceCfgValid(recentIPC)) {
-  console.log('get recentIPC', recentIPC);
   totalData.recentIPC = recentIPC;
 }
 
@@ -41,7 +38,6 @@ for (const key in presetServerStreams) {
   };
 }
 
-console.log('totalData', totalData);
 
 export const updateRecentIPC = (cfg) => {
   if (!isDeviceCfgValid(cfg)) {
@@ -59,7 +55,10 @@ export const updateRecentIPC = (cfg) => {
     initCommand: cfg.initCommand,
     options: cfg.options,
   };
-  console.log('set recentIPC', recentIPC);
+
+  // 将之前的recentIPC存入到缓存中，方便后续调试使用
+  updateStorageIPC(totalData.recentIPC);
+
   totalData.recentIPC = recentIPC;
   wx.setStorageSync('recentIPC', recentIPC);
 };

@@ -1,6 +1,6 @@
 {
   "appid": "wx9e8fbc98ceac2628",
-  "projectname": "iotvideo-xp2p-github-iot",
+  "projectname": "iotvideo-xp2p-demo-iot",
   "compileType": "miniprogram",
   "setting": {
     "urlCheck": true,
@@ -45,5 +45,6 @@
   "editorSetting": {
     "tabIndent": "insertSpaces",
     "tabSize": 2
-  }
+  },
+  "libVersion": "2.33.0"
 }

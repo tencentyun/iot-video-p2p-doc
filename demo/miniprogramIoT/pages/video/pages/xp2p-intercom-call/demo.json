@@ -1,0 +1,20 @@
+{
+  "navigationBarTitleText": "1v1 双向音视频",
+  "usingComponents": {
+    "iot-p2p-player-with-mjpg": "plugin://xp2p/iot-p2p-player-with-mjpg",
+    "iot-p2p-voice": "plugin://xp2p/iot-p2p-voice",
+    "iot-p2p-intercom": "plugin://xp2p/iot-p2p-intercom",
+    "mp-icon": "weui-miniprogram/icon/icon",
+    "iot-player-controls": "../../components/iot-player-controls/controls",
+    "ui-card": "/ui-components/card/index",
+    "ui-button": "/ui-components/button/index",
+    "ui-form": "/ui-components/form/index",
+    "ui-form-item": "/ui-components/form-item/index",
+    "ui-input": "/ui-components/input/index",
+    "ui-collapse-item": "/ui-components/collapse-item/index",
+    "ui-collapse": "/ui-components/collapse/index",
+    "ui-list": "/ui-components/list/index",
+    "ui-arc-popup": "/ui-components/arc-popup/index",
+    "ui-slide-view": "/ui-components/slide-view/index"
+  }
+}

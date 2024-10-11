@@ -18,7 +18,7 @@ const getDefaultChannelOptions = () => (
 Component({
   behaviors: ['wx://component-export'],
   properties: {
-    cfg: {
+    deviceId: {
       type: String,
       value: '',
     },
@@ -216,11 +216,11 @@ Component({
       }
       console.log(`[${this.id}]`, 'attached', this.id, this.properties);
       let data;
-      switch (this.properties.cfg) {
+      switch (this.properties.deviceId) {
         case 'emptyIPC':
           data = {
             p2pMode: 'ipc',
-            targetId: this.properties.cfg,
+            targetId: this.properties.deviceId,
             isMjpgDevice: false,
             productId: '',
             deviceName: '',
@@ -231,7 +231,7 @@ Component({
         case 'emptyIPCMjpg':
           data = {
             p2pMode: 'ipc',
-            targetId: this.properties.cfg,
+            targetId: this.properties.deviceId,
             isMjpgDevice: true,
             productId: '',
             deviceName: '',
@@ -240,15 +240,15 @@ Component({
           };
           break;
         default:
-          data = this.properties.cfg && totalData[this.properties.cfg];
+          data = this.properties.deviceId && totalData[this.properties.deviceId];
           break;
       }
       if (!data) {
-        console.log(`[${this.id}]`, 'invalid cfg');
+        console.log(`[${this.id}]`, 'invalid deviceId');
         return;
       }
 
-      console.log(`[${this.id}]`, 'setData from cfg data', data);
+      console.log(`[${this.id}]`, 'setData from deviceId data', data);
       // 基础字段
       const { simpleInputs } = this.data;
       simpleInputs.forEach((item) => {

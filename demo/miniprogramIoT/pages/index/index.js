@@ -1,30 +1,14 @@
-import { presetDevices, isDeviceCfgValid, presetServerStreams, totalData, updateRecentIPC, defaultShareInfo } from '../../config/config';
-import { getUserId } from '../../utils';
+import { isDeviceCfgValid, updateRecentIPC, defaultShareInfo } from '../../config/config';
 
 const sysInfo = wx.getSystemInfoSync();
-const accountInfo = wx.getAccountInfoSync();
-const miniProgramInfo = accountInfo.miniProgram;
 
 const XP2PManagerEvent = {
   XP2P_STATE_CHANGE: 'xp2pStateChange',
   XP2P_NAT_EVENT: 'xp2pNatEvent',
 };
 
-const getShortFlvName = (flvFile) => {
-  const filename = flvFile.split('.')[0];
-  if (filename.length > 10) {
-    return `${filename.substr(0, 4)}****${filename.substr(-4, 4)}`;
-  }
-  return filename;
-};
-
 Page({
   data: {
-    wxVersion: sysInfo.version,
-    wxSDKVersion: sysInfo.SDKVersion,
-    hostInfo: `${miniProgramInfo.appId}-${miniProgramInfo.envVersion}`,
-    sysInfo: `${sysInfo.platform} / ${sysInfo.system}`,
-    userId: getUserId(),
     playerVersion: '',
     xp2pVersion: '',
     xp2pUUID: '',
@@ -38,64 +22,49 @@ Page({
     tcpFirst: false,
     canToggleTcpFirst: false,
 
-    // 这些是监控页入口
-    recentIPCItem: null,
-    listVideoDevices: [],
-    listMjpgDevices: [],
-    listServerStreams: [],
-    firstServerStream: null,
-    firstIPCStream: null,
-
-    // 选择的cfg
-    cfg: '',
+    // 底部导航
+    navigators: [
+      {
+        icon: 'order',
+        title: 'Log管理',
+        path: '/pages/user-files/files?name=logs',
+      }, {
+        icon: 'video',
+        title: 'flv录像',
+        path: '/pages/user-files/files?name=flvs',
+      }, {
+        icon: 'video',
+        title: 'stream录像',
+        path: '/pages/user-files/files?name=streams',
+      }, {
+        icon: 'phone',
+        title: '对讲录像',
+        path: '/pages/user-files/files?name=voices',
+      }, {
+        icon: 'download',
+        title: '本地下载',
+        path: '/pages/user-files/files?name=downloads',
+      }, {
+        icon: 'download',
+        title: '云存下载',
+        path: '/pages/user-files/files?name=cloud',
+      }, {
+        icon: 'video',
+        title: 'Video测试',
+        path: '/pages/test-video/test',
+      }, {
+        icon: 'video',
+        title: 'local player',
+        path: '/pages/video/pages/local-flv-player/player',
+      }, {
+        icon: 'phone',
+        title: 'TWeCall',
+        path: '/pages/video/pages/voip/voip',
+      },
+    ],
   },
   onLoad(query) {
     console.log('index: onLoad', query);
-    this.showPolicyModal();
-
-    const listVideoDevices = [];
-    const listMjpgDevices = [];
-    const listServerStreams = [];
-    let firstServerStream = null;
-    let firstIPCStream = null;
-    for (const key in presetDevices) {
-      const item = presetDevices[key];
-      const navItem = {
-        p2pMode: 'ipc',
-        cfg: key,
-        title: `${item.productName || item.productId}/${item.deviceName}`,
-        ...item,
-      };
-      if (item.showInHomePageBtn) {
-        if (navItem.isMjpgDevice) {
-          listMjpgDevices.push(navItem);
-        } else {
-          listVideoDevices.push(navItem);
-        }
-        if (!firstIPCStream) {
-          firstIPCStream = navItem;
-        }
-      }
-    }
-    for (const key in presetServerStreams) {
-      const item = presetServerStreams[key];
-      const navItem = {
-        p2pMode: 'server',
-        cfg: key,
-        title: `${item.serverName}/${getShortFlvName(item.flvFile)}`,
-        ...item,
-      };
-      if (item.showInHomePageBtn) {
-        listServerStreams.push(navItem);
-        if (!firstServerStream) {
-          firstServerStream = navItem;
-        }
-      }
-    }
-    this.setData({ listVideoDevices, listMjpgDevices, listServerStreams, firstServerStream, firstIPCStream });
-
-    this.refreshRecnetIPC();
-
     /**
      * demo是为了展示xp2p相关信息和状态才预加载 xp2pManager.js 并监听相关事件，实际应用可以不处理
      * 有构建过程的，可能不能直接用 require.async，建议查看构建工具文档
@@ -182,20 +151,7 @@ Page({
   onShareAppMessage() {
     return defaultShareInfo;
   },
-  onShow() {
-    this.refreshRecnetIPC();
-  },
-  refreshRecnetIPC() {
-    const cfg = totalData.recentIPC;
-    this.setData({
-      recentIPCItem: cfg ? {
-        p2pMode: 'ipc',
-        cfg: 'recentIPC',
-        title: `${cfg.productId}/${cfg.deviceName}`,
-        ...cfg,
-      } : null,
-    });
-  },
+  onShow() { },
   onXp2pLoaded() {
     const { xp2pManager } = this.userData;
     console.log(`index: onXp2pLoaded, uuid ${xp2pManager?.uuid}, xp2pState ${xp2pManager?.moduleState}`);
@@ -209,6 +165,7 @@ Page({
       xp2pStateTime: Date.now(),
     });
   },
+
   onXp2pStateChange({ state }) {
     console.log('index: onXp2pStateChange', state);
     this.setData({
@@ -230,14 +187,7 @@ Page({
       xp2pNatEventTime: Date.now(),
     });
   },
-  openSetting() {
-    wx.openSetting({
-      success() { /** */ },
-      fail() {
-        wx.showToast({ title: '打开失败！' });
-      },
-    });
-  },
+
   gotoPage(e) {
     const { url, checkPlatform } = e.currentTarget.dataset;
     if (checkPlatform && !['ios', 'android', 'devtools'].includes(sysInfo.platform)) {
@@ -246,43 +196,9 @@ Page({
     }
     wx.navigateTo({ url });
   },
-  async copyDocUrl(e) {
-    const { doc } = e.currentTarget.dataset;
-    if (!doc) {
-      return;
-    }
-    await wx.setClipboardData({
-      data: doc,
-    });
-    wx.showToast({ title: '文档地址已复制到剪贴板', icon: 'none' });
-  },
-  showPolicyModal() {
-    const key = 'PRIVATE_POLICY_MODAL_SHOWED';
-    const value = wx.getStorageSync(key);
 
-    if (!value) {
-      wx.setStorageSync(key, true);
-      wx.showModal({
-        title: '隐私政策',
-        content: '我们严格按照《小程序服务声明》向您提供服务，不会收集和处理您的个人信息。如您对《小程序服务声明》有任何疑问或建议，可以通过声明内的联系方式向我们反馈。',
-        confirmText: '我已知晓',
-        cancelText: '查看声明',
-        success(res) {
-          if (!res.confirm) {
-            console.log('res.confirm');
-            wx.navigateTo({
-              url: '/pages/private-policy/private-policy',
-            });
-          }
-        },
-      });
-    }
-  },
-  toggleTcpFirst() {
-    const app = getApp();
-    if (!app.toggleTcpFirst) {
-      return;
-    }
-    app.toggleTcpFirst();
+  handleNavigate(e) {
+    const idx = parseInt(e.detail.key, 10);
+    wx.navigateTo({ url: this.data.navigators[idx].path });
   },
 });

@@ -1,0 +1,50 @@
+@import '../../../../common.wxss';
+
+.device-selecter {
+  width: 100vw;
+  min-height: 200px;
+  font-size: 14px;
+  background-color: #0004;
+  margin-top: -10px;
+}
+
+.weui-cell__bd {
+  font-size: 12px;
+}
+
+.text-blue {
+  background: orange;
+}
+
+view.weui-cell {
+  display: block;
+}
+
+view.weui-cell__bd {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.ml-10 {
+  margin-left: 10px;
+}
+
+.item-info {
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  /* display: flex;
+  justify-content: space-between; */
+}
+.item-info .item-btns {
+  text-align: right;
+}
+
+.group-button-area {
+  text-align: right;
+}
+
+.demo-basicinfo {
+  background: lightblue;
+}

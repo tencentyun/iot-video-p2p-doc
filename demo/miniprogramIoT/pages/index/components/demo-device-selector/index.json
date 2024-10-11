@@ -1,0 +1,22 @@
+{
+  "component": true,
+  "usingComponents": {
+    "mp-icon": "weui-miniprogram/icon/icon",
+    "mp-cells": "weui-miniprogram/cells/cells",
+    "mp-cell": "weui-miniprogram/cell/cell",
+    "mp-badge": "weui-miniprogram/badge/badge",
+
+
+    "ui-card": "/ui-components/card/index",
+    "ui-button": "/ui-components/button/index",
+    "ui-form": "/ui-components/form/index",
+    "ui-form-item": "/ui-components/form-item/index",
+    "ui-input": "/ui-components/input/index",
+    "ui-list": "/ui-components/list/index",
+    "ui-arc-popup": "/ui-components/arc-popup/index",
+    "ui-checkbox-group": "/ui-components/checkbox-group/index",
+    "ui-checkbox": "/ui-components/checkbox/index",
+    "ui-radio-group": "/ui-components/radio-group/index",
+    "ui-radio": "/ui-components/radio/index"
+  }
+}

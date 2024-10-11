@@ -24,6 +24,8 @@
  *   intercomLog: boolean 对讲log，默认 false
  */
 
+export const totalData = {};
+
 export const defaultOptions = {
   // 设备属性
   liveQuality: 'high',
@@ -60,7 +62,7 @@ const devices = {
     productName: 'x86-udp',
     productId: 'SO1Z9Y787A',
     deviceName: 'youzi_79972790_1',
-    xp2pInfo: 'XP2P4dDpbX8kO6ho4yx4I7oEMQ==%2.4.43',
+    xp2pInfo: 'XP2P4dDpbX8kO6gl2TpaMqc3GA==%2.4.43',
     options: {
       playerRTC: true,
       playerMuted: true,
@@ -73,10 +75,36 @@ const devices = {
     productName: 'x86-tcp',
     productId: 'SO1Z9Y787A',
     deviceName: 'youzi_79972790_2',
-    xp2pInfo: 'XP2PlmS3tg+xnZTYcTFTsVTlQRoP%2.4.43',
+    xp2pInfo: 'XP2PlmS3tg+xnZTYcVxAu3yVdBsY%2.4.43',
     options: {
       supportPTZ: true,
       supportCustomCommand: true,
+      playerRTC: true,
+      playerMuted: true,
+      voiceType: 'Pusher',
+      intercomType: 'voice',
+    },
+  },
+  debug_signal_udp: {
+    showInHomePageBtn: true,
+    productName: 'signal-udp',
+    productId: 'J5YLI0DSZZ',
+    deviceName: 'signalc1_131193839_1',
+    xp2pInfo: 'XP2PIo4CesqQOCc5j/SxiT8Dwg==%2.4.45',
+    options: {
+      playerRTC: true,
+      playerMuted: true,
+      voiceType: 'Pusher',
+      intercomType: 'voice',
+    },
+  },
+  debug_signal_tcp: {
+    showInHomePageBtn: true,
+    productName: 'signal-tcp',
+    productId: 'J5YLI0DSZZ',
+    deviceName: 'signalc1_131193839_2',
+    xp2pInfo: 'XP2PxIn3PGxXhC86I0HGIwUQHltZ%2.4.45',
+    options: {
       playerRTC: true,
       playerMuted: true,
       voiceType: 'Pusher',
@@ -150,11 +178,58 @@ Object.values(devices).forEach((device) => {
   };
 });
 
-export const presetDevices = devices;
+export const getStorageIPC = () => {
+  const historyIPC = wx.getStorageSync('historyIPC') || [];
+  if (!Array.isArray(historyIPC)) return [];
+  return historyIPC;
+};
+
 
 export const isDeviceCfgValid = cfgInfo => (
   cfgInfo && typeof cfgInfo.isMjpgDevice === 'boolean'
-    && cfgInfo.productId
-    && cfgInfo.deviceName
-    && cfgInfo.xp2pInfo
+  && cfgInfo.productId
+  && cfgInfo.deviceName
+  && cfgInfo.xp2pInfo
 );
+
+export const presetDevices = devices;
+
+/** demo 设备列表，显示顺序后加入的设备先显示。默认显示 10 条 */
+export const demoDeviceList = [];
+
+/** 生成 cfg, 也就是数据的 id，历史遗留问题了 */
+export const genDeviceCfg = (item) => `historyIPC-${item.productId}/${item.deviceName}`;
+
+const historyIPC = getStorageIPC();
+for (const item of historyIPC) {
+  if (isDeviceCfgValid(item)) {
+    item.p2pMode = item.p2pMode ?? 'ipc';
+    const cfg = genDeviceCfg(item);
+    item.cfg = item.cfg || cfg;
+    devices[cfg] = item;
+    totalData[cfg] = item;
+  }
+  demoDeviceList.push(item);
+}
+
+for (const [cfg, item] of Object.entries(devices)) {
+  if (isDeviceCfgValid(item) && !item?.p2pMode) {
+    item.p2pMode = 'ipc';
+    // 添加 cfg 属性，方便查找
+    item.cfg = item.cfg ?? cfg;
+  }
+  demoDeviceList.push(item);
+}
+
+export const demoDevices = demoDeviceList.slice(0, 10);
+
+export const updateStorageIPC = (cfg) => {
+  if (!isDeviceCfgValid(cfg)) {
+    return;
+  }
+  // 将之前的recentIPC存入到缓存中，方便后续调试使用
+  const historyIPC = getStorageIPC();
+  const idx = historyIPC.findIndex(item => item.productId === cfg.productId && item.deviceName === cfg.deviceName);
+  if (idx >= 0) historyIPC.splice(idx, 1);
+  wx.setStorageSync('historyIPC', [cfg, ...historyIPC].slice(0, 10));
+};

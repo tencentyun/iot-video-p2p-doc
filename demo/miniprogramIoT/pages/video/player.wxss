@@ -5,6 +5,8 @@
   width: 750rpx;
   height: 400rpx;
 }
+
+.intercom-call-player.full .iot-player,
 .my-player.full .iot-player {
   height: 100vh;
 }
@@ -27,6 +29,7 @@
   top: 0;
   z-index: 101;
 }
+
 .debug-info-switch-container .debug-info-switch {
   background-color: rgba(0, 0, 0, 0.3);
   color: white;

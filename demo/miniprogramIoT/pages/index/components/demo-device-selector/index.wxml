@@ -1,0 +1,177 @@
+<block>
+  <ui-card title="设备信息" class="{{ className }}" plaintext="{{ !!full }}" full="{{ !!full }}">
+    <view class="btn-grp left">
+      <ui-button type="default" plain size="mini" bindtap="importXp2pInfo">从剪切板导入</ui-button>
+      <ui-button type="default" plain size="mini" class="ml-10" bindtap="setShowDeviceList">选择设备</ui-button>
+    </view>
+
+    <ui-form name="addDeviceForm">
+      <ui-form-item label="ProductId" name="productId" label-width="168rpx">
+        <ui-input
+          label-layout="left"
+          label-width="170"
+          hide-label
+          value="{{ deviceData.productId }}"
+          data-label="productId"
+          bind:lininput="handleInputDeviceData"
+        ></ui-input>
+      </ui-form-item>
+
+      <ui-form-item label="DeviceName" name="deviceName" label-width="168rpx">
+        <ui-input
+          label-layout="left"
+          label-width="170"
+          hide-label
+          value="{{ deviceData.deviceName }}"
+          data-label="deviceName"
+          bind:lininput="handleInputDeviceData"
+        ></ui-input>
+      </ui-form-item>
+
+      <ui-form-item label="Xp2pInfo" name="xp2pInfo" label-width="168rpx">
+        <ui-input
+          label-layout="left"
+          label-width="170"
+          hide-label
+          value="{{ deviceData.xp2pInfo }}"
+          data-label="xp2pInfo"
+          bind:lininput="handleInputDeviceData"
+        ></ui-input>
+      </ui-form-item>
+
+      <block wx:if="{{ !!deviceData.productId && !!deviceData.deviceName && !!deviceData.xp2pInfo }}">
+        <ui-form-item label="多通道" name="channelIds" label-width="168rpx">
+          <ui-checkbox-group bind:linchange="onChangeChannelIds" placement="row" min-selected="{{ 1 }}">
+            <ui-checkbox
+              wx:for-items="{{ channelIds }}"
+              wx:key="name"
+              key="{{ item.key }}"
+              checked="{{ item.checked }}"
+            >
+              {{ item.name }}
+            </ui-checkbox>
+          </ui-checkbox-group>
+        </ui-form-item>
+
+        <ui-form-item label="清晰度" name="quality" label-width="168rpx">
+          <ui-radio-group
+            current="{{ deviceData.options.quality }}"
+            placement="row"
+            none-checked="{{ true }}"
+            data-name="quality"
+            bind:linchange="onRadioChage"
+          >
+            <ui-radio key="standard" l-class="demo-radio-padding">标清 </ui-radio>
+            <ui-radio key="high" l-class="demo-radio-padding">高清 </ui-radio>
+            <ui-radio key="super" l-class="demo-radio-padding">超清 </ui-radio>
+          </ui-radio-group>
+        </ui-form-item>
+
+        <ui-form-item label="对讲方式" name="intercomType" label-width="168rpx">
+          <ui-radio-group
+            current="{{ deviceData.options.intercomType }}"
+            placement="row"
+            none-checked="{{ true }}"
+            data-name="intercomType"
+            bind:linchange="onRadioChage"
+          >
+            <ui-radio key="voice">语音对讲 </ui-radio>
+            <ui-radio key="video">视频对讲 </ui-radio>
+          </ui-radio-group>
+        </ui-form-item>
+
+        <ui-form-item label="语音采集" name="voiceType" label-width="168rpx">
+          <ui-radio-group
+            current="{{ deviceData.options.voiceType }}"
+            placement="row"
+            none-checked="{{ true }}"
+            data-name="voiceType"
+            bind:linchange="onRadioChage"
+          >
+            <ui-radio key="Recorder">Record-PCM </ui-radio>
+            <ui-radio key="Pusher">Pusher-AAC </ui-radio>
+          </ui-radio-group>
+        </ui-form-item>
+
+        <ui-form-item label="其他选项" name="others" label-placement="column" label-width="168rpx">
+          <ui-checkbox-group bind:linchange="onChangeOthers">
+            <ui-checkbox
+              wx:for-items="{{ othersOptions }}"
+              wx:key="name"
+              placement="right"
+              key="{{ item.key }}"
+              checked="{{ item.checked }}"
+            >
+              {{ item.name }}
+            </ui-checkbox>
+          </ui-checkbox-group>
+        </ui-form-item>
+      </block>
+    </ui-form>
+
+    <view
+      class="btn-grp"
+      wx:if="{{ showDemoLink && !!deviceData.productId && !!deviceData.deviceName && !!deviceData.xp2pInfo }}"
+    >
+      <ui-button type="default" size="mini" data-page="live" bindtap="gotoVideoDemoPage">p2p监控</ui-button>
+      <ui-button
+        wx:if="{{ deviceData.options.playback }}"
+        type="default"
+        size="mini"
+        data-page="playback"
+        wx:if="{{ deviceData.p2pMode !== 'server' }}"
+        bindtap="gotoVideoDemoPage"
+        >p2p回放</ui-button
+      >
+      <ui-button
+        wx:if="{{ deviceData.options.cloudStorage }}"
+        type="default"
+        size="mini"
+        data-page="cloud"
+        bindtap="gotoVideoDemoPage"
+        >云存回放</ui-button
+      >
+      <ui-button
+        wx:if="{{ deviceData.options.twecall }}"
+        type="default"
+        plain
+        size="mini"
+        data-page="twecall-intercom"
+        bindtap="gotoVideoDemoPage"
+        >*音视频通话</ui-button
+      >
+    </view>
+  </ui-card>
+
+  <ui-arc-popup show="{{ showDeviceList }}" locked max-height="660" min-height="200" direction="top">
+    <block wx:if="{{ !!deviceList }}">
+      <ui-list
+        wx:for="{{ deviceList }}"
+        wx:key="deviceId"
+        title="{{ item.deviceName }}"
+        desc="{{ item.productId }}"
+        tag-content="{{ item.isMjpgDevice ? 'mjpg' : 'video' }}"
+        tag-color="{{ item.isMjpgDevice ? '#3963bc' : 'orange' }}"
+        tag-position="right"
+        data-item="{{ item }}"
+        bind:lintap="selectDevice"
+      ></ui-list>
+    </block>
+    <block wx:else><view>暂无设备，请导入或者输入设备信息</view></block>
+
+    <view class="btn-grp">
+      <ui-button type="default" plain size="mini" bindtap="hideDeviceList">取消</ui-button>
+    </view>
+
+    <!-- <block wx:for="{{ device1vnlist }}" wx:key="deviceId">
+      <ui-list
+        title="{{item.flvUrl.split('/').slice(item.flvUrl.split('/').length - 2).join('/')}}"
+        tag-content="1vn"
+        tag-color="#f4516c"
+        tag-position="right"
+        data-item="{{ item }}"
+        bind:lintap="selectDevice"
+      ></ui-list>
+    </block> -->
+  </ui-arc-popup>
+</block>

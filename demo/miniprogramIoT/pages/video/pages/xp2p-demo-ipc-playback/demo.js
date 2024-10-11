@@ -2,6 +2,7 @@ import { pad, toMonthString, toDateTimeString, toTimeString, toDateTimeFilename,
 import { getRecordManager, removeFileByPath } from '../../../../lib/recordManager';
 import { getXp2pManager } from '../../lib/xp2pManager';
 import { CustomParser } from '../../lib/customParser';
+import { STORE } from '../../../../lib/demo-storage-store';
 
 // 覆盖 console
 const app = getApp();
@@ -37,7 +38,7 @@ let pageSeq = 0;
 Page({
   data: {
     // 这是onLoad时就固定的
-    cfg: '',
+    deviceId: '',
     loadErrMsg: '',
 
     // 这些是控制player和p2p的
@@ -160,7 +161,7 @@ Page({
       } catch (err) {
         console.error('demo: parse json error', err);
       };
-      if (!detail?.targetId || !detail?.deviceInfo || !detail?.p2pMode || !detail?.sceneType) {
+      if (!detail?.targetId || !detail?.deviceId || !detail?.p2pMode || !detail?.sceneType) {
         this.setData({ loadErrMsg: 'invalid json' });
         return;
       }
@@ -168,10 +169,14 @@ Page({
       return;
     }
 
-    const cfg = query.cfg || '';
-    this.setData({
-      cfg,
-    });
+    const deviceId = query.deviceId || '';
+    const deviceInfo = STORE.getDeviceById(deviceId);
+    console.log('demo: ipc playback demo onLoad', deviceId, deviceInfo);
+
+    if (deviceInfo) {
+      this.setData({ deviceId, deviceInfo });
+      this.onStartPlayer({ detail: { ...deviceInfo, targetId: deviceId } });
+    }
   },
   onShow() {
     console.log('demo: onShow');
@@ -220,20 +225,30 @@ Page({
       console.log('demo: info error');
       this.setData({
         targetId: detail.targetId,
-        deviceInfo: detail.deviceInfo,
+        deviceInfo: {
+          deviceId: detail.deviceId,
+          productId: detail.productId,
+          deviceName: detail.deviceName,
+        },
+        xp2pInfo: detail.xp2pInfo,
         p2pMode: detail.p2pMode,
-        sceneType: detail.sceneType,
+        // TODO  进到这里的 sceneType 都默认是 playback？
+        sceneType: 'playback',
       });
       return;
     }
 
-    this.userData.deviceId = detail.deviceInfo.deviceId;
+    this.userData.deviceId = detail.deviceId;
 
     // 开始连接
     console.log('demo: startP2PService', this.userData.deviceId);
     xp2pManager.startP2PService({
       p2pMode: detail.p2pMode,
-      deviceInfo: detail.deviceInfo,
+      deviceInfo: {
+        deviceId: detail.deviceId,
+        productId: detail.productId,
+        deviceName: detail.deviceName,
+      },
       xp2pInfo: detail.xp2pInfo,
       caller: this.userData.pageId,
     })
@@ -258,7 +273,7 @@ Page({
     );
 
     const { showIcons } = this.data;
-    if (detail.deviceInfo.isMjpgDevice) {
+    if (detail.isMjpgDevice) {
       // 图片流设备
       showIcons.orientation = false;
       showIcons.rotate = true;
@@ -273,7 +288,7 @@ Page({
       streamChannel = detail.useChannelIds[0];
     }
 
-    console.log('demo: set deviceInfo', detail.deviceInfo, detail.useChannelIds, streamChannel);
+    console.log('demo: set deviceInfo', detail, detail.useChannelIds, streamChannel);
 
     this.setData({
       ...detail,
