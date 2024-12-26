@@ -1,6 +1,11 @@
 import { STORE } from '../../../../lib/demo-storage-store';
 import { isDevTool } from '../../../../utils';
 
+// 覆盖 console
+const app = getApp();
+const oriConsole = app.console;
+const console = app.logger || oriConsole;
+
 let playerId = 1000;
 const logPrefix = '[demo] [intercom-call] page:';
 // 视频对讲水位码率，默认高码率，需要流控用低码率
@@ -82,7 +87,7 @@ Page({
   },
   onLoad: function (options) {
     playerId++;
-    console.log('intercom call page onLoad: ', { options, xp2pInfo: decodeURIComponent(options.xp2pInfo), xp2pManager: getApp().xp2pManager });
+    console.log('intercom call page onLoad: ', { options, xp2pInfo: decodeURIComponent(options.xp2pInfo), xp2pManager: app.xp2pManager });
     const { deviceId } = options;
     const deviceInfo = STORE.getDeviceById(deviceId);
 
@@ -102,7 +107,7 @@ Page({
     this.getComponents();
 
     setTimeout(() => {
-      console.log('onload xp2pManager: ', getApp().xp2pManager);
+      console.log('onload xp2pManager: ', app.xp2pManager);
     }, 1000);
   },
   onShow: function () {
@@ -137,7 +142,7 @@ Page({
    */
   async preStartService() {
     const { deviceId, productId, deviceName, xp2pInfo } = this.data.deviceInfo;
-    const res = await getApp().xp2pManager.startP2PService({
+    const res = await app.xp2pManager.startP2PService({
       p2pMode: 'ipc',
       deviceInfo: { deviceId, productId, deviceName },
       xp2pInfo,
@@ -194,6 +199,7 @@ Page({
     clearTimeout(this.data.callingTimer);
     this.setData({ calling: 'idle', callingTimer: null });
     this.sendUserCommand('wx_call_cancel');
+    if (this.data.instance.intercom) this.data.instance.intercom.intercomHangup();
   },
 
   callerHangup() {
@@ -212,7 +218,7 @@ Page({
    */
   addFeedbackListener() {
     // 监听 feedback 消息
-    const res = getApp().xp2pManager.addP2PServiceEventListener(
+    const res = app.xp2pManager.addP2PServiceEventListener(
       this.data.deviceInfo.deviceId,
       // 'feedbackFromDevice',
       'serviceReceivePrivateCommand', // 这里走的内部信令，不是 feedbackFromDevice
@@ -225,7 +231,7 @@ Page({
   },
   removeFeedbackListener() {
     // 移除 feedback 消息监听
-    getApp().xp2pManager.removeP2PServiceEventListener(
+    app.xp2pManager.removeP2PServiceEventListener(
       this.data.deviceInfo.deviceId,
       'serviceReceivePrivateCommand',
       this.feedbackFromDevice.bind(this),
@@ -308,7 +314,7 @@ Page({
    * wx_call_timeout - 呼叫超时
    */
   async sendUserCommand(cmd) {
-    const sendRes = await getApp()
+    const sendRes = await app
       .xp2pManager
       .sendCommand(this.data.deviceInfo.deviceId, `action=user_define&channel=0&cmd=${cmd}`)
       .then(() => 'success')

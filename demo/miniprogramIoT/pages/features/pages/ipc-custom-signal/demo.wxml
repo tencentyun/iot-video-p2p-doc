@@ -1,0 +1,23 @@
+<view>
+  <ipc-live-player id="ipc-live-player" showDebugInfo="{{false}}"></ipc-live-player>
+  <view style="height:20px"></view>
+  <ui-form  l-form-btn-class="l-form-btn-class" bind:linsubmit="submit" style="margin-top:20px">
+    <ui-form-item label="Cmd:" name="cmd">
+        <ui-input id="cmd" value="{{form.cmd}}" hide-label show-row="{{false}}"/>
+    </ui-form-item>
+    <ui-form-item label="Payload:" name="payload">
+        <ui-input id="payload" value="{{form.payload}}" hide-label show-row="{{false}}"/>
+    </ui-form-item>
+    <view slot="submit">
+        <ui-button>发送</ui-button>
+    </view>
+  </ui-form>
+  <view>
+    <text>下发是否成功？ </text>
+    <view>{{sendResultCodeMap[sendResult.type]}}</view>
+  </view>
+  <view>
+    <text>返回结果：</text>
+    <view>{{sendResult.data}}</view>
+    </view>
+</view>

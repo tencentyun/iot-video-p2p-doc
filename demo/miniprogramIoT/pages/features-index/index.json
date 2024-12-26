@@ -1,0 +1,12 @@
+{
+  "navigationBarTitleText": "Features",
+  "usingComponents": {
+    "custom-tab-bar": "../index/components/demo-tabbar/index",
+    "ui-card": "/ui-components/card/index",
+    "ui-icon": "/ui-components/icon/index",
+    "ui-grid": "/ui-components/grid/index",
+    "ui-grid-item": "/ui-components/grid-item/index"
+  },
+  "componentPlaceholder": {
+  }
+}

@@ -2,7 +2,18 @@
   <ui-card title="设备信息" class="{{ className }}" plaintext="{{ !!full }}" full="{{ !!full }}">
     <view class="btn-grp left">
       <ui-button type="default" plain size="mini" bindtap="importXp2pInfo">从剪切板导入</ui-button>
-      <ui-button type="default" plain size="mini" class="ml-10" bindtap="setShowDeviceList">选择设备</ui-button>
+      <ui-button
+        type="default"
+        plain
+        size="mini"
+        class="ml-10"
+        bindtap="setShowDeviceList"
+        wx:if="{{ deviceList.length > 0 }}"
+        >选择设备</ui-button
+      >
+      <ui-button wx:if="{{ showAddDevice }}" type="default" plain size="mini" class="ml-10" bindtap="handleAddDevice">
+        保存设备
+      </ui-button>
     </view>
 
     <ui-form name="addDeviceForm">
@@ -39,6 +50,55 @@
         ></ui-input>
       </ui-form-item>
 
+      <block wx:if="{{ showOptions && !!deviceData.options.twecall }}">
+        <ui-form-item label="Appid" name="Appid" label-width="168rpx">
+          <text bindtap="copyDeviceData" data-value="{{ twecallOpts.wxappid }}" class="data-copy-box">
+            <text>{{ twecallOpts.wxappid }}</text>
+            <text style="color: blue" class="ml-10">复制</text>
+          </text>
+        </ui-form-item>
+        <ui-form-item label="ModelId" name="ModelId" label-width="168rpx">
+          <text bindtap="copyDeviceData" data-value="{{ twecallOpts.modelId }}" class="data-copy-box">
+            <text>{{ twecallOpts.modelId }}</text>
+            <text style="color: blue" class="ml-10">复制</text>
+          </text>
+        </ui-form-item>
+        <ui-form-item wx:if="{{ !!twecallOpts.openId }}" label="OpenId" name="OpenId" label-width="168rpx">
+          <text bindtap="copyDeviceData" data-value="{{ twecallOpts.openId }}" class="data-copy-box">
+            <text>{{ twecallOpts.openId }}</text>
+            <text style="color: blue" class="ml-10">复制</text>
+          </text>
+        </ui-form-item>
+
+        <!-- <block>
+          <ui-form-item wx:if="{{ !!twecallOpts.snTicket }}" label="SnTicket" name="SnTicket" label-width="168rpx">
+            <text bindtap="copyDeviceData" data-value="{{ twecallOpts.snTicket }}" class="data-copy-box">
+              <text>{{ twecallOpts.snTicket }}</text>
+              <text style="color: blue" class="ml-10">复制</text>
+            </text>
+          </ui-form-item>
+          <ui-form-item wx:else label="SnTicket" name="SnTicket" label-width="168rpx">
+            <text bindtap="getSnTicketAndOpenid" class="data-copy-box">
+              <text style="color: blue" class="ml-10">重新拉取</text>
+            </text>
+          </ui-form-item>
+        </block> -->
+
+        <ui-form-item label="订阅状态" name="IsSubd" label-width="168rpx">
+          <!-- wx:if="{{ twecallOpts.deviceVoipList.findIndex(d => d.sn === (deviceData.productId + '_' + deviceData.deviceName)) > -1 }}" -->
+          <text wx:if="{{ isVoipSubd }}" class="formitem-text"> 已订阅 </text>
+          <text
+            wx:else
+            style="color: blue"
+            bindtap="requestDeviceVoIP"
+            bindlongpress="handleShowVoipList"
+            class="formitem-text"
+          >
+            点击订阅
+          </text>
+        </ui-form-item>
+      </block>
+
       <block wx:if="{{ !!deviceData.productId && !!deviceData.deviceName && !!deviceData.xp2pInfo }}">
         <ui-form-item label="多通道" name="channelIds" label-width="168rpx">
           <ui-checkbox-group bind:linchange="onChangeChannelIds" placement="row" min-selected="{{ 1 }}">
@@ -53,12 +113,12 @@
           </ui-checkbox-group>
         </ui-form-item>
 
-        <ui-form-item label="清晰度" name="quality" label-width="168rpx">
+        <ui-form-item label="清晰度" name="liveQuality" label-width="168rpx">
           <ui-radio-group
-            current="{{ deviceData.options.quality }}"
+            current="{{ deviceData.options.liveQuality }}"
             placement="row"
             none-checked="{{ true }}"
-            data-name="quality"
+            data-name="liveQuality"
             bind:linchange="onRadioChage"
           >
             <ui-radio key="standard" l-class="demo-radio-padding">标清 </ui-radio>

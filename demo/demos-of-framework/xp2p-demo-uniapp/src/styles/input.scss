@@ -1,0 +1,72 @@
+.group-button-area {
+  padding-top: 10rpx;
+}
+.group-button {
+  margin-right: 10rpx;
+}
+
+.weui-cells {
+  position: relative;
+  margin-top: 15rpx;
+  background-color: #FFFFFF;
+  line-height: 1.5;
+  font-size: 17px;
+}
+.weui-cells__title {
+  margin-top: 10rpx;
+  margin-bottom: 5rpx;
+  padding-left: 15rpx;
+  padding-right: 15rpx;
+  color: #999999;
+  font-size: 14px;
+}
+.weui-cells_after-title {
+  margin-top: 0;
+}
+
+.weui-cell {
+  padding: 10rpx 15rpx;
+  position: relative;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+}
+.weui-cells:before {
+  content: " ";
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 1px;
+  border-top: 1px solid #D9D9D9;
+  color: #D9D9D9;
+}
+.weui-cells:after {
+  content: " ";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  height: 1px;
+  border-bottom: 1px solid #D9D9D9;
+  color: #D9D9D9;
+}
+.weui-cell_block {
+  display: block;
+}
+.weui-cell_input {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.weui-input {
+  width: 100%;
+  height: 80rpx;
+  min-height: 80rpx;
+  line-height: 80rpx;
+}
+.weui-input .disabled {
+  color: rgba(0,0,0,0.3);
+}

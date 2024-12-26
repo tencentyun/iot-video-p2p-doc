@@ -46,9 +46,9 @@ export const defaultOptions = {
 const devices = {
   debug_device: {
     showInHomePageBtn: true,
-    productId: 'J5YLI0DSZZ',
-    deviceName: 'lianlian_93028156_1',
-    xp2pInfo: 'XP2P9294QVs4JAgCItdWnyoQOg==%2.4.43',
+    productId: 'HP21L9GVKA',
+    deviceName: 'mtest_131974230_1',
+    xp2pInfo: 'XP2Pk3fS3onCsgGaQJCinTCtfw==%2.4.46',
     options: {
       liveQuality: 'high',
       playerRTC: true,

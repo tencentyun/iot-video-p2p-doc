@@ -15,9 +15,11 @@ page {
   position: relative;
   margin-bottom: 20rpx;
 }
+
 .page-section-gap {
   margin-bottom: 40rpx;
 }
+
 .page-section-title {
   padding-bottom: 10rpx;
   font-size: 18px;
@@ -35,9 +37,11 @@ page {
 .component-section {
   margin-bottom: 20rpx;
 }
+
 .component-section-gap {
   margin-bottom: 40rpx;
 }
+
 .component-section-title {
   padding-bottom: 10rpx;
   font-size: 18px;
@@ -46,9 +50,11 @@ page {
 .group-button-area {
   padding-top: 10rpx;
 }
+
 .group-button-area .group-button {
   margin-right: 10rpx;
 }
+
 .group-button.active {
   color: #0052d9;
 }
@@ -60,37 +66,50 @@ page {
 .text-box {
   box-sizing: border-box;
   padding: 0 10rpx;
-  min-height: 54rpx; /* 44 + 10 */
+  min-height: 54rpx;
+  /* 44 + 10 */
 }
+
 .text-box.lines-2 {
-  min-height: 98rpx; /* 44 * 2 + 10 */
+  min-height: 98rpx;
+  /* 44 * 2 + 10 */
 }
+
 .text-box.lines-3 {
-  min-height: 142rpx; /* 44 * 3 + 10 */
+  min-height: 142rpx;
+  /* 44 * 3 + 10 */
 }
+
 .text-break {
   word-break: break-all;
 }
+
 .text-btn {
   color: #0052d9;
   margin: 0 10rpx;
 }
+
 .text-btn.disabled {
   color: rgba(0, 0, 0, 0.3);
 }
+
 .align-right {
   text-align: right;
 }
+
 .absolute-right {
   position: absolute;
   right: 0rpx;
 }
+
 .float-right {
   float: right;
 }
+
 .margin-left {
   margin-left: 20rpx;
 }
+
 .margin-right {
   margin-right: 20rpx;
 }
@@ -98,6 +117,7 @@ page {
 .font-small {
   font-size: 14px;
 }
+
 .font-large {
   font-size: 18px;
 }
@@ -135,12 +155,23 @@ page {
   align-items: center;
   height: 64px;
 }
+
 .btn-grp.right {
   justify-content: flex-end;
 }
+
 .btn-grp.left {
   justify-content: flex-start;
 }
+
 .mt-20 {
   margin-top: 20px;
+}
+
+.lu-tab-bar {
+  box-shadow: 0 -2px 2px rgba(192, 192, 192, 0.25);
+}
+
+.tab-bar-placeholder {
+  height: 120px;
 }

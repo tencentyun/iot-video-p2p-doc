@@ -1,0 +1,6 @@
+{
+  "component": true,
+  "usingComponents": {
+    "ui-tab-bar": "/ui-components/tab-bar/index"
+  }
+}

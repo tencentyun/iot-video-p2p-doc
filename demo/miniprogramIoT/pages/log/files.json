@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "用户文件管理",
+  "usingComponents": {
+    "custom-tab-bar": "../index/components/demo-tabbar/index"
+  }
+}

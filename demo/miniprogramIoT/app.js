@@ -8,6 +8,7 @@ App({
     this.logger = new Logger({
       logManagePage: '/pages/user-files/files?name=logs',
     });
+
     this.pluginLogger = {
       log: (...args) => this.logger.log('[Plugin]', ...args),
       info: (...args) => this.logger.info('[Plugin]', ...args),

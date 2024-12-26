@@ -13,8 +13,14 @@ Component({
   properties: {
     playerVersion: String,
     xp2pVersion: String,
-    canToggleTcpFirst: Boolean,
+
     tcpFirst: Boolean,
+    canToggleTcpFirst: Boolean,
+
+    // crossStunTurn
+    crossStunTurn: Boolean,
+    canToggleCrossStunTurn: Boolean,
+
     xp2pUuid: String,
     xp2pState: String,
     xp2pStateTime: Number,
@@ -55,5 +61,25 @@ Component({
       }
       app.toggleTcpFirst();
     },
-  }
+    toggleCrossStunTurn() {
+      const app = getApp();
+      if (!app.toggleCrossStunTurn) {
+        return;
+      }
+      app.toggleCrossStunTurn();
+    },
+
+    copyData(e) {
+      const { value } = e.currentTarget.dataset;
+      wx.setClipboardData({
+        data: value,
+        success: () => {
+          wx.showToast({
+            title: '复制成功',
+            icon: 'none'
+          });
+        },
+      });
+    },
+  },
 });

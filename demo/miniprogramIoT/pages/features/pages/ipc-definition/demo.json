@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "IPC清晰度测试",
+  "usingComponents": {
+    "ipc-live-player": "../components/ipc-live-player/index"
+  },
+  "componentPlaceholder": {
+    "ipc-live-player": "view"
+  }
+}

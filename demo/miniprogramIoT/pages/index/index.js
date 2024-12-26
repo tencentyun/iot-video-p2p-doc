@@ -1,11 +1,14 @@
 import { isDeviceCfgValid, updateRecentIPC, defaultShareInfo } from '../../config/config';
 
-const sysInfo = wx.getSystemInfoSync();
-
 const XP2PManagerEvent = {
   XP2P_STATE_CHANGE: 'xp2pStateChange',
   XP2P_NAT_EVENT: 'xp2pNatEvent',
 };
+
+// 覆盖 console
+const app = getApp();
+const oriConsole = app.console;
+const console = app.logger || oriConsole;
 
 Page({
   data: {
@@ -22,46 +25,8 @@ Page({
     tcpFirst: false,
     canToggleTcpFirst: false,
 
-    // 底部导航
-    navigators: [
-      {
-        icon: 'order',
-        title: 'Log管理',
-        path: '/pages/user-files/files?name=logs',
-      }, {
-        icon: 'video',
-        title: 'flv录像',
-        path: '/pages/user-files/files?name=flvs',
-      }, {
-        icon: 'video',
-        title: 'stream录像',
-        path: '/pages/user-files/files?name=streams',
-      }, {
-        icon: 'phone',
-        title: '对讲录像',
-        path: '/pages/user-files/files?name=voices',
-      }, {
-        icon: 'download',
-        title: '本地下载',
-        path: '/pages/user-files/files?name=downloads',
-      }, {
-        icon: 'download',
-        title: '云存下载',
-        path: '/pages/user-files/files?name=cloud',
-      }, {
-        icon: 'video',
-        title: 'Video测试',
-        path: '/pages/test-video/test',
-      }, {
-        icon: 'video',
-        title: 'local player',
-        path: '/pages/video/pages/local-flv-player/player',
-      }, {
-        icon: 'phone',
-        title: 'TWeCall',
-        path: '/pages/video/pages/voip/voip',
-      },
-    ],
+    crossStunTurn: false,
+    canToggleCrossStunTurn: false,
   },
   onLoad(query) {
     console.log('index: onLoad', query);
@@ -97,6 +62,12 @@ Page({
                 canToggleTcpFirst: true,
               });
             }
+            if (app.toggleCrossStunTurn) {
+              this.setData({
+                crossStunTurn: app.crossStunTurn,
+                canToggleCrossStunTurn: true,
+              });
+            }
             console.log(`index: preload xp2pManager success, delay ${Date.now() - start}ms`, pkg);
             this.onXp2pLoaded();
           })
@@ -113,7 +84,7 @@ Page({
     switch (query.page) {
       case 'ipc-live':
         try {
-          let json = query.json;
+          let { json } = query;
           if (json.charAt(0) === '%') {
             json = decodeURIComponent(query.json);
           }
@@ -167,7 +138,7 @@ Page({
   },
 
   onXp2pStateChange({ state }) {
-    console.log('index: onXp2pStateChange', state);
+    console.log('index: onXp2pStateChange', state, this.userData.xp2pManager);
     this.setData({
       xp2pState: state,
       xp2pStateTime: Date.now(),
@@ -186,19 +157,5 @@ Page({
       xp2pNatEvent: type,
       xp2pNatEventTime: Date.now(),
     });
-  },
-
-  gotoPage(e) {
-    const { url, checkPlatform } = e.currentTarget.dataset;
-    if (checkPlatform && !['ios', 'android', 'devtools'].includes(sysInfo.platform)) {
-      wx.showToast({ title: `不支持当前平台: ${sysInfo.platform}`, icon: 'error' });
-      return;
-    }
-    wx.navigateTo({ url });
-  },
-
-  handleNavigate(e) {
-    const idx = parseInt(e.detail.key, 10);
-    wx.navigateTo({ url: this.data.navigators[idx].path });
   },
 });

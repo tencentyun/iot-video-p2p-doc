@@ -1,0 +1,20 @@
+<template>
+<view class="page-section page-section-gap">
+  <view class="notice-box">
+    <view>· 真机体验请使用已上传版本或二维码预览，<text style="color: red">不支持真机调试，不支持PC</text></view>
+    <view>· 开发者工具中仅支持获取p2p数据，<text style="color: red">不支持播放</text></view>
+    <view>· 使用期间需保持设备在线且 xp2pinfo 有效，可以在<text class="text-btn" bindtap="copyDocUrl" data-doc="https://cloud.tencent.com/document/product/1131/52739">控制台云日志</text>查看设备 _sys_xp2p_info 属性</view>
+    <view>· 如果遇到问题，可以查看<text class="text-btn" bindtap="copyDocUrl" data-doc="https://mp.weixin.qq.com/wxopen/plugindevdoc?appid=wx1319af22356934bf">插件开发文档</text>中的常见问题部分，或者提供 xp2pUUID 和出现时间给我们</view>
+    <view>· <text class="text-btn" bindtap="openSetting">《小程序权限设置》</text></view>
+    <view>· <text class="text-btn" bindtap="gotoPage" data-url="/pages/private-policy/private-policy">《小程序服务声明》</text></view>
+  </view>
+</view>
+</template>
+
+<script setup lang="ts">
+console.log('[INF] loaded demo-privacy');
+</script>
+
+<style>
+@import '../styles/common.scss';
+</style>

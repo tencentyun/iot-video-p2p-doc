@@ -41,6 +41,29 @@ export const getXp2pManager = () => {
       };
     }
 
+    // 设置是否连接对端stun
+    if (xp2pPlugin.p2p.setCrossStunTurn) {
+      const crossStunTurnKey = 'crossStunTurn';
+      const crossStunTurnTime = parseInt(wx.getStorageSync(crossStunTurnKey), 10);
+      const crossStunTurn = !!(crossStunTurnTime && (Date.now() - crossStunTurnTime < 3600000 * 24)); // 24小时内有效
+      console.log('crossStunTurn', crossStunTurn);
+      xp2pPlugin.p2p.setCrossStunTurn(crossStunTurn);
+
+      // 给index页用，方便测试时调整crossStunTurn
+      app.crossStunTurn = crossStunTurn;
+      app.toggleCrossStunTurn = async () => {
+        const modalRes = await wx.showModal({
+          title: '确定切换 crossStunTurn 吗？',
+          content: '切换后需要重新进入小程序',
+        });
+        if (!modalRes || !modalRes.confirm) {
+          return;
+        }
+        wx.setStorageSync(crossStunTurnKey, crossStunTurn ? '' : Date.now());
+        app.restart();
+      };
+    }
+
     xp2pManager = iotExports.getXp2pManager();
     app.logger?.log('xp2pManager', {
       P2PPlayerVersion: xp2pManager.P2PPlayerVersion,

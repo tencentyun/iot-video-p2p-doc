@@ -11,7 +11,7 @@
     </view> -->
     <view class="input-box box">
       <view class="label"> 设备 sn</view>
-      <input class="input" type="text" bindinput="bindKeyInputSn" placeholder="deviceId, 斜杠换成-" />
+      <input class="input" type="text" bindinput="bindKeyInputSn" placeholder="deviceId, 斜杠换成下划线 _" />
     </view>
     <!-- <view class="input-box box">
       <view class="label">voipToken</view>

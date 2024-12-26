@@ -1,5 +1,6 @@
 {
   "appid": "wx9e8fbc98ceac2628",
+  "cloudfunctionRoot": "cloudfunctions/",
   "projectname": "iotvideo-xp2p-demo-iot",
   "compileType": "miniprogram",
   "setting": {
@@ -46,5 +47,5 @@
     "tabIndent": "insertSpaces",
     "tabSize": 2
   },
-  "libVersion": "2.33.0"
+  "libVersion": "3.6.3"
 }

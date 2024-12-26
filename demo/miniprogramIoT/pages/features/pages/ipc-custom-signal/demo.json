@@ -1,0 +1,13 @@
+{
+  "navigationBarTitleText": "IPC自定义信令测试",
+  "usingComponents": {
+    "ipc-live-player": "../components/ipc-live-player/index",
+    "ui-form": "../../../../ui-components/form/index",
+    "ui-form-item": "../../../../ui-components/form-item/index",
+    "ui-input": "../../../../ui-components/input/index",
+    "ui-button": "../../../../ui-components/button/index"
+  },
+  "componentPlaceholder": {
+    "ipc-live-player": "view"
+  }
+}

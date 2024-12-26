@@ -11,6 +11,8 @@
           xp2pVersion="{{ xp2pVersion }}"
           canToggleTcpFirst="{{ canToggleTcpFirst }}"
           tcpFirst="{{ tcpFirst }}"
+          canToggleCrossStunTurn="{{ canToggleCrossStunTurn }}"
+          crossStunTurn="{{ crossStunTurn }}"
           xp2pUuid="{{ xp2pUUID }}"
           xp2pState="{{ xp2pState }}"
           xp2pStateTime="{{ xp2pStateTime }}"
@@ -21,19 +23,8 @@
       </ui-collapse-item>
     </ui-collapse>
   </ui-card>
-
   <view class="mt-20" style="height: 1px"></view>
   <demo-device-selector full />
-
-  <view class="mt-20" style="height: 1px"></view>
-  <ui-card plaintext full>
-    <ui-grid show-border>
-      <block wx:for="{{ navigators }}" wx:key="index">
-        <ui-grid-item key="{{ index }}" slot="{{ index }}" bind:linitemtap="handleNavigate">
-          <ui-icon name="{{ item.icon }}" size="50" />
-          <view class="text">{{ item.title }}</view>
-        </ui-grid-item>
-      </block>
-    </ui-grid>
-  </ui-card>
+  <view class="tab-bar-placeholder"></view>
+  <custom-tab-bar></custom-tab-bar>
 </block>

@@ -148,7 +148,7 @@
               height: xxx;
             }
         -->
-        <iot-p2p-intercom 
+        <iot-p2p-intercom
           wx:if="{{intercomId}}"
           id="{{intercomId}}"
           compClass="my-intercom {{intercomVideoSizeClass}}"
@@ -270,7 +270,7 @@
         </view>
       </view>
     </view>
-    <view wx:if="{{options.supportCustomCommand}}" class="page-section page-section-gap">
+    <view wx:if="{{!options.supportCustomCommand}}" class="page-section page-section-gap">
       <view class="page-section-title">【自定义信令】</view>
       <view class="margin-left margin-right">
         <view class="weui-cells weui-cells_after-title">

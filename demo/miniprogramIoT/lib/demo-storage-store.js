@@ -3,10 +3,11 @@
  * @typedef {Object} StorageDeviceItemOptions
  * @property {boolean} playback
  * @property {number[]} useChannelIds
- * @property {'standard' | 'high' | 'super'} quality
+ * @property {'standard' | 'high' | 'super'} liveQuality
  * @property {'voice' | 'video'} intercomType
  * @property {'Pusher' | 'Recorder'} voiceType
  * @property {boolean} cloudStorage
+ * @property {boolean} p2pCall
  * @property {boolean} twecall
  * @property {boolean} ptz
  * @property {boolean} userCommand
@@ -27,6 +28,12 @@
  * @property {string} xp2pInfo
  * @property {'ipc' | 'server'} p2pMode
  * @property {'live' | 'playback'} sceneType
+ * TODO  需要初始化信令的设备加入支持，信令调用成功才会去尝试连接设备
+ * @property {string} initCommand
+ * TODO  添加 liveStreamDomain 支持 1vn
+ * @property {string} liveStreamDomain
+ * @property {string} wxappid
+ * @property {string} openid
  * @property {StorageDeviceItemOptions} options
  */
 
@@ -97,12 +104,13 @@ export const STORE = {
 
   defaultOptions: {
     useChannelIds: [0],
-    quality: 'standard',
+    liveQuality: 'standard',
     intercomType: 'video',
     voiceType: 'Pusher',
     playback: true,
     cloudStorage: false,
-    twecall: false,
+    p2pCall: true,
+    twecall: true,
     ptz: false,
     userCommand: false,
     rtcMode: true,
@@ -111,6 +119,13 @@ export const STORE = {
     showIntercomLog: true,
     onlyFlv: false,
   },
+};
+
+const initMiniProgramInfo = () => {
+  return {
+    wxappid: '',
+    openid: '',
+  };
 };
 
 const initDevice = (device) => {
@@ -146,6 +161,7 @@ const initDevice = (device) => {
     isMjpgDevice: xp2pInfo.endsWith('m'),
     p2pMode: device.p2pMode || 'ipc',
     sceneType: device.sceneType || 'live',
+    ...initMiniProgramInfo(),
     options: {
       ...STORE.defaultOptions,
       ...device.options,

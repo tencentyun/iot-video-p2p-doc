@@ -1,0 +1,11 @@
+<ui-card plaintext full>
+  <ui-grid show-border>
+    <block wx:for="{{ navigators }}" wx:key="index">
+      <ui-grid-item wx:if="{{ !item.hide }}" key="{{ index }}" slot="{{ index }}" bind:linitemtap="handleNavigate">
+        <ui-icon name="{{ item.icon }}" size="50" />
+        <view class="text">{{ item.title }}</view>
+      </ui-grid-item>
+    </block>
+  </ui-grid>
+</ui-card>
+<custom-tab-bar></custom-tab-bar>

@@ -1,7 +1,7 @@
-
-wx.cloud.init({
-  env: 'cloud1-9gy10gzb2687fd99',
-});
+// NOTE 在主包初始化一次就可以了，不用在这里再次初始化，本云开发环境仅支持 p2p player 调试使用
+// wx.cloud.init({
+//   env: 'cloud1-9gy10gzb2687fd99',
+// });
 const app = getApp();
 const oriConsole = app.console;
 const console = app.logger || oriConsole;

@@ -14,10 +14,30 @@ let xp2pManager;
 const pageName = 'demo-page-ipc';
 let pageSeq = 0;
 
+// NOTE 引入 VOIP 插件, demo 这里是使用了分包预加载功能使打开小程序就能开始加载 voip，详见 app.json 中的 preloadRule。
 const wmpfVoip = requirePlugin('wmpf-voip').default;
 // 监听 voip 通话
 wmpfVoip.onVoipEvent((event) => {
   console.info('demo onVoipEvent', event.eventName);
+});
+
+// NOTE 默认 demo 不要修改这里，演示用先旋转 -90° 把微信小程序端画面调正，实际项目中需要根据设备实际情况调整
+wmpfVoip.setUIConfig({
+  // 微信端采集的是正的，不用旋转
+  listenerUI: {
+    cameraRotation: 0,
+    objectFit: 'contain',
+  },
+  // 来自设备端的视频被逆时针旋转了 90 度，需要调整回来
+  callerUI: {
+    cameraRotation: 270,
+    objectFit: 'contain',
+  }
+});
+
+console.warn('[wmpf-voip]', {
+  title: 'TWeCall DEBUG',
+  content: `listenerUI 旋转角度 ${0}, callerUI 旋转角度 ${270}`,
 });
 
 const sysInfo = wx.getSystemInfoSync();
@@ -241,7 +261,7 @@ Page({
   onLoad(query) {
     pageSeq++;
     const pageId = `${pageName}-${pageSeq}`;
-    console.log('demo: onLoad', pageId, query);
+    console.log('demo: onLoad', pageId, query, query.deviceId);
 
     // 渲染无关的放这里
     this.userData = {
@@ -287,32 +307,39 @@ Page({
     console.log('demo: checkReset when enter');
     xp2pManager.checkReset();
 
-    if (query.json) {
-      // 直接传播放数据
-      let detail;
-      try {
-        let json = query.json;
-        if (json.charAt(0) === '%') {
-          json = decodeURIComponent(query.json);
-        }
-        detail = JSON.parse(json);
-      } catch (err) {
-        console.error('demo: parse json error', err);
-      };
-      if (!detail?.targetId || !detail?.deviceInfo || !detail?.p2pMode || !detail?.sceneType) {
-        this.setData({ loadErrMsg: 'invalid json' });
-        return;
-      }
-      this.onStartPlayer({ detail });
-      return;
-    }
+    // 先不支持这个
+    // if (query.json) {
+    //   // 直接传播放数据
+    //   let detail;
+    //   try {
+    //     let json = query.json;
+    //     if (json.charAt(0) === '%') {
+    //       json = decodeURIComponent(query.json);
+    //     }
+    //     detail = JSON.parse(json);
+    //   } catch (err) {
+    //     console.error('demo: parse json error', err);
+    //   };
+    //   if (!detail?.targetId || !detail?.deviceInfo || !detail?.p2pMode || !detail?.sceneType) {
+    //     this.setData({ loadErrMsg: 'invalid json' });
+    //     return;
+    //   }
+    //   this.onStartPlayer({ detail });
+    //   return;
+    // }
 
     const deviceId = query.deviceId || '';
     const deviceInfo = STORE.getDeviceById(deviceId);
+    console.log('demo: deviceInfo', deviceInfo, deviceInfo.options?.useChannelIds);
+    const useChannelIds = deviceInfo?.options?.useChannelIds || [];
+
     if (deviceInfo) {
-      this.setData({ deviceId, deviceInfo });
-      this.onStartPlayer({ detail: { ...deviceInfo, targetId: deviceId } });
+      this.setData({
+        deviceId, deviceInfo, useChannelIds,
+      });
+      this.onStartPlayer({ detail: { ...deviceInfo, targetId: deviceId, useChannelIds } });
     }
+    console.log('demo: onLoad end. this.data.useChannelIds =', this.data.useChannelIds);
   },
   onShow() {
     console.log('demo: ipc live demo onShow');

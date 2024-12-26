@@ -4,6 +4,7 @@
     "demo-device-selector": "./components/demo-device-selector/index",
     "demo-basicinfo": "./components/demo-basicinfo/index",
     "demo-privacy": "./components/demo-privacy/index",
+    "custom-tab-bar": "./components/demo-tabbar/index",
 
     "ui-card": "/ui-components/card/index",
     "ui-collapse-item": "/ui-components/collapse-item/index",

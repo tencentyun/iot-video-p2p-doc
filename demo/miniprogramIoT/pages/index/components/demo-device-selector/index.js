@@ -1,5 +1,9 @@
 import { STORE } from '../../../../lib/demo-storage-store';
 
+wx.cloud.init({
+  env: 'cloud1-9gy10gzb2687fd99',
+});
+
 const logPrefix = '[demo] [demo-device-selector]';
 
 Component({
@@ -19,7 +23,7 @@ Component({
     showIcons: {
       type: Object,
       value: {
-        quality: false,
+        liveQuality: false,
         muted: false,
         orientation: false, // 视频流设备才支持
         rotate: false, // 图片流监控才支持旋转
@@ -37,7 +41,7 @@ Component({
       type: Object,
       value: {},
     },
-    quality: {
+    liveQuality: {
       type: String,
       value: '',
     },
@@ -76,15 +80,72 @@ Component({
     deviceList: [],
     deviceData: { options: STORE.defaultOptions },
 
+    showAddDevice: false,
+
     // 其他表单项
     channelIds: [],
     othersOptions: [],
+
+    // 展示项
+    twecallOpts: {
+      // NOTE 这里只能用单引号，否则 demo 打包时无法匹配可能会出现替换小程序 appid 失败！
+      wxappid: 'wx9e8fbc98ceac2628',
+      modelId: 'DYEbVE9kfjAONqnWsOhXgw',
+      deviceVoipList: [],
+      snTicket: '',
+      openId: wx.getStorageSync('wx:openId') || '',
+    },
+
+    showOptions: false,
+    isVoipSubd: false,
+  },
+  observers: {
+    async deviceData(data) {
+      console.log(logPrefix, 'deviceData change', data);
+      // if twecall 设备，自动拉取 openId 和 snTicket
+      const { productId, deviceName, xp2pInfo, options: { twecall } } = data;
+
+      if (productId && deviceName && xp2pInfo) {
+        let exist = false;
+        for (const item of STORE.storageDeviceList) {
+          if (item.productId === productId && item.deviceName === deviceName) {
+            exist = true;
+            break;
+          }
+        }
+        this.setData({
+          showOptions: true,
+          showAddDevice: !exist,
+        });
+      } else {
+        this.setData({
+          showOptions: false,
+        });
+      }
+
+      if (twecall && productId && deviceName && xp2pInfo) {
+        this.reloadVoipInfo();
+
+        const { snTicket, openId, errMsg } = await this.getSnTicketAndOpenid(`${productId}_${deviceName}`);
+        console.log(logPrefix, 'getSnTicketAndOpenid', errMsg);
+
+        // SnTicket获取失败 不弹窗提示，页面能直接看到
+        if (errMsg) errMsg !== 'SnTicket获取失败!' && wx.showToast({ title: errMsg, icon: 'none' });
+        else this.setData({
+          twecallOpts: {
+            ...this.data.twecallOpts,
+            snTicket, openId: openId || this.data.twecallOpts.openId,
+          },
+        });
+      }
+    },
   },
   export() {
     return {};
   },
   lifetimes: {
     attached() {
+      this.reloadVoipInfo();
       this.initDevices();
       this.setData({
         channelIds: [
@@ -94,6 +155,7 @@ Component({
         othersOptions: [
           { key: 'playback', checked: this.data.deviceData.options.playback, name: '本地回放支持' },
           { key: 'cloudStorage', checked: this.data.deviceData.options.cloudStorage, name: '云存支持' },
+          { key: 'p2pCall', checked: this.data.deviceData.options.p2pCall, name: 'p2p呼叫设备' },
           { key: 'twecall', checked: this.data.deviceData.options.twecall, name: 'twecall支持' },
           { key: 'ptz', checked: this.data.deviceData.options.ptz, name: 'PTZ支持' },
           { key: 'userCommand', checked: this.data.deviceData.options.userCommand, name: '自定义信令支持' },
@@ -137,6 +199,17 @@ Component({
       this.setShowDeviceList(false);
     },
 
+    handleAddDevice() {
+      // 保存设备信息
+      if (!this.data.deviceData) return;
+      STORE.updateRecentDevice(this.data.deviceData);
+      this.setData({
+        deviceList: STORE.storageDeviceList,
+        showAddDevice: false,
+      });
+      wx.showToast({ title: '已保存到缓存列表', icon: 'none' });
+    },
+
     selectDevice(e) {
       const { item: device } = e.currentTarget.dataset;
       console.log(logPrefix, 'selectDevice', device);
@@ -154,7 +227,7 @@ Component({
       console.log(logPrefix, 'goDevicePage page: ', page, this.data.deviceData);
 
       const { deviceId, isMjpgDevice, p2pMode } = STORE.initDevice(this.data.deviceData);
-      STORE.updateRecentDevice(this.data.deviceData);
+      this.handleAddDevice();
 
       switch (page) {
         case 'twecall-intercom': {
@@ -313,7 +386,7 @@ Component({
           ...this.data.deviceData,
           options: {
             ...this.data.deviceData.options,
-            quality: e.detail.key,
+            liveQuality: e.detail.key,
           },
         }
       });
@@ -358,6 +431,133 @@ Component({
       });
     },
 
+    // 获取 snTicket 和 openId
+    async getSnTicketAndOpenid(inputSN) {
+      // if (!sn) {
+      //   wx.showToast({ title: '请先输入设备 sn' });
+      //   return;
+      // }
+
+      const sn = inputSN ?? `${this.data.deviceData.productId}_${this.data.deviceData.deviceName}`;
+
+      return new Promise((resolve) => {
+        wx.cloud.callFunction({
+          name: 'getSnTicket',
+          data: { sn },
+          complete: (res) => {
+            console.log('callFunction getSnTicket req: sn = ', sn, {
+              res,
+              code: res.errCode,
+              Msg: res.errMsg,
+            });
+
+            if (!res.result?.snTicket) {
+              resolve({ errMsg: 'SnTicket获取失败!' });
+              return;
+            }
+
+            const openId = res.result.OPENID;
+            wx.setStorageSync('wx:openId', openId);
+
+            resolve({ snTicket: res.result.snTicket, openId });
+          },
+        });
+      });
+    },
+
+    // https://developers.weixin.qq.com/miniprogram/dev/api/open-api/device-voip/wx.getDeviceVoIPList.html
+    async reloadVoipInfo() {
+      const deviceVoipList = await new Promise(resolve => {
+        wx.getDeviceVoIPList({
+          success: (res) => {
+            console.log('getDeviceVoIPList success: ', res);
+            resolve(res.list);
+          },
+          fail: (err) => {
+            console.log('getDeviceVoIPList fail: ', err);
+            resolve(err);
+          },
+        });
+      });
+
+      // 0：未授权；1：已授权
+      console.log('deviceVoipList: ', deviceVoipList);
+      this.setData({
+        isVoipSubd: this.checkIsVoipSubd(deviceVoipList),
+        twecallOpts: {
+          ...this.data.twecallOpts,
+          deviceVoipList,
+        },
+      });
+    },
+
+    checkIsVoipSubd(list) {
+      // twecallOpts.deviceVoipList.findIndex(d => d.sn === (deviceData.productId + '_' + deviceData.deviceName)) > -1
+      let flag = false;
+      const currentSn = `${this.data.deviceData.productId}_${this.data.deviceData.deviceName}`;
+      console.log('checkIsVoipSubd: currentSn', currentSn, this.data.twecallOpts.deviceVoipList);
+      try {
+        for (const d of (list ?? this.data.twecallOpts.deviceVoipList)) {
+          if (d.sn === currentSn) {
+            flag = !!d.status;
+            break;
+          }
+        }
+      } catch (_e) { }
+      console.log('checkIsVoipSubd: flag', flag);
+
+      return flag;
+    },
+    // https://developers.weixin.qq.com/miniprogram/dev/api/open-api/device-voip/wx.requestDeviceVoIP.html
+    requestDeviceVoIP() {
+      console.log('已订阅设备列表: ', this.data.twecallOpts.deviceVoipList);
+
+      wx.requestDeviceVoIP({
+        sn: `${this.data.deviceData.productId}_${this.data.deviceData.deviceName}`,
+        snTicket: this.data.twecallOpts.snTicket,
+        modelId: this.data.twecallOpts.modelId,
+        deviceName: `demo:${this.data.deviceData.deviceName}`,
+        success: (res) => {
+          console.log('requestDeviceVoIP success: ', res);
+          wx.showToast({ title: '订阅成功', icon: 'success' });
+          this.reloadVoipInfo();
+        },
+        fail: (err) => {
+          console.log('requestDeviceVoIP fail: ', err);
+          // wx.showToast({ title: '订阅失败', icon: 'none' });
+          if (err.errCode === 10001) {
+            wx.showToast({ title: '已订阅', icon: 'none' });
+          } else {
+            wx.showModal({
+              title: '订阅失败',
+              content: '请到设置中手动订阅',
+              showCancel: false,
+            });
+          }
+        },
+      });
+    },
+    handleShowVoipList() {
+      wx.showModal({
+        title: '已订阅设备列表',
+        content: this.data.twecallOpts.deviceVoipList.map(d => d.sn).join('\n'),
+        showCancel: false,
+      });
+    },
+
+    copyDeviceData(e) {
+      console.log('copyDeviceData: ', e.currentTarget.dataset, e);
+      const { value } = e.currentTarget.dataset;
+      wx.setClipboardData({
+        data: value,
+        success: () => {
+          wx.showToast({ title: '复制成功', icon: 'none' });
+        },
+        fail: () => {
+          wx.showToast({ title: '复制失败', icon: 'none' });
+        },
+      });
+    },
   },
 
 });

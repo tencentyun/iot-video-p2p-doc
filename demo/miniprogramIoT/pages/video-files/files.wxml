@@ -1,0 +1,43 @@
+<view class="page-body">
+  <view wx:if="{{!isLogDir}}" class="page-section">
+    <view class="notice-box">
+      <view>· mp4文件可以保存到相册</view>
+      <view>· flv文件在Android系统可以保存到相册，但是iOS系统不支持</view>
+    </view>
+  </view>
+  <view wx:if="{{baseDir}}" class="page-section">
+    <view>baseDir: {{baseDir}}</view>
+    <view class="group-button-area">
+      <button bindtap="getRecordList" class="group-button" type="primary" size="mini" disabled="{{isRefreshing}}">刷新列表</button>
+      <button bindtap="removeAllRecords" class="group-button" type="primary" size="mini" disabled="{{isRefreshing}}">清空</button>
+    </view>
+  </view>
+  <view wx:if="{{recordList}}" class="page-section {{logFileDetail ? 'hide' : ''}}">
+    <view>共 {{recordList.length}} 个文件/文件夹，{{totalBytes}} Bytes</view>
+    <view wx:for="{{recordList}}" wx:key="fileName" class="record-item">
+      <view>{{item.fileName}}</view>
+      <view wx:if="{{item.isDir}}">
+        <text class="info">目录</text>
+        <text class="right-btn" wx:if="{{!isLogDir}}" bindtap="removeDir" data-index="{{index}}">删除</text>
+      </view>
+      <view wx:else>
+        <text class="info">{{item.size}}B</text>
+        <text class="right-btn" wx:if="{{!isLogDir}}" bindtap="removeFile" data-index="{{index}}">删除</text>
+        <text class="right-btn" wx:if="{{!isDevTool}}" bindtap="sendFile" data-index="{{index}}">发送</text>
+        <text class="right-btn" wx:if="{{isDevTool}}" bindtap="saveFileInDevTool" data-index="{{index}}">保存</text>
+        <text class="right-btn" wx:if="{{item.showSaveToAlbum && item.isMP4}}" bindtap="saveToAlbum" data-index="{{index}}">保存到相册</text>
+        <text class="right-btn" wx:if="{{item.showSaveToAlbum && !item.isMP4}}" bindtap="exportToAlbum" data-index="{{index}}">导出到相册</text>
+        <text class="right-btn" wx:if="{{item.showPlay}}" bindtap="playFile" data-index="{{index}}">播放</text>
+        <text class="right-btn" wx:if="{{item.isLOG}}" bindtap="openLogFile" data-index="{{index}}">查看</text>
+      </view>
+    </view>
+  </view>
+  <view wx:if="{{logFileDetail}}" class="log-file-dialog">
+    <view class="log-file-header" bindtap="closeLogFile">
+      <text class="log-file-title">{{logFileDetail.fileName}}</text>
+      <text class="btn" bindtap="closeLogFile">关闭</text>
+    </view>
+    <text class="log-file-content">{{logFileDetail.data}}</text>
+  </view>
+  <custom-tab-bar></custom-tab-bar>
+</view>

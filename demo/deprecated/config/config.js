@@ -5,10 +5,10 @@ import { presetServerStreams } from './streams';
 // 这些是和设备无关的配置
 const config = {
   appParams: {
-    appid: 1253131157,
-    appOauthId: '600a4206062556e21befdc98',
-    appKey: 'pMqRNpU3M4wOA2BY',
-    appSecretKey: 'b62XcOoDcvJOgnibM8iKFVgVsXcdxNda',
+    appid: 123,
+    appOauthId: 'xxx',
+    appKey: 'xxx',
+    appSecretKey: 'xxx',
     appPackage: 'ios.test.com',
   },
   presetDevices,
