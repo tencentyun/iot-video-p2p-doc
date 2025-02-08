@@ -24,9 +24,14 @@ Page({
     // tcpFirst
     tcpFirst: false,
     canToggleTcpFirst: false,
+    // 切换端口
+    stunPort: 20002,
+    useDeliveryConfig: false,
 
     crossStunTurn: false,
     canToggleCrossStunTurn: false,
+    canTogglePort: false,
+    canToggleUseDeliveryConfig: false,
   },
   onLoad(query) {
     console.log('index: onLoad', query);
@@ -45,41 +50,57 @@ Page({
       this.userData.xp2pManager = app.xp2pManager;
       this.onXp2pLoaded();
     } else {
-      wx.nextTick(() => {
-        const start = Date.now();
-        console.log('index: preload xp2pManager');
-        require.async('../video/lib/xp2pManager.js')
-          .then((pkg) => {
-            if (this.hasExited) {
-              return;
-            }
-            console.log(`index: preload xp2pManager.js success, delay ${Date.now() - start}ms`, pkg);
-            app.xp2pManager = pkg.getXp2pManager();
-            this.userData.xp2pManager = app.xp2pManager;
-            if (app.toggleTcpFirst) {
-              this.setData({
-                tcpFirst: app.tcpFirst,
-                canToggleTcpFirst: true,
-              });
-            }
-            if (app.toggleCrossStunTurn) {
-              this.setData({
-                crossStunTurn: app.crossStunTurn,
-                canToggleCrossStunTurn: true,
-              });
-            }
-            console.log(`index: preload xp2pManager success, delay ${Date.now() - start}ms`, pkg);
-            this.onXp2pLoaded();
-          })
-          .catch((err) => {
-            if (this.hasExited) {
-              return;
-            }
-            console.error(`index: preload xp2pManager fail, delay ${Date.now() - start}ms`, err);
-          });
-      });
-    }
+      const fn = () =>
+        wx.nextTick(() => {
+          const start = Date.now();
+          console.log('index: preload xp2pManager');
+          require
+            .async('../video/lib/xp2pManager.js')
+            .then(pkg => {
+              if (this.hasExited) {
+                return;
+              }
 
+              console.log(`index: preload xp2pManager.js success, delay ${Date.now() - start}ms`, pkg);
+              app.xp2pManager = pkg.getXp2pManager();
+              this.userData.xp2pManager = app.xp2pManager;
+              if (app.toggleTcpFirst) {
+                this.setData({
+                  tcpFirst: app.tcpFirst,
+                  canToggleTcpFirst: true,
+                });
+              }
+              if (app.toggleCrossStunTurn) {
+                this.setData({
+                  crossStunTurn: app.crossStunTurn,
+                  canToggleCrossStunTurn: true,
+                });
+              }
+              if (app.togglePort) {
+                this.setData({
+                  stunPort: app.stunPort,
+                  canTogglePort: true,
+                });
+              }
+              if (!!app.toggleUseDeliveryConfig) {
+                this.setData({
+                  useDeliveryConfig: app.useDeliveryConfig,
+                  canToggleUseDeliveryConfig: true,
+                });
+              }
+              console.log(`index: preload xp2pManager success, delay ${Date.now() - start}ms`, pkg);
+
+              this.onXp2pLoaded();
+            })
+            .catch(err => {
+              if (this.hasExited) {
+                return;
+              }
+              console.error(`index: preload xp2pManager fail, delay ${Date.now() - start}ms`, err);
+            });
+        });
+      fn();
+    }
     let url = '';
     switch (query.page) {
       case 'ipc-live':
@@ -104,7 +125,7 @@ Page({
           }
         } catch (err) {
           console.error(`index: query.page ${query.page}, parse json error`, err);
-        };
+        }
         break;
     }
     url && wx.navigateTo({ url });
@@ -122,7 +143,7 @@ Page({
   onShareAppMessage() {
     return defaultShareInfo;
   },
-  onShow() { },
+  onShow() {},
   onXp2pLoaded() {
     const { xp2pManager } = this.userData;
     console.log(`index: onXp2pLoaded, uuid ${xp2pManager?.uuid}, xp2pState ${xp2pManager?.moduleState}`);
