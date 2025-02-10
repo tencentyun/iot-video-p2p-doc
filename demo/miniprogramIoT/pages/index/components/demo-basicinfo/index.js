@@ -6,7 +6,6 @@ const miniProgramInfo = accountInfo.miniProgram;
 
 // components/demo-basicinfo/index.js
 Component({
-
   /**
    * 组件的属性列表
    */
@@ -16,10 +15,14 @@ Component({
 
     tcpFirst: Boolean,
     canToggleTcpFirst: Boolean,
+    stunPort: String,
+    useDeliveryConfig: Boolean,
 
     // crossStunTurn
     crossStunTurn: Boolean,
     canToggleCrossStunTurn: Boolean,
+    canTogglePort: Boolean,
+    canToggleUseDeliveryConfig: Boolean,
 
     xp2pUuid: String,
     xp2pState: String,
@@ -46,7 +49,7 @@ Component({
       this.setData({
         xp2pNatEventTimeStr: toDateTimeMsString(new Date(val)),
       });
-    }
+    },
   },
 
   /**
@@ -68,6 +71,29 @@ Component({
       }
       app.toggleCrossStunTurn();
     },
+    // 切换端口函数
+    togglePort() {
+      const app = getApp();
+      const portList = ['80', '443', '8000', '20000', '20002'];
+      if (!app.togglePort) {
+        return;
+      }
+      wx.showActionSheet({
+        itemList: portList,
+        success: ({ tapIndex }) => {
+          const currentPort = portList[tapIndex];
+          app.togglePort(currentPort);
+        },
+      });
+    },
+    // 切换配置跟随函数
+    toggleUseDeliveryConfig() {
+      const app = getApp();
+      if (!app.toggleUseDeliveryConfig) {
+        return;
+      }
+      app.toggleUseDeliveryConfig();
+    },
 
     copyData(e) {
       const { value } = e.currentTarget.dataset;
@@ -76,7 +102,7 @@ Component({
         success: () => {
           wx.showToast({
             title: '复制成功',
-            icon: 'none'
+            icon: 'none',
           });
         },
       });

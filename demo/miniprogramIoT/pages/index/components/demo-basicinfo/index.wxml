@@ -21,10 +21,15 @@
       <view wx:if="{{ canToggleTcpFirst }}">
         tcpFirst: {{ tcpFirst }} <text class="text-btn" bindtap="toggleTcpFirst">切换</text>
       </view>
-      <!-- TODO 暂未正式上线，预计上线版本 4.5.1 -->
-      <!-- <view wx:if="{{canToggleCrossStunTurn}}">
+      <view wx:if="{{canToggleCrossStunTurn}}">
         crossStunTurn: {{crossStunTurn}} <text class="text-btn" bindtap="toggleCrossStunTurn">切换</text>
-      </view> -->
+      </view>
+      <view wx:if="{{ canTogglePort }}">
+        切换端口: {{ stunPort }} <text class="text-btn" bindtap="togglePort">切换</text>
+      </view>
+      <view wx:if="{{ canToggleUseDeliveryConfig }}">
+        使用设备跟随: {{ useDeliveryConfig }} <text class="text-btn" bindtap="toggleUseDeliveryConfig">切换</text>
+      </view>
       <view>
         uuid: <text user-select>{{ xp2pUuid }}</text>
       </view>

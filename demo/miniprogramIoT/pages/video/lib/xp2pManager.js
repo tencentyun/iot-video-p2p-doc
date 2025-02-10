@@ -5,8 +5,6 @@ let xp2pManager = null;
 export const getXp2pManager = () => {
   if (!xp2pManager) {
     const xp2pPlugin = requirePlugin('xp2p');
-    console.log('xp2pPlugin', xp2pPlugin);
-
     const iotExports = xp2pPlugin.iot;
     const app = getApp();
 
@@ -22,7 +20,7 @@ export const getXp2pManager = () => {
     if (compareVersion(wx.getSystemInfoSync().SDKVersion, '3.4.1') >= 0 && xp2pPlugin.p2p.setTcpFirst) {
       const tcpFirstKey = 'tcpFirst';
       const tcpFirstTime = parseInt(wx.getStorageSync(tcpFirstKey), 10);
-      const tcpFirst = !!(tcpFirstTime && (Date.now() - tcpFirstTime < 3600000 * 24)); // 24小时内有效
+      const tcpFirst = !!(tcpFirstTime && Date.now() - tcpFirstTime < 3600000 * 24); // 24小时内有效
       console.log('tcpFirst', tcpFirst);
       xp2pPlugin.p2p.setTcpFirst(tcpFirst);
 
@@ -45,10 +43,8 @@ export const getXp2pManager = () => {
     if (xp2pPlugin.p2p.setCrossStunTurn) {
       const crossStunTurnKey = 'crossStunTurn';
       const crossStunTurnTime = parseInt(wx.getStorageSync(crossStunTurnKey), 10);
-      const crossStunTurn = !!(crossStunTurnTime && (Date.now() - crossStunTurnTime < 3600000 * 24)); // 24小时内有效
-      console.log('crossStunTurn', crossStunTurn);
+      const crossStunTurn = !!(crossStunTurnTime && Date.now() - crossStunTurnTime < 3600000 * 24); // 24小时内有效
       xp2pPlugin.p2p.setCrossStunTurn(crossStunTurn);
-
       // 给index页用，方便测试时调整crossStunTurn
       app.crossStunTurn = crossStunTurn;
       app.toggleCrossStunTurn = async () => {
@@ -60,6 +56,43 @@ export const getXp2pManager = () => {
           return;
         }
         wx.setStorageSync(crossStunTurnKey, crossStunTurn ? '' : Date.now());
+        app.restart();
+      };
+    }
+    // 设置切换端口
+    if (xp2pPlugin.p2p.updateStunPort) {
+      const portKey = 'STUN_PORT';
+      const stunPort = wx.getStorageSync(portKey) || 20002;
+      xp2pPlugin.p2p.updateStunPort(stunPort);
+      app.stunPort = stunPort;
+      app.togglePort = async port => {
+        const modalRes = await wx.showModal({
+          title: '确定切换 stunPort 吗？',
+          content: '切换后需要重新进入小程序',
+        });
+        if (!modalRes || !modalRes.confirm) {
+          return;
+        }
+        wx.setStorageSync(portKey, port);
+        app.restart();
+      };
+    }
+    // 设置切换配置跟随
+    if (xp2pPlugin.p2p.setUseDeliveryConfig) {
+      const useDeliveryConfigKey = 'useDeliveryConfig';
+      const useDeliveryConfigTime = parseInt(wx.getStorageSync(useDeliveryConfigKey), 10);
+      const useDeliveryConfig = !!(useDeliveryConfigTime && Date.now() - useDeliveryConfigTime < 3600000 * 24); // 24小时内有效
+      xp2pPlugin.p2p.setUseDeliveryConfig(useDeliveryConfig);
+      app.useDeliveryConfig = useDeliveryConfig;
+      app.toggleUseDeliveryConfig = async () => {
+        const modalRes = await wx.showModal({
+          title: '确定切换 使用设备跟随 吗？',
+          content: '切换后需要重新进入小程序',
+        });
+        if (!modalRes || !modalRes.confirm) {
+          return;
+        }
+        wx.setStorageSync(useDeliveryConfigKey, useDeliveryConfig ? '' : Date.now());
         app.restart();
       };
     }
