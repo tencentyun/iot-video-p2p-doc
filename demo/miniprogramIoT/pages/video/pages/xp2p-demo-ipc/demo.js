@@ -213,6 +213,10 @@ Page({
     },
     voiceChangerTypeList: pusherPropConfigMap.voiceChangerType.list,
 
+    // 支持用户通过输入框输入信息, 已支持的字段
+    // - recorderProps
+    othersParams: {},
+
     // intercomType: video, 双向音视频
     intercomId: '',  // 播放成功再创建
     stateList: [],
@@ -335,7 +339,7 @@ Page({
 
     if (deviceInfo) {
       this.setData({
-        deviceId, deviceInfo, useChannelIds,
+        deviceId, deviceInfo, useChannelIds, recorderProps: deviceInfo.options?.recorderProps,
       });
       this.onStartPlayer({ detail: { ...deviceInfo, targetId: deviceId, useChannelIds } });
     }
@@ -1120,6 +1124,10 @@ Page({
       intercomPusherProps: {
         ...this.data.intercomPusherProps,
         ...intercomBirateMap.high,
+        mjpg: {
+          width: 160,
+          height: 240,
+        },
       },
     });
 

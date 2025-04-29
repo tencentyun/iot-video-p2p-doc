@@ -17,6 +17,7 @@
     "ui-checkbox-group": "/ui-components/checkbox-group/index",
     "ui-checkbox": "/ui-components/checkbox/index",
     "ui-radio-group": "/ui-components/radio-group/index",
-    "ui-radio": "/ui-components/radio/index"
+    "ui-radio": "/ui-components/radio/index",
+    "ui-textarea": "/ui-components/textarea/index"
   }
 }

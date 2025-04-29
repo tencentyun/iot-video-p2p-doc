@@ -153,6 +153,17 @@
           </ui-radio-group>
         </ui-form-item>
 
+        <ui-form-item label="其他参数" name="othersParams" label-width="168rpx" label-placement="column" l-form-item-class="my-2">
+          <ui-textarea
+            value="{{othersParams}}"
+            auto-height
+            maxlength="-1"
+            indicator="{{false}}"
+            placeholder="请输入JSON字符串格式"
+            l-class="my-2" bind:lininput="handleOtherParamsInput"
+          />
+        </ui-form-item>
+
         <ui-form-item label="其他选项" name="others" label-placement="column" label-width="168rpx">
           <ui-checkbox-group bind:linchange="onChangeOthers">
             <ui-checkbox

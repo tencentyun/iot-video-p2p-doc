@@ -63,6 +63,10 @@ Page({
 
               console.log(`index: preload xp2pManager.js success, delay ${Date.now() - start}ms`, pkg);
               app.xp2pManager = pkg.getXp2pManager();
+
+              // NOTE 在这里关闭加密，方便调试不加密的场景
+              // app.xp2pManager.enableXP2PCryptoInner(false);
+
               this.userData.xp2pManager = app.xp2pManager;
               if (app.toggleTcpFirst) {
                 this.setData({

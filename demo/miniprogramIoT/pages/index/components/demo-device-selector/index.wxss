@@ -55,3 +55,6 @@ view.weui-cell__bd {
 .data-copy-box .ml-10 {
   font-size: 14px;
 }
+.my-2 {
+  margin: .5rem 0;
+}

@@ -79,6 +79,7 @@ Component({
     showDeviceList: false,
     deviceList: [],
     deviceData: { options: STORE.defaultOptions },
+    othersParams: undefined,
 
     showAddDevice: false,
 
@@ -103,7 +104,11 @@ Component({
     async deviceData(data) {
       console.log(logPrefix, 'deviceData change', data);
       // if twecall 设备，自动拉取 openId 和 snTicket
-      const { productId, deviceName, xp2pInfo, options: { twecall } } = data;
+      const { productId, deviceName, xp2pInfo, options: {
+        twecall, playback, cloudStorage, liveQuality, intercomType, voiceType, onlyAudio,
+        useChannelIds, p2pCall, ptz, userCommand, rtcMode, isMuted, showPlayerLog, showIntercomLog, onlyFlv,
+        ...othersParams
+      }, } = data;
 
       if (productId && deviceName && xp2pInfo) {
         let exist = false;
@@ -116,6 +121,7 @@ Component({
         this.setData({
           showOptions: true,
           showAddDevice: !exist,
+          othersParams: Reflect.ownKeys(othersParams).length > 0 ? JSON.stringify(othersParams, null, 2) : '',
         });
       } else {
         this.setData({
@@ -164,6 +170,7 @@ Component({
           { key: 'showPlayerLog', checked: this.data.deviceData.options.showPlayerLog, name: '显示播放组件log' },
           { key: 'showIntercomLog', checked: this.data.deviceData.options.showIntercomLog, name: '显示对讲组件log' },
           { key: 'onlyFlv', checked: this.data.deviceData.options.onlyFlv, name: '只拉数据不播放' },
+          { key: 'onlyAudio', checked: this.data.deviceData.options.onlyAudio, name: '图片流设备只拉音频？' },
         ],
       });
     },
@@ -558,6 +565,31 @@ Component({
         },
       });
     },
+
+    handleOtherParamsInput(e) {
+      try {
+        let others = {};
+        if (e.detail.value) others = JSON.parse(e.detail.value);
+        const { twecall, playback, cloudStorage, liveQuality, intercomType, voiceType, useChannelIds, p2pCall, ptz,
+          userCommand, rtcMode, isMuted, showPlayerLog, showIntercomLog, onlyFlv, ..._ignoreOpts } = this.data.deviceData.options;
+
+        // 已知属性直接拷贝过来
+        const othersOpts = {
+          twecall, playback, cloudStorage, liveQuality, intercomType, voiceType,
+          useChannelIds, p2pCall, ptz, userCommand, rtcMode, isMuted, showPlayerLog, showIntercomLog, onlyFlv
+        };
+
+        // 编辑过的属性，合并到已知属性中
+        const deviceInfo = { ...this.data.deviceData, options: { ...othersOpts, ...others } };
+
+        // 保存到本地存储
+        STORE.updateRecentDevice(deviceInfo);
+        this.setData({ deviceData: deviceInfo });
+      } catch (error) {
+        // ignore json stream error.
+        // console.error('[demo] ParamsInput error: ', error);
+      }
+    }
   },
 
 });

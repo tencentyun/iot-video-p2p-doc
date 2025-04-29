@@ -16,6 +16,7 @@
  * @property {boolean} showPlayerLog
  * @property {boolean} showIntercomLog
  * @property {boolean} onlyFlv
+ * @property {boolean} onlyAudio 图片流设备是否只拉音频
  */
 
 /**
@@ -110,7 +111,7 @@ export const STORE = {
     playback: true,
     cloudStorage: false,
     p2pCall: true,
-    twecall: true,
+    twecall: false,
     ptz: false,
     userCommand: false,
     rtcMode: true,
@@ -118,6 +119,7 @@ export const STORE = {
     showPlayerLog: true,
     showIntercomLog: true,
     onlyFlv: false,
+    onlyAudio: false,
   },
 };
 

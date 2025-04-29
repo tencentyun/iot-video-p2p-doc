@@ -85,6 +85,10 @@ Component({
       type: Boolean,
       value: false,
     },
+    onlyAudio: {
+      type: Boolean,
+      value: false,
+    },
     acceptPlayerEvents: {
       type: Object,
       value: {},
