@@ -73,6 +73,10 @@ Page({
       acceptPusherEvents: {
         netstatus: intercomShowPusherInfo,
       },
+      mjpg: {
+        width: 160,
+        height: 120,
+      }
     },
     autoStopVoiceIfPageHide,
 
@@ -90,6 +94,7 @@ Page({
     console.log('intercom call page onLoad: ', { options, xp2pInfo: decodeURIComponent(options.xp2pInfo), xp2pManager: app.xp2pManager });
     const { deviceId } = options;
     const deviceInfo = STORE.getDeviceById(deviceId);
+    console.log('intercom call page onLoad, deviceInfo: ', deviceInfo);
 
     if (deviceInfo) {
       this.setData({
@@ -168,6 +173,7 @@ Page({
       return;
     }
 
+    // 启动自己的摄像头预览
     this.data.instance.intercom.startPreview();
 
     // 启动定时器

@@ -147,7 +147,7 @@ Page({
   onShareAppMessage() {
     return defaultShareInfo;
   },
-  onShow() {},
+  onShow() { },
   onXp2pLoaded() {
     const { xp2pManager } = this.userData;
     console.log(`index: onXp2pLoaded, uuid ${xp2pManager?.uuid}, xp2pState ${xp2pManager?.moduleState}`);
