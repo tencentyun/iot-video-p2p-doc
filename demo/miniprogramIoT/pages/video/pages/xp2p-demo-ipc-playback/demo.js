@@ -172,7 +172,7 @@ Page({
     const deviceId = query.deviceId || '';
     const deviceInfo = STORE.getDeviceById(deviceId);
     console.log('demo: ipc playback demo onLoad', deviceId, deviceInfo);
-
+    deviceInfo.sceneType = 'playback';
     if (deviceInfo) {
       this.setData({ deviceId, deviceInfo });
       this.onStartPlayer({ detail: { ...deviceInfo, targetId: deviceId } });
