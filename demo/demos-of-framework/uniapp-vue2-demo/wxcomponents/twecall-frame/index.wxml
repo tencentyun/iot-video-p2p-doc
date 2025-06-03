@@ -1,0 +1,15 @@
+<view>
+  twecall 嵌入页面
+    <iot-p2p-player-with-mjpg
+      class='demo-player'
+      id='{{playerId}}'
+      sceneType='live'
+      mode='ipc'
+      soundMode='speaker'
+      deviceInfo='{{deviceInfo}}'
+      xp2pInfo='{{deviceInfo.xp2pInfo}}'
+      showLog='{{false}}'
+      showDebugInfo='{{false}}'
+      triggerFirstPlayByAutoPlay='{{false}}'
+    />
+</view>

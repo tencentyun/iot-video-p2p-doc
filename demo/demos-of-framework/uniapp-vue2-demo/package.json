@@ -1,0 +1,21 @@
+{
+  "name": "xp2p-uniapp",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "copy-webpack-plugin": "^5.0.0"
+  },
+  "dependencies": {
+    "@vant/weapp": "^1.11.7",
+    "dayjs": "^1.11.13",
+    "lodash-es": "^4.17.21",
+    "vuex": "^3.6.2"
+  }
+}
