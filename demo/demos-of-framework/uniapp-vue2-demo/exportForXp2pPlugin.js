@@ -1,10 +1,10 @@
 const appParams = {
-  appid: 1253131157,
-  appOauthId: '600a4206062556e21befdc98',
-  appKey: 'pMqRNpU3M4wOA2BY',
-  appSecretKey: 'b62XcOoDcvJOgnibM8iKFVgVsXcdxNda',
-  appPackage: 'ios.test.com',
-};
+	appid: "xx",
+	appOauthId: "xx",
+	appKey: "xx",
+	appSecretKey: "xx",
+	appPackage: "xx.com",
+}
 
 module.exports = {
   wx,
