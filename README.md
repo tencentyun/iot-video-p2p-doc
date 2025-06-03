@@ -42,3 +42,6 @@ APP SDK入参是腾讯云IoT Video提供的APP ID、APP Key和APP Secret、客�
 
 小程序插件入参是腾讯云IoT Video提供的APP ID、APP Key和APP Secret、客户部署的接入层域名，详情参考文档[腾讯云IoT Video 小程序P2P 接入手册](./IoT%20Video%20%E5%B0%8F%E7%A8%8B%E5%BA%8FP2P%E6%8E%A5%E5%85%A5%E6%8C%87%E5%8D%97.md)。
 
+### 六、xp2p接入Demo示例
+[微信小程序原生 Demo](./demo/miniprogramIoT/app.js)
+[uni-app Vue2 Demo](./demo/demos-of-framework/uniapp-vue2-demo/main.js)

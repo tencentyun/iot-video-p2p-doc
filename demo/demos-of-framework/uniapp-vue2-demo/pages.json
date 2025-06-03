@@ -1,0 +1,146 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "uniApp & Vue2 Xp2p 示例"
+      }
+    }
+  ],
+  "subPackages": [
+    {
+      "root": "pages/video",
+      "pages": [
+        {
+          "path": "ipc-live/index",
+          "style": {
+            "navigationBarTitleText": "直播",
+            "usingComponents": {
+              "iot-p2p-player-with-mjpg": "plugin://xp2p/iot-p2p-player-with-mjpg"
+            }
+          }
+        },
+        {
+          "path": "ipc-replay/index",
+          "style": {
+            "navigationBarTitleText": "录播",
+            "usingComponents": {
+              "iot-p2p-playback-player": "plugin://xp2p/iot-p2p-playback-player"
+            },
+            "componentPlaceholder": {
+              "iot-p2p-playback-player": "view"
+            }
+          }
+        },
+        {
+          "path": "ipc-intercom/index",
+          "style": {
+            "navigationBarTitleText": "语音&视频呼叫",
+            "usingComponents": {
+              "iot-p2p-player-with-mjpg": "plugin://xp2p/iot-p2p-player-with-mjpg",
+              "iot-p2p-intercom": "plugin://xp2p/iot-p2p-intercom",
+              "iot-p2p-voice": "plugin://xp2p/iot-p2p-voice"
+            }
+          }
+        },
+        {
+          "path": "ipc-command/index",
+          "style": {
+            "navigationBarTitleText": "信令发送",
+            "usingComponents": {
+              "iot-p2p-player-with-mjpg": "plugin://xp2p/iot-p2p-player-with-mjpg"
+            }
+          }
+        },
+        {
+          "path": "ipc-custom-style/index",
+          "style": {
+            "navigationBarTitleText": "自定义样式",
+            "usingComponents": {
+              "iot-p2p-player-with-mjpg": "plugin://xp2p/iot-p2p-player-with-mjpg",
+              "iot-p2p-intercom": "plugin://xp2p/iot-p2p-intercom"
+            }
+          }
+        },
+        {
+          "path": "ipc-twecall/index",
+          "style": {
+            "navigationBarTitleText": "TWECALL测试",
+            "usingComponents": {
+              "iot-p2p-player-with-mjpg": "plugin://xp2p/iot-p2p-player-with-mjpg"
+            }
+          }
+        },
+        {
+          "path": "twecall-end/index",
+          "style": {
+            "navigationBarTitleText": "TWECALL落地页",
+            "usingComponents": {
+              "iot-p2p-player-with-mjpg": "plugin://xp2p/iot-p2p-player-with-mjpg"
+            }
+          }
+        }
+      ],
+      "plugins": {
+        "xp2p": {
+          "version": "latest",
+          "provider": "wx1319af22356934bf",
+          "export": "exportForXp2pPlugin.js"
+        },
+        "wechat-p2p-player": {
+          "version": "latest",
+          "provider": "wx9e8fbc98ceac2628",
+          "export": "exportForPlayerPlugin.js"
+        }
+      }
+    },
+    {
+      "root": "pages/features",
+      "pages": [
+        {
+          "path": "async-subpackage/index"
+        }
+      ],
+      "plugins": {
+        "wmpf-voip": {
+          "version": "latest",
+          "provider": "wxf830863afde621eb",
+          "genericsImplementation": {
+            "call-page-plugin": {
+              "custombox": "/wxcomponents/twecall-frame/index" // 要显示的自定义组件路径
+            }
+          }
+        }
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "uni-app",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8",
+    "usingComponents": {
+      "van-button": "/wxcomponents/vant/button/index",
+      "van-grid": "/wxcomponents/vant/grid/index",
+      "van-grid-item": "/wxcomponents/vant/grid-item/index",
+      "van-toast": "/wxcomponents/vant/toast/index",
+      "van-collapse": "/wxcomponents/vant/collapse/index",
+      "van-collapse-item": "/wxcomponents/vant/collapse-item/index",
+      "van-popup": "/wxcomponents/vant/popup/index",
+      "van-picker": "/wxcomponents/vant/picker/index",
+      "van-field": "/wxcomponents/vant/field/index",
+      "van-cell": "/wxcomponents/vant/cell/index",
+      "van-cell-group": "/wxcomponents/vant/cell-group/index",
+      "van-radio": "/wxcomponents/vant/radio/index",
+      "van-radio-group": "/wxcomponents/vant/radio-group/index",
+      "van-action-sheet": "/wxcomponents/vant/action-sheet/index",
+      "van-notice-bar": "/wxcomponents/vant/notice-bar/index",
+      "van-icon": "/wxcomponents/vant/icon/index",
+      "van-tab": "/wxcomponents/vant/tab/index",
+      "van-tabs": "/wxcomponents/vant/tabs/index",
+      "van-checkbox": "/wxcomponents/vant/checkbox/index",
+      "van-checkbox-group": "/wxcomponents/vant/checkbox-group/index",
+      "twecall-frame": "/wxcomponents/twecall-frame/index"
+    }
+  }
+}
