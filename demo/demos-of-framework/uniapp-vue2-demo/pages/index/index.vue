@@ -25,7 +25,7 @@
               }}</van-radio>
             </van-radio-group>
           </van-cell>
-          <van-cell title="对讲方式" title-width="100px">
+          <!-- <van-cell title="对讲方式" title-width="100px">
             <van-radio-group
               data-name="intercomMode"
               :value="form.intercomMode"
@@ -36,7 +36,7 @@
                 {{ item.label }}
               </van-radio>
             </van-radio-group>
-          </van-cell>
+          </van-cell> -->
           <van-cell title="静音播放" title-width="100px">
             <van-checkbox :value="form.muted" data-name="muted" @change="onInput"></van-checkbox>
           </van-cell>
