@@ -3,13 +3,13 @@
     <iot-p2p-player-with-mjpg
       v-if="playerId"
       class="demo-player"
+      mode="RTC"
       :id="playerId"
       :deviceInfo="deviceInfo"
       :xp2pInfo="deviceInfo.xp2pInfo"
       :sceneType="playerOptions.sceneType"
       :streamQuality="playerOptions.streamQuality"
       :streamParams="playerOptions.streamParams"
-      :mode="playerOptions.mode"
       :definition="playerOptions.definition"
       :soundMode="playerOptions.soundMode"
       :needCheckStream="playerOptions.needCheckStream"
@@ -24,17 +24,16 @@
       @playend="onPlayStateEvent"
     />
     <iot-p2p-intercom
-      v-if="intercomId"
+      mode="RTC"
       :id="intercomId"
-      compClass="my-intercom is-intercoming is-preview"
+      compClass="my-intercom"
       :intercomVideoSizeClass="intercomOptions.intercomVideoSizeClass"
       :deviceInfo="deviceInfo"
       :xp2pInfo="deviceInfo.xp2pInfo"
       :pusherProps="intercomOptions.pusherProps"
-      :autoStopIfPageHide="intercomOptions.autoStopVoiceIfPageHide"
+      :autoStopIfPageHide="intercomOptions.autoStopIfPageHide"
       :showLog="intercomOptions.showLog"
       :showInnerPusherLog="intercomOptions.showInnerPusherLog"
-      :needVideo="intercomOptions.needVideo"
       @intercomeventchange="onIntercomEventChange"
       @intercomstatechange="onIntercomStateChange"
       @intercomstart="onIntercomProcess"
@@ -111,7 +110,7 @@ export default {
         showLog: false,
         needVideo: true,
         showInnerPusherLog: false,
-        autoStopVoiceIfPageHide: true,
+        autoStopIfPageHide: false,
         pusherInfoCount: 0,
         intercomVideoSizeClass: 'vertical_3_4',
         bufferInfo: { bitrateType: 'high' },
@@ -393,6 +392,7 @@ export default {
     if (this.intercomRef && !['IntercomIdle', 'Ready2Call'].includes(this.status.intercomState)) {
       this.stopIntercomCall();
     }
+    xp2pManger.stopP2pService(deviceId, this.pageId);
     xp2pManger.removeP2PServiceEventListener(deviceId, 'serviceReceivePrivateCommand', this.feedbackFromDevice);
   },
   computed: {

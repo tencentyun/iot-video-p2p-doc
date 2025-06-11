@@ -7,7 +7,7 @@
       compClass="custom-style-player"
       compStyle="width: 100%; height: 300px;"
       sceneType="live"
-      mode="ipc"
+      mode="RTC"
       soundMode="speaker"
       :deviceInfo="deviceInfo"
       :xp2pInfo="deviceInfo.xp2pInfo"
@@ -17,6 +17,7 @@
     >
     </iot-p2p-player-with-mjpg>
     <iot-p2p-intercom
+      mode="RTC"
       id="intercomRef"
       class="intercom-wrap"
       compClass="my-intercom"
