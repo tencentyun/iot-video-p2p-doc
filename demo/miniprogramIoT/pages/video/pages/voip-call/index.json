@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "voip呼叫页面",
+  "usingComponents": {
+    "ui-form": "/ui-components/form/index",
+    "ui-form-item": "/ui-components/form-item/index",
+    "ui-input": "/ui-components/input/index",
+    "ui-radio-group": "/ui-components/radio-group/index",
+    "ui-radio": "/ui-components/radio/index"
+  }
+}

@@ -1,0 +1,65 @@
+<view class="voip-call-wrap">
+  <ui-form name="voip-call-form">
+    <ui-form-item label="AppKey" name="appKey" label-width="168rpx">
+        <ui-input
+          clear="{{true}}"
+          label-layout="left"
+          label-width="170"
+          hide-label
+          value="{{ form.appKey }}"
+          data-name="appKey"
+          bind:lininput="onInput"
+          bind:linclear="onClear"
+        />
+      </ui-form-item>
+    <ui-form-item label="AppSecret" name="appSecret" label-width="168rpx">
+      <ui-input
+        clear="{{true}}"
+        label-layout="left"
+        label-width="170"
+        hide-label
+        value="{{ form.appSecret }}"
+        data-name="appSecret"
+        bind:lininput="onInput"
+        bind:linclear="onClear"
+      />
+    </ui-form-item>
+    <ui-form-item label="Sn" name="sn" label-width="168rpx">
+      <ui-input
+        clear="{{true}}"
+        label-layout="left"
+        label-width="170"
+        hide-label
+        value="{{ form.sn }}"
+        data-name="sn"
+        bind:lininput="onInput"
+        bind:linclear="onClear"
+      />
+    </ui-form-item>
+    <ui-form-item label="ModelId" name="modelId" label-width="168rpx">
+      <ui-input
+        clear="{{true}}"
+        label-layout="left"
+        label-width="170"
+        hide-label
+        value="{{ form.modelId }}"
+        data-name="modelId"
+        bind:lininput="onInput"
+        bind:linclear="onClear"
+      />
+    </ui-form-item>
+    <ui-form-item label="呼叫方式" name="callType" label-width="168rpx">
+      <ui-radio-group
+        current="{{ form.callType }}"
+        placement="row"
+        none-checked="{{ true }}"
+        data-name="callType"
+        bind:linchange="onCallTypeChange"
+      >
+        <ui-radio key="voice" l-class="demo-radio-padding">音频 </ui-radio>
+        <ui-radio key="video" l-class="demo-radio-padding">视频 </ui-radio>
+      </ui-radio-group>
+    </ui-form-item>
+    <button bindtap="onSubmit" loading="{{isCalling}}">呼叫</button>
+  </ui-form>
+</view>
