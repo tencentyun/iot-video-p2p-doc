@@ -40,6 +40,13 @@
           <van-cell title="静音播放" title-width="100px">
             <van-checkbox :value="form.muted" data-name="muted" @change="onInput"></van-checkbox>
           </van-cell>
+          <van-cell title="左滑出现浮窗" title-width="100px">
+            <van-checkbox
+              :value="form.swipeLeftMinWindow"
+              data-name="swipeLeftMinWindow"
+              @change="onInput"
+            ></van-checkbox>
+          </van-cell>
         </van-cell-group>
         <van-button custom-style="width: 100%; margin:12px 0" type="primary" @click="onSubmit">保存</van-button>
       </view>
@@ -50,9 +57,9 @@
         v-for="item of videoPageList"
         :key="item.url"
         icon="play"
-        link-type="navigateTo"
         :url="item.url"
         :text="item.text"
+        @click="onNavigate(item.url)"
       />
     </van-grid>
     <van-toast id="van-toast" />
@@ -78,6 +85,7 @@ export default {
         definition: 'standard',
         intercomMode: 'voice',
         muted: false,
+        swipeLeftMinWindow: false,
       },
       videoPageList: [
         { text: 'P2P监控', url: '/pages/video/ipc-live/index' },
@@ -100,6 +108,7 @@ export default {
         ...this.form,
         deviceId: `${productId}/${deviceName}`,
       };
+      this.log('params', params);
       this.$store.commit('setDefaultDeviceInfo', params);
       Toast.success('保存成功');
     },
@@ -123,6 +132,12 @@ export default {
         fail: err => {
           this.error('读取剪贴板数据失败:', err);
         },
+      });
+    },
+    onNavigate(url) {
+      this.log('======onNavigate=======', url);
+      wx[this.form.swipeLeftMinWindow ? 'redirectTo' : 'navigateTo']({
+        url,
       });
     },
   },

@@ -24,12 +24,12 @@
       @playend="onPlayStateEvent"
     />
     <iot-p2p-intercom
+      v-if="hasIntercom"
       mode="RTC"
       :id="intercomId"
       compClass="my-intercom"
       :intercomVideoSizeClass="intercomOptions.intercomVideoSizeClass"
       :deviceInfo="deviceInfo"
-      :xp2pInfo="deviceInfo.xp2pInfo"
       :pusherProps="intercomOptions.pusherProps"
       :autoStopIfPageHide="intercomOptions.autoStopIfPageHide"
       :showLog="intercomOptions.showLog"
@@ -82,6 +82,7 @@ export default {
   name: 'IpcIntercom',
   data() {
     return {
+      hasIntercom: true, // 是否展示intercom组件
       playerId: 'p2pPlayer',
       intercomId: 'p2pInterCom',
       pageId: '[ipc-intercom]',
@@ -209,6 +210,7 @@ export default {
       }
       this.clearIntercomBufferInfo();
       this.intercomRef.intercomHangup();
+      wx.navigateBack();
       this.log('关闭intercom组件完成');
     },
 
@@ -392,7 +394,7 @@ export default {
     if (this.intercomRef && !['IntercomIdle', 'Ready2Call'].includes(this.status.intercomState)) {
       this.stopIntercomCall();
     }
-    xp2pManger.stopP2pService(deviceId, this.pageId);
+    xp2pManger.stopP2PService(deviceId, this.pageId);
     xp2pManger.removeP2PServiceEventListener(deviceId, 'serviceReceivePrivateCommand', this.feedbackFromDevice);
   },
   computed: {
