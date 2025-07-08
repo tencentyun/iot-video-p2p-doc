@@ -2,7 +2,7 @@
   <ui-form name="voip-call-form">
     <ui-form-item label="AppKey" name="appKey" label-width="168rpx">
         <ui-input
-          clear="{{true}}"
+          clear
           label-layout="left"
           label-width="170"
           hide-label
@@ -14,7 +14,7 @@
       </ui-form-item>
     <ui-form-item label="AppSecret" name="appSecret" label-width="168rpx">
       <ui-input
-        clear="{{true}}"
+        clear
         label-layout="left"
         label-width="170"
         hide-label
@@ -26,7 +26,7 @@
     </ui-form-item>
     <ui-form-item label="Sn" name="sn" label-width="168rpx">
       <ui-input
-        clear="{{true}}"
+        clear
         label-layout="left"
         label-width="170"
         hide-label
@@ -38,7 +38,7 @@
     </ui-form-item>
     <ui-form-item label="ModelId" name="modelId" label-width="168rpx">
       <ui-input
-        clear="{{true}}"
+        clear
         label-layout="left"
         label-width="170"
         hide-label
@@ -56,10 +56,10 @@
         data-name="callType"
         bind:linchange="onCallTypeChange"
       >
-        <ui-radio key="voice" l-class="demo-radio-padding">音频 </ui-radio>
-        <ui-radio key="video" l-class="demo-radio-padding">视频 </ui-radio>
+        <ui-radio key="voice" l-class="demo-radio-padding">音频</ui-radio>
+        <ui-radio key="video" l-class="demo-radio-padding">视频</ui-radio>
       </ui-radio-group>
     </ui-form-item>
-    <button bindtap="onSubmit" loading="{{isCalling}}">呼叫</button>
+    <button bindtap="onSubmit" loading="{{isCalling}}" type="primary">呼叫</button>
   </ui-form>
 </view>
