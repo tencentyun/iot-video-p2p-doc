@@ -24,7 +24,6 @@
       @playend="onPlayStateEvent"
     />
     <iot-p2p-intercom
-      v-if="hasIntercom"
       mode="RTC"
       :id="intercomId"
       compClass="my-intercom"
@@ -47,10 +46,19 @@
       @netstatus="onIntercomLivePusherNetStatus"
     />
     <view class="button-group">
-      <van-button custom-style="width:100%;margin-bottom:10px" type="primary" @click="startIntercomCall"
-        >呼叫</van-button
-      >
-      <van-button custom-style="width:100%" type="danger" @click="stopIntercomCall">挂断</van-button>
+      <view style="margin-bottom: 20px">
+        <van-button custom-style="width:100%;margin-bottom:10px" type="primary" @click="startIntercomCall"
+          >呼叫</van-button
+        >
+
+        <van-button custom-style="width:100%" type="danger" @click="stopIntercomCall">挂断</van-button>
+      </view>
+      <view>
+        <van-button custom-style="width:100%;margin-bottom:10px" type="primary" @click="startPreview">预览</van-button>
+        <van-button custom-style="width:100%;margin-bottom:10px" type="danger" @click="stopPreview"
+          >挂断预览</van-button
+        >
+      </view>
       <!-- 获取到pusher context才可以操作摄像头相关的逻辑 -->
       <van-collapse v-if="!!livePusherContext" :value="activeNameArr" @change="onChange">
         <van-collapse-item title="pusher设置" name="pusherSetting">
@@ -76,13 +84,12 @@ import { mapState } from 'vuex';
 import { isDevTools } from '@/utils';
 import { getXp2pManager } from '@/pages/video/xp2pManager';
 import { intercomBirateMap, INTERCOM_COMMAND_MAP } from '@/constants';
-let xp2pManger = null;
+let xp2pManager = null;
 
 export default {
   name: 'IpcIntercom',
   data() {
     return {
-      hasIntercom: true, // 是否展示intercom组件
       playerId: 'p2pPlayer',
       intercomId: 'p2pInterCom',
       pageId: '[ipc-intercom]',
@@ -132,7 +139,7 @@ export default {
           maxBitrate: 400,
           videoWidth: 480,
           videoHeight: 640,
-          localMirror: 'auto',
+          localMirror: 'disable',
           removeMirror: false,
           autoPush: true,
           devicePosition: 'front',
@@ -148,6 +155,7 @@ export default {
             width: 240,
             height: 320,
             fps: 15,
+            livePusherSnapshotQuality: "raw"
           },
           ...intercomBirateMap.high,
         },
@@ -202,6 +210,29 @@ export default {
       // this.intercomRef.setP2PEventCallback(this.onIntercomP2PEvent.bind(this));
       this.intercomRef.intercomCall({ needRecord: false });
     },
+    // 开启预览
+    async startPreview() {
+      this.log('startPreview');
+      this.intercomRef.startPreview();
+      const res = this.sendUserCommand('wx_call_start');
+      this.log('sendUserCommand wx_call_start', res);
+    },
+    async sendUserCommand(cmd) {
+      const sendRes = await xp2pManager
+        .sendCommand(this.deviceInfo.deviceId, `action=user_define&channel=0&cmd=${cmd}`)
+        .then(() => 'success')
+        .catch(e => console.error(e));
+      this.log('sendUserCommand', cmd, sendRes);
+      return sendRes;
+    },
+
+    // 关闭预览
+    async stopPreview() {
+      this.log('stopPreview');
+      this.intercomRef.stopPreview();
+      const res = this.sendUserCommand('wx_call_cancel');
+      this.log('sendUserCommand wx_call_cancel', res);
+    },
     async stopIntercomCall() {
       const { intercomState } = this.status;
       this.log('stopIntercomCall in state ->', intercomState);
@@ -210,7 +241,6 @@ export default {
       }
       this.clearIntercomBufferInfo();
       this.intercomRef.intercomHangup();
-      wx.navigateBack();
       this.log('关闭intercom组件完成');
     },
 
@@ -357,23 +387,25 @@ export default {
     async startP2PService() {
       const { deviceId } = this.deviceInfo;
       try {
-        await xp2pManger.startP2PService({
+        await xp2pManager.startP2PService({
           p2pMode: this.p2pMode,
           deviceInfo: this.deviceInfo,
           xp2pInfo: this.deviceInfo.xp2pInfo,
           caller: this.pageId,
         });
-        xp2pManger.addP2PServiceEventListener(deviceId, 'serviceReceivePrivateCommand', this.feedbackFromDevice);
+        xp2pManager.addP2PServiceEventListener(deviceId, 'serviceReceivePrivateCommand', this.feedbackFromDevice);
       } catch (e) {
         this.log('startP2PService error 启动P2P服务失败', e);
       }
     },
     feedbackFromDevice(params) {
-      this.log('feedbackFromDevice', {
+      this.log('收到设备端反馈', {
         params,
       });
       const cmd = params.iv_private_cmd;
-      Toast(`cmd-${INTERCOM_COMMAND_MAP[cmd]}`);
+      if (cmd === 'call_answer') {
+        this.startIntercomCall();
+      }
     },
   },
   created() {
@@ -384,7 +416,7 @@ export default {
   },
   mounted() {
     this.log('=========mounted=========');
-    xp2pManger = getXp2pManager();
+    xp2pManager = getXp2pManager();
     this.startP2PService();
     this.getComponentRefs();
   },
@@ -394,8 +426,8 @@ export default {
     if (this.intercomRef && !['IntercomIdle', 'Ready2Call'].includes(this.status.intercomState)) {
       this.stopIntercomCall();
     }
-    xp2pManger.stopP2PService(deviceId, this.pageId);
-    xp2pManger.removeP2PServiceEventListener(deviceId, 'serviceReceivePrivateCommand', this.feedbackFromDevice);
+    xp2pManager.stopP2PService(deviceId, this.pageId);
+    xp2pManager.removeP2PServiceEventListener(deviceId, 'serviceReceivePrivateCommand', this.feedbackFromDevice);
   },
   computed: {
     ...mapState(['rawDeviceInfo']),

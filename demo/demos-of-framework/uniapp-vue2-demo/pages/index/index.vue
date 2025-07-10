@@ -57,7 +57,6 @@
         v-for="item of videoPageList"
         :key="item.url"
         icon="play"
-        :url="item.url"
         :text="item.text"
         @click="onNavigate(item.url)"
       />
@@ -69,6 +68,7 @@
 <script>
 import Toast from '@/wxcomponents/vant/toast/toast';
 import { DEFAULT_DEVICE_INFO, definitionOptions, intercomModeOptions } from '@/constants';
+import wmpfVoip from '@/utils/voip';
 import { mapState } from 'vuex';
 export default {
   data() {
@@ -140,9 +140,35 @@ export default {
         url,
       });
     },
+    initVoipConfig() {
+      this.log('引入twecall成功', wmpfVoip); // 有结果即表示引入插件成功
+      wmpfVoip.setUIConfig({
+        btnText: '打开半屏页面',
+        listenerUI: {
+          objetFit: 'contain',
+        },
+        callerUI: {
+          cameraRotation: 0,
+        },
+      });
+      wmpfVoip.onVoipEvent(event => {
+        if (event.eventName === 'callPageOnShow') {
+          const query = wmpfVoip.getPluginOnloadOptions();
+          // query.custom_message
+          console.log('从voip callPageOnShow得到的参数为 ', query);
+        }
+      });
+      // 设置通话结束页面 done
+      wmpfVoip.setVoipEndPagePath({
+        url: '/pages/video/twecall-end/index',
+        options: 'sn=xxx&ticket=yyy',
+        key: 'Call',
+      });
+    },
   },
   onLoad() {
     this.log('======onLoad=======');
+    this.initVoipConfig();
   },
   created() {
     Object.keys(this.form).forEach(key => {
