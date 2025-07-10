@@ -101,17 +101,7 @@
           "path": "async-subpackage/index"
         }
       ],
-      "plugins": {
-        "wmpf-voip": {
-          "version": "latest",
-          "provider": "wxf830863afde621eb",
-          "genericsImplementation": {
-            "call-page-plugin": {
-              "custombox": "/wxcomponents/twecall-frame/index" // 要显示的自定义组件路径
-            }
-          }
-        }
-      }
+      "plugins": {}
     }
   ],
   "globalStyle": {

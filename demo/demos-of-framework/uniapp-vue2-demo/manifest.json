@@ -51,6 +51,17 @@
   /* 小程序特有相关 */
   "mp-weixin": {
     "appid": "wx9e8fbc98ceac2628",
+    "plugins": {
+      "wmpf-voip": {
+        "version": "latest",
+        "provider": "wxf830863afde621eb",
+        "genericsImplementation": {
+          "call-page-plugin": {
+            "custombox": "/wxcomponents/twecall-frame/index" // 要显示的自定义组件路径
+          }
+        }
+      }
+    },
     "setting": {
       "urlCheck": false,
       "es6": true

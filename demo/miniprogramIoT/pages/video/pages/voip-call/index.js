@@ -8,7 +8,6 @@ let isBindVoipEvent = false;
 
 wmpfVoip.setVoipEndPagePath({
   url: '/pages/index/index',
-  options: 'voip-call-end=1',
   key: 'Call',
   routeType: 'switchTab',
 });
@@ -91,7 +90,6 @@ Page({
       };
       console.log('开始呼叫callDevice params=>', callDeviceParams);
       const { roomId } = await wmpfVoip.callDevice(callDeviceParams);
-      console.log(pagePrefix, '调用voip通话成功 roomId =>', roomId);
       const [productId, deviceName] = splitByFirstUnderscore(sn);
       const params = {
         AccessToken: token,
@@ -116,7 +114,6 @@ Page({
         token,
         productId,
         deviceName,
-        roomId
       };
       wx.request({
         method: 'POST',
@@ -152,20 +149,17 @@ Page({
       });
     }
   },
-  onUnload() {
-    console.log(pagePrefix, 'onUnload call');
-  },
+
   onReady() {
     if (!isBindVoipEvent) {
       isBindVoipEvent = true;
-      wmpfVoip.onVoipEvent(event => {
+      const unsubscribeFn = wmpfVoip.onVoipEvent(event => {
         console.info(pagePrefix, 'onVoipEvent', event);
         if (event.eventName === VOIP_EVENT_STATUS.rejectVoip) {
           console.info(pagePrefix, '通话被拒接了', event);
         } else if (event.eventName === VOIP_EVENT_STATUS.busy) {
           console.info(pagePrefix, '设备端繁忙', event);
-        }
-        if (event.eventName === VOIP_EVENT_STATUS.cancelVoip) {
+        } else if (event.eventName === VOIP_EVENT_STATUS.cancelVoip) {
           const params = {
             AccessToken: this.voipData.token,
             RequestId: getRandomId(),
@@ -179,11 +173,12 @@ Page({
               clientToken: getClientToken(),
               timestamp: Math.floor(Date.now() / 1000),
               params: {
-                roomId: this.voipData.roomId,
+                roomId: event.roomId,
                 status: event.data.status
               },
             }),
           };
+          console.log('发送cancelVoip params=>', params);
           wx.request({
             method: 'POST',
             url: 'https://iot.cloud.tencent.com/api/exploreropen/tokenapi',
@@ -193,10 +188,20 @@ Page({
             },
             fail(err) {
               console.log(pagePrefix, '发送cancelVoip失败', err);
+            },
+            complete() {
+              isBindVoipEvent = false;
+              unsubscribeFn();
             }
           });
         }
       });
     }
-  }
+  },
+  onUnload() {
+    console.log(pagePrefix, 'onUnload call');
+  },
+  onHide() {
+    console.log(pagePrefix, 'onHide call');
+  },
 });
