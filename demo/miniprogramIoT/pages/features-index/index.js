@@ -6,38 +6,51 @@ Page({
     },
     navigators: [
       {
+        icon: 'video',
+        title: 'voip呼叫设备',
+        path: '/pages/video/pages/voip-call/index?name=voip-call',
+      },
+      {
         icon: 'order',
         title: 'Log管理',
         path: '/pages/user-files/files?name=logs',
-      }, {
+      },
+      {
         icon: 'video',
         title: 'flv录像',
         path: '/pages/user-files/files?name=flvs',
-      }, {
+      },
+      {
         icon: 'video',
         title: 'stream录像',
         path: '/pages/user-files/files?name=streams',
-      }, {
+      },
+      {
         icon: 'phone',
         title: '对讲录像',
         path: '/pages/user-files/files?name=voices',
-      }, {
+      },
+      {
         icon: 'download',
         title: '本地下载',
         path: '/pages/user-files/files?name=downloads',
-      }, {
+      },
+      {
         icon: 'download',
         title: '云存下载',
         path: '/pages/user-files/files?name=cloud',
-      }, {
+      },
+      {
         icon: 'video',
         title: 'Video测试',
         path: '/pages/test-video/test',
-      }, {
+      },
+      {
         icon: 'video',
         title: 'local player',
         path: '/pages/video/pages/local-flv-player/player',
-      }, {
+      },
+      {
         icon: 'phone',
         title: 'TWeCall',
         path: '/pages/video/pages/voip/voip',
