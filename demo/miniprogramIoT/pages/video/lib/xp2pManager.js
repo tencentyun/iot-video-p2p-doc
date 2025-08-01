@@ -96,6 +96,22 @@ export const getXp2pManager = () => {
         app.restart();
       };
     }
+    // 设置切换xp2p流加密
+    const streamCryptoKey = 'streamCrypto';
+    const streamCryptoTime = parseInt(wx.getStorageSync(streamCryptoKey), 10);
+    const streamCrypto = !!(streamCryptoTime && Date.now() - streamCryptoTime < 3600000 * 24); // 24小时内有效
+    app.streamCrypto = streamCrypto;
+    app.toggleStreamCrypto = async () => {
+      const modalRes = await wx.showModal({
+        title: '确定切换 xp2p加密 吗？',
+        content: '切换后需要重新进入小程序',
+      });
+      if (!modalRes || !modalRes.confirm) {
+        return;
+      }
+      wx.setStorageSync(streamCryptoKey, streamCrypto ? '' : Date.now());
+      app.restart();
+    };
 
     xp2pManager = iotExports.getXp2pManager();
     app.logger?.log('xp2pManager', {

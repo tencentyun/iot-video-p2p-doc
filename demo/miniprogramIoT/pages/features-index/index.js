@@ -102,7 +102,7 @@ Page({
       },
     ],
   },
-  onLoad() { },
+  onLoad() {},
   handleNavigate(e) {
     const idx = parseInt(e.detail.key, 10);
     wx.navigateTo({ url: this.data.navigators[idx].path });

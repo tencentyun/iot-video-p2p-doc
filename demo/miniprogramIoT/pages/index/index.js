@@ -27,11 +27,13 @@ Page({
     // 切换端口
     stunPort: 20002,
     useDeliveryConfig: false,
+    streamCrypto: false,
 
     crossStunTurn: false,
     canToggleCrossStunTurn: false,
     canTogglePort: false,
     canToggleUseDeliveryConfig: false,
+    canToggleStreamCrypto: false,
   },
   onLoad(query) {
     console.log('index: onLoad', query);
@@ -65,8 +67,8 @@ Page({
               app.xp2pManager = pkg.getXp2pManager();
 
               // NOTE 在这里关闭加密，方便调试不加密的场景
-              // app.xp2pManager.enableXP2PCryptoInner(false);
-
+              // 加密根据首页的配置决定
+              app.xp2pManager.enableXP2PCryptoInner(app.streamCrypto);
               this.userData.xp2pManager = app.xp2pManager;
               if (app.toggleTcpFirst) {
                 this.setData({
@@ -90,6 +92,12 @@ Page({
                 this.setData({
                   useDeliveryConfig: app.useDeliveryConfig,
                   canToggleUseDeliveryConfig: true,
+                });
+              }
+              if (!!app.toggleStreamCrypto) {
+                this.setData({
+                  streamCrypto: app.streamCrypto,
+                  canToggleStreamCrypto: true,
                 });
               }
               console.log(`index: preload xp2pManager success, delay ${Date.now() - start}ms`, pkg);
@@ -147,7 +155,7 @@ Page({
   onShareAppMessage() {
     return defaultShareInfo;
   },
-  onShow() { },
+  onShow() {},
   onXp2pLoaded() {
     const { xp2pManager } = this.userData;
     console.log(`index: onXp2pLoaded, uuid ${xp2pManager?.uuid}, xp2pState ${xp2pManager?.moduleState}`);

@@ -130,3 +130,13 @@
   height: 60px;
   text-align: center;
 }
+.functional-btn-wrap{
+  display: flex;
+  margin: 20rpx 0;
+}
+.functional-btn-wrap .functional-btn {
+  margin-right: 20rpx;
+}
+.beauty-config{
+  padding: 0 40rpx;
+}

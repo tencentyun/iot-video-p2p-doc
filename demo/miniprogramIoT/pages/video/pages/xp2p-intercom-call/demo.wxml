@@ -20,7 +20,6 @@
       showLog="{{ showLog }}"
       showDebugInfo="{{ showDebugInfo }}"
       onlyp2pMap="{{ onlyp2pMap }}"
-      onlyAudio="{{ deviceInfo.options.onlyAudio }}"
       bind:domready="onPlayerEvent"
       bind:playerstatechange="onPlayerEvent"
       bind:streamstatechange="onPlayerEvent"
@@ -87,12 +86,14 @@
   <view class="intercom-call-preview">
     <iot-p2p-intercom
       wx:if="{{ intercomId && deviceInfo.xp2pInfo }}"
+      mode="RTC"
       id="{{ intercomId }}"
       compClass="my-intercom vertical_9_16"
       deviceInfo="{{ deviceInfo }}"
+      xp2pInfo="{{ deviceInfo.xp2pInfo }}"
       pusherProps="{{ intercomPusherProps }}"
-      autoStopIfPageHide="{{ autoStopVoiceIfPageHide }}"
-      showLog="{{ true }}"
+      autoStopIfPageHide="{{ false }}"
+      showLog="{{ false }}"
       bind:intercomeventchange="onIntercomEventChange"
       bind:intercomstatechange="onIntercomStateChange"
       bind:intercomstart="onIntercomProcess"
@@ -109,7 +110,27 @@
 
   <view wx:if="{{ !errMsg }}">
     <!-- 发起呼叫 -->
-    <ui-button size="mini" bindtap="call">发起呼叫</ui-button>
+    <ui-button class="call-btn" size="mini" bindtap="call" style="margin-right:20px">发起呼叫</ui-button>
+    <view class="functional-btn-wrap">
+       <ui-button class="functional-btn" size="mini" bindtap="changePusherProps">切换mjpg截图压缩</ui-button>
+      <ui-button class="functional-btn" size="mini" bindtap="switchCamera">切换前后摄像头</ui-button>
+    </view>
+    <view class="beauty-config">
+        <view>
+          <view>beauty-当前值:{{intercomPusherProps.beauty}}</view>
+          <slider bindchanging="onBeautyChange"></slider>
+        </view>
+        <view>
+          <view>whiteness-当前值:{{intercomPusherProps.whiteness}}</view>
+          <slider bindchanging="onWhitenessChange"></slider>
+        </view>
+        <view>
+          <view>beautStyle-当前值:{{intercomPusherProps.beautyStyle}}</view>
+          <ui-button bindtap="onBeautyStyleChange" size="mini">切换</ui-button>
+        </view>
+    </view>
+
+    <view>当前是否压缩? {{intercomPusherProps.mjpg.livePusherSnapshotQuality === 'raw' ? "否":"是"}}</view>
 
     <view class="demo-call-panel" wx:if="{{ calling === 'calling' }}">
       <view class="demo-call-panel-listener-name">{{ deviceInfo.deviceName }}</view>

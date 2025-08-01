@@ -148,7 +148,6 @@ Page({
 
     console.log('demo: checkReset when enter');
     xp2pManager.checkReset();
-
     if (query.json) {
       // 直接传播放数据
       let detail;

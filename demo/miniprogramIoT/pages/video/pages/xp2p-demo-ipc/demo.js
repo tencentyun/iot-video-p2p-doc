@@ -16,28 +16,39 @@ let pageSeq = 0;
 
 // NOTE 引入 VOIP 插件, demo 这里是使用了分包预加载功能使打开小程序就能开始加载 voip，详见 app.json 中的 preloadRule。
 const wmpfVoip = requirePlugin('wmpf-voip').default;
-// 监听 voip 通话
-wmpfVoip.onVoipEvent((event) => {
-  console.info('demo onVoipEvent', event.eventName);
+console.warn('[wmpf-voip]', {
+  title: 'TWeCall DEBUG',
+  content: `listenerUI 旋转角度 ${0}, callerUI 旋转角度 ${0}`,
 });
 
+// wmpfVoip.setCustomBtnText('more');
+// // 这个可以在 onVoipEvent 中监听通话结束前都可以设置
+// wmpfVoip.setVoipEndPagePath({
+//   url: '/pages/index/index',
+//   options: 'param1=param1&param2=param2',
+//   key: 'Call',
+// })
+
+// 监听 voip 通话
+// wmpfVoip.onVoipEvent((event) => {
+//   console.info('demo onVoipEvent', event.eventName);
+// });
+const screenH = wx.getWindowInfo().screenHeight;
+const screenW = wx.getWindowInfo().screenWidth;
 // NOTE 默认 demo 不要修改这里，演示用先旋转 -90° 把微信小程序端画面调正，实际项目中需要根据设备实际情况调整
 wmpfVoip.setUIConfig({
   // 微信端采集的是正的，不用旋转
   listenerUI: {
     cameraRotation: 0,
     objectFit: 'contain',
+    aspectRatio: screenH / screenW,
   },
   // 来自设备端的视频被逆时针旋转了 90 度，需要调整回来
   callerUI: {
-    cameraRotation: 270,
+    // cameraRotation: 270,
     objectFit: 'contain',
-  }
-});
-
-console.warn('[wmpf-voip]', {
-  title: 'TWeCall DEBUG',
-  content: `listenerUI 旋转角度 ${0}, callerUI 旋转角度 ${270}`,
+    aspectRatio: screenH / screenW,
+  },
 });
 
 const sysInfo = wx.getSystemInfoSync();

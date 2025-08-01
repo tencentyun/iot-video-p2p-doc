@@ -17,6 +17,8 @@
           canTogglePort="{{ canTogglePort }}"
           useDeliveryConfig="{{ useDeliveryConfig }}"
           canToggleUseDeliveryConfig="{{ canToggleUseDeliveryConfig }}"
+          streamCrypto="{{ streamCrypto }}"
+          canToggleStreamCrypto="{{ canToggleStreamCrypto }}"
           xp2pUuid="{{ xp2pUUID }}"
           xp2pState="{{ xp2pState }}"
           xp2pStateTime="{{ xp2pStateTime }}"

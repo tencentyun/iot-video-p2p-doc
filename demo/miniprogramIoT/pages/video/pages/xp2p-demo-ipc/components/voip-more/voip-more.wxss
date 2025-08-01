@@ -1,0 +1,5 @@
+.my-player .iot-player p2p-player, /** 在 generics 组件中使用时会丢失样式 */
+.my-player .iot-player {
+  width: 750rpx;
+  height: 400rpx;
+}

@@ -21,9 +21,6 @@ const intercomBirateMap = {
     maxBitrate: 600,
   },
 };
-// 页面隐藏自动关闭对讲
-const autoStopVoiceIfPageHide = true;
-
 // 影响性能，需要调试时才打开
 const intercomShowPusherInfo = true;
 
@@ -67,19 +64,24 @@ Page({
       aspect: '3:4', // 3:4 / 9:16
       videoWidth: 480,
       videoHeight: 640,
+      autoStopVoiceIfPageHide: false,
       ...intercomBirateMap.high,
-      disableCameraIfPageHide: autoStopVoiceIfPageHide,
-      disableMicIfPageHide: autoStopVoiceIfPageHide,
+      disableCameraIfPageHide: true,
+      disableMicIfPageHide: true,
       acceptPusherEvents: {
         netstatus: intercomShowPusherInfo,
       },
+      devicePosition: 'front',
       mjpg: {
         width: 160,
-        height: 120,
-      }
+        height: 240,
+        livePusherSnapshotQuality: 'raw',
+      },
+      beautyStyle: 'smooth',
+      beauty: 0, // 美颜
+      whiteness: 0, // 美白
+      filter: ''
     },
-    autoStopVoiceIfPageHide,
-
     // 组件实例
     instance: { player: null, intercom: null },
 
@@ -89,12 +91,15 @@ Page({
     callingTimer: null,
     errMsgTimer: null,
   },
-  onLoad: function (options) {
+  onLoad(options) {
     playerId++;
-    console.log('intercom call page onLoad: ', { options, xp2pInfo: decodeURIComponent(options.xp2pInfo), xp2pManager: app.xp2pManager });
+    console.log('intercom call page onLoad: ', {
+      options,
+      xp2pInfo: decodeURIComponent(options.xp2pInfo),
+      xp2pManager: app.xp2pManager,
+    });
     const { deviceId } = options;
     const deviceInfo = STORE.getDeviceById(deviceId);
-    console.log('intercom call page onLoad, deviceInfo: ', deviceInfo);
 
     if (deviceInfo) {
       this.setData({
@@ -114,8 +119,10 @@ Page({
     setTimeout(() => {
       console.log('onload xp2pManager: ', app.xp2pManager);
     }, 1000);
+    // 初始化pusherContext
+    this.pusherContext = null;
   },
-  onShow: function () {
+  onShow() {
 
   },
   onUnload() {
@@ -157,6 +164,51 @@ Page({
 
     this.addFeedbackListener();
   },
+  changePusherProps() {
+    const quality = this.data.intercomPusherProps.mjpg.livePusherSnapshotQuality === 'raw' ? 'compressed' : 'raw';
+    this.setData({
+      intercomPusherProps: {
+        ...this.data.intercomPusherProps,
+        mjpg: {
+          ...this.data.intercomPusherProps.mjpg,
+          livePusherSnapshotQuality: quality,
+        },
+      },
+    });
+    console.log(this.data.intercomPusherProps);
+  },
+  onBeautyChange(e) {
+    this.setData({
+      intercomPusherProps: {
+        ...this.data.intercomPusherProps,
+        beauty: Number(e.detail.value)
+      }
+    });
+  },
+  onWhitenessChange(e) {
+    this.setData({
+      intercomPusherProps: {
+        ...this.data.intercomPusherProps,
+        whiteness: Number(e.detail.value)
+      }
+    });
+  },
+  onBeautyStyleChange() {
+    const beautyStyle = this.data.intercomPusherProps.beautyStyle === 'smooth' ? 'nature' : 'smooth';
+    this.setData({
+      intercomPusherProps: {
+        ...this.data.intercomPusherProps,
+        beautyStyle
+      }
+    });
+  },
+  switchCamera() {
+    this.pusherContext.switchCamera({
+      success() {
+        console.log(logPrefix, '切换摄像头成功');
+      }
+    });
+  },
 
   /**
    * ## 发起呼叫
@@ -165,15 +217,19 @@ Page({
     if (this.data.callingTimer && this.data.calling !== 'idle') {
       this.setErrMsg('正在呼叫中');
       return;
-    };
+    }
 
     if (!this.data.instance.intercom) {
       this.setErrMsg('对讲组件尚未初始化完成');
       this.getComponents();
       return;
     }
+    console.log(logPrefix, 'start call=========', {
+      intercomPusherProps: this.data.intercomPusherProps,
+      mode: this.data.mode,
+      autoStopVoiceIfPageHide: this.data.autoStopVoiceIfPageHide,
+    });
 
-    // 启动自己的摄像头预览
     this.data.instance.intercom.startPreview();
 
     // 启动定时器
@@ -191,10 +247,10 @@ Page({
     // 监听 feedback 消息
     if (!this.data.initedFeedback) this.addFeedbackListener();
 
-    if (!await this.sendUserCommand('wx_call_start')) {
+    if (!(await this.sendUserCommand('wx_call_start'))) {
       this.setErrMsg('发送呼叫信令失败，请重试!');
       return;
-    };
+    }
     console.log(logPrefix, 'caller call', 'sent wx_call_start');
 
     // 结果处理:
@@ -320,8 +376,7 @@ Page({
    * wx_call_timeout - 呼叫超时
    */
   async sendUserCommand(cmd) {
-    const sendRes = await app
-      .xp2pManager
+    const sendRes = await app.xp2pManager
       .sendCommand(this.data.deviceInfo.deviceId, `action=user_define&channel=0&cmd=${cmd}`)
       .then(() => 'success')
       .catch(e => console.error(e));
@@ -368,6 +423,7 @@ Page({
     console.log(logPrefix, this.intercomId, 'onIntercomPreviewError', detail);
   },
   onIntercomLivePusherContextChange({ detail }) {
+    this.pusherContext = detail.livePusherContext;
     console.log(logPrefix, this.intercomId, 'onIntercomLivePusherContextChange', detail);
   },
   onIntercomSystemPermissionError({ detail }) {

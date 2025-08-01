@@ -1,8 +1,8 @@
 const appParams = {
-  appid: 123,
-  appOauthId: 'xxx',
-  appKey: 'xxx',
-  appSecretKey: 'xxx',
+  appid: 1253131157,
+  appOauthId: '600a4206062556e21befdc98',
+  appKey: 'pMqRNpU3M4wOA2BY',
+  appSecretKey: 'b62XcOoDcvJOgnibM8iKFVgVsXcdxNda',
   appPackage: 'ios.test.com',
 };
 

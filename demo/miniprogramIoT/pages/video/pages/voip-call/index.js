@@ -6,6 +6,7 @@ const wmpfVoip = requirePlugin('wmpf-voip').default;
 // 确保voipEvent回调只绑定一次
 let isBindVoipEvent = false;
 
+wmpfVoip.setCustomBtnText('more');
 wmpfVoip.setVoipEndPagePath({
   url: '/pages/index/index',
   key: 'Call',

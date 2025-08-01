@@ -11,7 +11,7 @@
   ],
   "plugins": {
     "xp2p": {
-      "version": "4.6.9",
+      "version": "latest",
       "provider": "wx1319af22356934bf",
       "export": "exportForXp2pPlugin.js"
     }
@@ -27,7 +27,8 @@
         "pages/xp2p-demo-server/demo",
         "pages/local-flv-player/player",
         "pages/voip/voip",
-        "pages/xp2p-intercom-call/demo"
+        "pages/xp2p-intercom-call/demo",
+        "pages/voip-call/index"
       ],
       "plugins": {
         "wechat-p2p-player": {
@@ -37,7 +38,12 @@
         },
         "wmpf-voip": {
           "version": "latest",
-          "provider": "wxf830863afde621eb"
+          "provider": "wxf830863afde621eb",
+          "genericsImplementation": {
+            "call-page-plugin": {
+              "custombox": "/pages/video/pages/xp2p-demo-ipc/components/voip-more/voip-more"
+            }
+          }
         }
       }
     },
@@ -61,19 +67,24 @@
   },
   "tabBar": {
     "custom": true,
-    "list": [{
-      "pagePath": "pages/index/index",
-      "text": "首页"
-    }, {
-      "pagePath": "pages/features-index/index",
-      "text": "Features"
-    }, {
-      "pagePath": "pages/video-files/files",
-      "text": "录像"
-    }, {
-      "pagePath": "pages/log/files",
-      "text": "日志"
-    }]
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/features-index/index",
+        "text": "Features"
+      },
+      {
+        "pagePath": "pages/video-files/files",
+        "text": "录像"
+      },
+      {
+        "pagePath": "pages/log/files",
+        "text": "日志"
+      }
+    ]
   },
   "preloadRule": {
     "pages/index/index": {

@@ -17,12 +17,14 @@ Component({
     canToggleTcpFirst: Boolean,
     stunPort: String,
     useDeliveryConfig: Boolean,
+    streamCrypto: Boolean,
 
     // crossStunTurn
     crossStunTurn: Boolean,
     canToggleCrossStunTurn: Boolean,
     canTogglePort: Boolean,
     canToggleUseDeliveryConfig: Boolean,
+    canToggleStreamCrypto: Boolean,
 
     xp2pUuid: String,
     xp2pState: String,
@@ -93,6 +95,14 @@ Component({
         return;
       }
       app.toggleUseDeliveryConfig();
+    },
+    // 切换xp2p流加密
+    toggleStreamCrypto() {
+      const app = getApp();
+      if (!app.toggleStreamCrypto) {
+        return;
+      }
+      app.toggleStreamCrypto();
     },
 
     copyData(e) {

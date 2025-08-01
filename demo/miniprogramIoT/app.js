@@ -1,6 +1,5 @@
 import { Logger } from './lib/logger';
 import { getUserId, compareVersion } from './utils';
-
 App({
   onLaunch(options) {
     this.console = console;
