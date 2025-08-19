@@ -8,6 +8,12 @@ const console = app.logger || oriConsole;
 
 const wmpfVoip = requirePlugin('wmpf-voip').default;
 console.log(wmpfVoip); // 有结果即表示引入插件成功
+// 临时演示用
+const SN_DEVICE_NAME_MAP = {
+  T87KS3HDDQ_kanekliu: " 你的智能玩伴",
+  T87KS3HDDQ_cloverwwang1: "展轩的设备",
+  T87KS3HDDQ_Edward: "旺财小崽",
+}
 
 // sn:F2TL8I8UFD-iot_100624161_1
 Page({
@@ -163,7 +169,7 @@ Page({
       sn: this.data.sn, // 向用户发起通话的设备 sn，需要与 4.2 中注册设备时一致
       snTicket: this.data.snTicket, // 获取的 snTicket
       modelId: this.data.modelId, // 2.3 设备接入获取的 model_id
-      deviceName: '测试设备', // 设备名称，用于授权时显示给用户看
+      deviceName: SN_DEVICE_NAME_MAP[this.data.sn] || '测试设备', // 设备名称，用于授权时显示给用户看
       success(res) {
         console.log('requestDeviceVoIP success:', res);
         wx.showToast({ title: '绑定成功', icon: 'success' });

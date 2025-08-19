@@ -1,5 +1,8 @@
 <view class="voip-call-wrap">
-  <ui-form name="voip-call-form">
+  <view class="btn-wrap">
+     <ui-button  type="default" plain size="mini" bindtap="importFromClipboard">从剪切板导入</ui-button>
+  </view>
+  <ui-form>
     <ui-form-item label="AppKey" name="appKey" label-width="168rpx">
         <ui-input
           clear

@@ -1,4 +1,4 @@
-import { getRandomId, getClientToken, splitByFirstUnderscore } from '../../utils/index';
+import { getRandomId, getClientToken, splitByFirstUnderscore, appendSignature } from '../../utils/index';
 import { VOIP_EVENT_STATUS } from './constant';
 const pagePrefix = '[voip-call]';
 const VOIP_CALL_STORAGE_KEY = 'voipCallData';
@@ -19,13 +19,10 @@ wx.cloud.init({
 Page({
   data: {
     form: {
-      // appKey: 'mDlhRpAfMtjyLCXKP',
-      // appSecret: 'iKMZvmIoRIJIRevOnYXE',
-      // sn: 'XOCLFIHUCU_camera_eric04',
-      appKey: 'mIJZdrxRqhdtyCPkh',
-      appSecret: 'MokbekSWizfAqBlGquby',
-      sn: 'VR8UC23ATA_004',
-      modelId: 'DYEbVE9kfjAONqnWsOhXgw',
+      appKey: '',
+      appSecret: '',
+      sn: 'productId/deviceName',
+      modelId: '',
       callType: 'video',
     },
     isCalling: false,
@@ -59,7 +56,7 @@ Page({
   },
   async onSubmit() {
     wx.setStorageSync(VOIP_CALL_STORAGE_KEY, JSON.stringify(this.data.form));
-    const { appKey, appSecret, sn, callType, modelId } = this.data.form;
+    const { sn, callType, modelId } = this.data.form;
     if (this.data.isCalling) {
       this.setData({ isCalling: false });
       wmpfVoip.forceHangUpVoip();
@@ -67,16 +64,6 @@ Page({
     }
     console.log(pagePrefix, 'onSubmit=> form', this.data.form);
     try {
-      this.setData({ isCalling: true });
-      const res = await wx.cloud.callFunction({
-        name: 'getAccessToken',
-        data: {
-          appKey,
-          appSecret,
-        },
-      });
-      const token = res.result.token;
-      console.log(pagePrefix, '调用云函数getAccessToken成功 token =>', token);
       const callDeviceParams = {
         roomType: callType,
         sn,
@@ -84,61 +71,117 @@ Page({
         isCloud: true,
         payload: '{}',
         nickName: 'jin的手机',
+        deviceName: 'jin的设备',
         encodeVideoFixedLength: 320,
         encodeVideoRotation: 1,
         encodeVideoRatio: 0,
         encodeVideoMaxFPS: 15,
       };
+      this.setData({ isCalling: true });
       console.log('开始呼叫callDevice params=>', callDeviceParams);
       const { roomId } = await wmpfVoip.callDevice(callDeviceParams);
-      const [productId, deviceName] = splitByFirstUnderscore(sn);
-      const params = {
-        AccessToken: token,
-        RequestId: getRandomId(),
-        Action: 'AppPublishMessage',
-        ProductId: productId,
-        DeviceName: deviceName,
-        Topic: `$twecall/down/service/${productId}/${deviceName}`,
-        Payload: JSON.stringify({
-          version: '1.0',
-          method: 'voip_join',
-          clientToken: getClientToken(),
-          timestamp: Math.floor(Date.now() / 1000),
-          params: {
-            roomId,
-          },
-        }),
-      };
-      // 同步voipdata的数据
-      this.voipData = {
-        ...this.voipData,
-        token,
-        productId,
-        deviceName,
-      };
-      wx.request({
-        method: 'POST',
-        url: 'https://iot.cloud.tencent.com/api/exploreropen/tokenapi',
-        data: params,
-        success(res) {
-          console.log(pagePrefix, '调用AppPublishMessage成功', res);
+      const payload = JSON.stringify({
+        version: '1.0',
+        method: 'voip_join',
+        clientToken: getClientToken(),
+        timestamp: Math.floor(Date.now() / 1000),
+        params: {
+          roomId,
+        },
+      });
+      this.publishMessage(payload)
+        .then((res) => {
+          console.log(pagePrefix, '发送voipJoin成功', res);
           wx.redirectTo({
             url: wmpfVoip.CALL_PAGE_PATH,
           });
-        },
-        fail(err) {
-          console.log(pagePrefix, '调用AppPublishMessage失败', err);
-        },
-      });
+        })
+        .catch((err) => {
+          console.error(pagePrefix, '发送voipJoin失败', err);
+          wmpfVoip.forceHangUpVoip(roomId);
+        });
     } catch (err) {
-      console.log(pagePrefix, '调用云函数getAccessToken失败', err);
+      console.error(pagePrefix, 'call error', err);
     } finally {
       this.setData({ isCalling: false });
     }
   },
+  async publishMessage(payload) {
+    console.log(pagePrefix, '调用publishMessage函数 payload=>', payload);
+    return new Promise((resolve, reject) => {
+      const { appKey, appSecret, sn } = this.data.form;
+      const [productId, deviceName] = splitByFirstUnderscore(sn);
+      const params = {
+        Action: 'AppApiPublishMessage',
+        RequestId: getRandomId(),
+        AppKey: appKey,
+        AppSecret: appSecret,
+        Timestamp: Math.floor(Date.now() / 1000),
+        Nonce: Math.floor(10000 * Math.random()) + 1,
+        ProductId: productId,
+        DeviceName: deviceName,
+        Topic: `$twecall/down/service/${productId}/${deviceName}`,
+        Payload: payload,
+        Qos: 1,
+      };
+      const pararmsWithSignature = appendSignature({
+        ...params
+      });
+      console.log('调用AppApiPublishMessage params=>', pararmsWithSignature);
+      wx.request({
+        method: 'POST',
+        url: 'https://iot.cloud.tencent.com/api/exploreropen/appapi',
+        data: pararmsWithSignature,
+        success(res) {
+          console.log(pagePrefix, '调用AppApiPublishMessage完成', res);
+          if (res.data.code !== 0) {
+            wx.showToast({
+              icon: 'error',
+              title: res.data.msg,
+            });
+            reject(new Error(res.data.msg));
+          }
+          resolve(res);
+        },
+        fail(err) {
+          reject(err);
+        }
+      });
+    });
+  },
+  importFromClipboard() {
+    wx.getClipboardData()
+      .then(res => {
+        const arr = res.data
+          .split(/\r\n|\n|\r/)                // 支持 \n, \r\n, \r
+          .map(s => s.trim().replace(/^"+|"+$/g, '')) // trim 并去掉首尾的 "（若存在）
+          .filter(s => s.length > 0);        // 过滤掉空行
+        if (arr.length !== 4) {
+          return wx.showToast({
+            icon: 'error',
+            title: '格式错误，为4行'
+          });
+        }
+        this.setData({
+          form: {
+            ...this.data.form,
+            appKey: arr[0],
+            appSecret: arr[1],
+            sn: arr[2],
+            modelId: arr[3],
+          }
+        });
+        console.log(arr);
+      })
+      .catch(() => {
+        wx.showToast({
+          icon: 'error',
+          title: '获取剪切板内容失败'
+        });
+      });
+  },
   onLoad() {
     console.log(pagePrefix, 'onLoad call');
-    this.voipData = {};
     // 从缓存中获取voip数据
     const voipFormData = wx.getStorageSync(VOIP_CALL_STORAGE_KEY);
     if (!!voipFormData) {
@@ -152,6 +195,7 @@ Page({
   },
 
   onReady() {
+    console.log(pagePrefix, 'onReady call');
     if (!isBindVoipEvent) {
       isBindVoipEvent = true;
       const unsubscribeFn = wmpfVoip.onVoipEvent(event => {
@@ -161,40 +205,27 @@ Page({
         } else if (event.eventName === VOIP_EVENT_STATUS.busy) {
           console.info(pagePrefix, '设备端繁忙', event);
         } else if (event.eventName === VOIP_EVENT_STATUS.cancelVoip) {
-          const params = {
-            AccessToken: this.voipData.token,
-            RequestId: getRandomId(),
-            Action: 'AppPublishMessage',
-            ProductId: this.voipData.productId,
-            DeviceName: this.voipData.deviceName,
-            Topic: `$twecall/down/service/${this.voipData.productId}/${this.voipData.deviceName}`,
-            Payload: JSON.stringify({
-              version: '1.0',
-              method: 'voip_cancel',
-              clientToken: getClientToken(),
-              timestamp: Math.floor(Date.now() / 1000),
-              params: {
-                roomId: event.roomId,
-                status: event.data.status
-              },
-            }),
-          };
-          console.log('发送cancelVoip params=>', params);
-          wx.request({
-            method: 'POST',
-            url: 'https://iot.cloud.tencent.com/api/exploreropen/tokenapi',
-            data: params,
-            success(res) {
+          const payload = JSON.stringify({
+            version: '1.0',
+            method: 'voip_cancel',
+            clientToken: getClientToken(),
+            timestamp: Math.floor(Date.now() / 1000),
+            params: {
+              roomId: event.roomId,
+              status: event.data.status
+            },
+          });
+          this.publishMessage(payload)
+            .then(res => {
               console.log(pagePrefix, '发送cancelVoip成功', res);
-            },
-            fail(err) {
-              console.log(pagePrefix, '发送cancelVoip失败', err);
-            },
-            complete() {
+            })
+            .catch(err => {
+              console.error(pagePrefix, '发送cancelVoip失败', err);
+            })
+            .finally(() => {
               isBindVoipEvent = false;
               unsubscribeFn();
-            }
-          });
+            });
         }
       });
     }
