@@ -177,12 +177,15 @@ export default {
       const page = getCurrentPages().pop();
       this.playerRef = page.selectComponent(`#${this.playerId}`);
     },
-    async asyncGetDeviceInfo() {
-      setTimeout(() =>{
+     asyncGetDeviceInfo() {
+      return new Promise((resolve,reject) =>{
+        setTimeout(() =>{
         this.deviceInfo = this.rawDeviceInfo;
         this.log('deviceInfo获取完毕',this.deviceInfo)
-        return
+        resolve()
       },3000)
+      })
+     
     }
   },
   async created() {
@@ -190,8 +193,9 @@ export default {
     // this.conrtolState.definition = this.deviceInfo.definition;
     // this.conrtolState.muted = this.deviceInfo.muted;
     this.log('rawDeviceInfo',this.rawDeviceInfo)
-    await this.asyncGetDeviceInfo()
-    this.onStartPlayer()
+    this.asyncGetDeviceInfo().then(() =>{
+      this.onStartPlayer()
+    })
   },
   async mounted() {
     this.log('=========mounted=========');
