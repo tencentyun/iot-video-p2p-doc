@@ -1,15 +1,15 @@
 <template>
   <view class="content">
     <iot-p2p-player-with-mjpg
-      v-if="playerId"
+      v-if="!!deviceInfo.deviceId"
       :id="playerId"
       class="demo-player"
       :sceneType="playerOptions.sceneType"
       :streamParams="playerOptions.streamParams"
       :mode="p2pMode"
       soundMode="speaker"
-      :deviceInfo="deviceInfo || null"
-      :xp2pInfo="deviceInfo.xp2pInfo || ''"
+      :deviceInfo="deviceInfo"
+      :xp2pInfo="deviceInfo.xp2pInfo"
       :needCheckStream="playerOptions.needCheckStream"
       :showLog="playerOptions.showLog"
       :showDebugInfo="playerOptions.showDebugInfo"
@@ -26,6 +26,7 @@
         <PlayerControls :conrtolState="conrtolState" @iconClick="iconClick"></PlayerControls>
       </view>
     </iot-p2p-player-with-mjpg>
+    <view v-else>等待播放中。。。</view>
     <van-toast id="van-toast" />
   </view>
 </template>
@@ -72,6 +73,7 @@ export default {
         snapshot: false,
         record: false,
       },
+      deviceInfo:{}
     };
   },
   methods: {
@@ -175,17 +177,26 @@ export default {
       const page = getCurrentPages().pop();
       this.playerRef = page.selectComponent(`#${this.playerId}`);
     },
+    async asyncGetDeviceInfo() {
+      setTimeout(() =>{
+        this.deviceInfo = this.rawDeviceInfo;
+        this.log('deviceInfo获取完毕',this.deviceInfo)
+        return
+      },3000)
+    }
   },
-  created() {
+  async created() {
     // 覆盖清晰度
-    this.conrtolState.definition = this.deviceInfo.definition;
-    this.conrtolState.muted = this.deviceInfo.muted;
+    // this.conrtolState.definition = this.deviceInfo.definition;
+    // this.conrtolState.muted = this.deviceInfo.muted;
+    this.log('rawDeviceInfo',this.rawDeviceInfo)
+    await this.asyncGetDeviceInfo()
+    this.onStartPlayer()
   },
   async mounted() {
     this.log('=========mounted=========');
     xp2pManager = getXp2pManager();
     this.log('获取xp2pManager 结果 ->', xp2pManager);
-    this.onStartPlayer();
     this.getRefs();
   },
   beforeDestroy() {
@@ -197,12 +208,12 @@ export default {
   },
   computed: {
     ...mapState(['rawDeviceInfo']),
-    deviceInfo() {
-      return {
-        ...this.rawDeviceInfo,
-        isMjpgDevice: this.rawDeviceInfo.xp2pInfo.endsWith('m'),
-      };
-    },
+    // deviceInfo() {
+    //   return {
+    //     ...this.rawDeviceInfo,
+    //     isMjpgDevice: this.rawDeviceInfo.xp2pInfo.endsWith('m'),
+    //   };
+    // },
   },
 };
 </script>
