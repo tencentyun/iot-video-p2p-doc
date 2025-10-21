@@ -19,11 +19,12 @@ wx.cloud.init({
 Page({
   data: {
     form: {
-      appKey: '',
-      appSecret: '',
-      sn: 'productId/deviceName',
-      modelId: '',
+      appKey: 'mdyumoCfOFqquLALj',
+      appSecret: 'mYPZgDBPvDtUmsTwHKvg',
+      sn: 'BF5VFDTXKE_1',
+      modelId: 'DYEbVE9kfjAONqnWsOhXgw',
       callType: 'video',
+      publishMessagePayload: "",
     },
     isCalling: false,
   },
@@ -54,7 +55,19 @@ Page({
       },
     });
   },
+  onPublishMessagePayload(e) {
+    try {
+      console.log('onPublishMessagePayload json => ', JSON.parse(e.detail.value));
+    } catch (_error) {
+      // ignore
+    }
+    this.setData({ publishMessagePayload: e.detail.value });
+  },
   async onSubmit() {
+    let outerPayload = {};
+    try { outerPayload = JSON.parse(this.data.publishMessagePayload) }
+    catch (_e) { /** ignore error */ };
+
     wx.setStorageSync(VOIP_CALL_STORAGE_KEY, JSON.stringify(this.data.form));
     const { sn, callType, modelId } = this.data.form;
     if (this.data.isCalling) {
@@ -70,23 +83,47 @@ Page({
         modelId,
         isCloud: true,
         payload: '{}',
-        nickName: 'jin的手机',
-        deviceName: 'jin的设备',
-        encodeVideoFixedLength: 320,
-        encodeVideoRotation: 1,
-        encodeVideoRatio: 0,
-        encodeVideoMaxFPS: 15,
+        nickName: 'xp2p Demo 小程序',
+        deviceName: 'xp2p Demo 小程序',
+        // NOTE 支持用户手动传递这几个参数，如果有的话也会自动传递给设备端
+        // 这里的逻辑就是：
+        // 1. 如果用户传递了这几个参数，则使用用户传递的值
+        // 2. 小程序呼叫设备的这几个参数最好跟设备上行的参数一致，所以这里传给设备端
+        // ---> 小程序呼叫的参数和设备端传给小程序音视频参数一致了，黑边问题同时就解决了
+        
+        /**
+         * p2p player 小程 voip 呼叫设备 payload 填写示例:
+          {
+            "encodeVideoFixedLength": 320,
+            "encodeVideoRotation": 1,
+            "encodeVideoRatio": 0,
+            "encodeVideoMaxFPS": 15,
+            "others-key-1": "others-value-1",
+            "others-key-2": "others-value-2",
+            ...
+          }
+         */
+        encodeVideoFixedLength: outerPayload.encodeVideoFixedLength || 320,
+        encodeVideoRotation: outerPayload.encodeVideoRotation || 1,
+        encodeVideoRatio: outerPayload.encodeVideoRatio || 0,
+        encodeVideoMaxFPS: outerPayload.encodeVideoMaxFPS || 15,
       };
       this.setData({ isCalling: true });
       console.log('开始呼叫callDevice params=>', callDeviceParams);
       const { roomId } = await wmpfVoip.callDevice(callDeviceParams);
+
       const payload = JSON.stringify({
         version: '1.0',
         method: 'voip_join',
         clientToken: getClientToken(),
         timestamp: Math.floor(Date.now() / 1000),
         params: {
+          // NOTE method 为 voip_xxx 时，roomId 为必传参数
           roomId,
+          // NOTE 如果需要传递其他参数给到设备端，在这里扩展 kv 就好了
+          /** custom_data_key: custom_data_value, */
+          openId: wx.getStorageSync('wx:openId') || '',
+          ...outerPayload,
         },
       });
       this.publishMessage(payload)

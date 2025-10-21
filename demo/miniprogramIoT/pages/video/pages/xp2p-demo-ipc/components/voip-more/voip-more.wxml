@@ -1,21 +1,8 @@
 <!--components/p2p-live.wxml-->
 <view style="height: 75vh">
     <view>
-        <text>Component: voip-more updata @ 5 </text>
+        <text>Component: voip-more updata @ 6 </text>
     </view>
-
-    <!-- <p2p-live-player
-        id="p2p-live-player-generics"
-        compClass="my-player"
-        compStyle="width: 100%; height: 100%;"
-        deviceInfo="{{deviceInfo}}"
-        xp2pInfo="{{xp2pInfo}}"
-        sceneType="{{deviceInfo.sceneType}}"
-        mode="RTC"
-        acceptPlayerEvents="{{acceptPlayerEvents}}"
-        onlyp2pMap="{{onlyp2pMap}}"
-        bind:playstatechagne="onPlayStateChange"
-    ></p2p-live-player> -->
 
     <p2p-live-player
       data-index="1"

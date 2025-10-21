@@ -63,6 +63,16 @@
         <ui-radio key="video" l-class="demo-radio-padding">视频</ui-radio>
       </ui-radio-group>
     </ui-form-item>
-    <button bindtap="onSubmit" loading="{{isCalling}}" type="primary">呼叫</button>
+    <ui-form-item label="publish message payload" name="publishMessagePayload" label-width="168rpx" label-placement="column" l-form-item-class="my-2">
+      <ui-textarea
+        value="{{publishMessagePayload}}"
+        auto-height
+        maxlength="-1"
+        indicator="{{false}}"
+        placeholder="请输入JSON字符串格式"
+        l-class="my-2" bind:lininput="onPublishMessagePayload"
+      ></ui-textarea>
+    </ui-form-item>
+    <button bindtap="onSubmit" loading="{{isCalling}}" type="primary" style="margin-top: .5rem;">呼叫</button>
   </ui-form>
 </view>

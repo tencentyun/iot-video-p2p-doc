@@ -1,5 +1,4 @@
 <view class="p2p-live-player">
-  <view>是否存在 playerId ? {{ playerId ? playerId : '-' }}</view>
   <iot-p2p-player-with-mjpg
     id="{{playerId}}"
     class="{{compClass}}"

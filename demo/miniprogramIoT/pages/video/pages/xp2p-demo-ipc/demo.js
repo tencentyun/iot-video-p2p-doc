@@ -20,15 +20,6 @@ console.warn('[wmpf-voip]', {
   title: 'TWeCall DEBUG',
   content: `listenerUI 旋转角度 ${0}, callerUI 旋转角度 ${0}`,
 });
-
-// wmpfVoip.setCustomBtnText('more');
-// // 这个可以在 onVoipEvent 中监听通话结束前都可以设置
-// wmpfVoip.setVoipEndPagePath({
-//   url: '/pages/index/index',
-//   options: 'param1=param1&param2=param2',
-//   key: 'Call',
-// })
-
 // 监听 voip 通话
 // wmpfVoip.onVoipEvent((event) => {
 //   console.info('demo onVoipEvent', event.eventName);

@@ -5,15 +5,15 @@ Page({
    */
   data: {
     deviceInfo: {
-      deviceId: "XOCLFIHUCU/feedback_eric01",
-      productId: "XOCLFIHUCU",
-      deviceName: "feedback_eric01",
+      deviceId: 'XOCLFIHUCU/feedback_eric01',
+      productId: 'XOCLFIHUCU',
+      deviceName: 'feedback_eric01',
       isMjpgDevice: false,
-      xp2pInfo: "XP2PTmt7R2EZy5UEOjpibOoMtw==%2.4.43",
-      p2pMode: "ipc",
-      sceneType: "live",
+      xp2pInfo: 'XP2PTmt7R2EZy5UEOjpibOoMtw==%2.4.43',
+      p2pMode: 'ipc',
+      sceneType: 'live',
     },
-    xp2pInfo: "XP2PTmt7R2EZy5UEOjpibOoMtw==%2.4.43",
+    xp2pInfo: 'XP2PTmt7R2EZy5UEOjpibOoMtw==%2.4.43',
     acceptPlayerEvents: {},
     onlyp2pMap: {
       flv: false,
@@ -24,10 +24,10 @@ Page({
   /**
    * 生命周期函数--监听页面加载
    */
-  onLoad(options) {
+  onLoad(_options) {
     wx.showToast({
       title: 'p2p-live'
-    })
+    });
   },
 
   /**
