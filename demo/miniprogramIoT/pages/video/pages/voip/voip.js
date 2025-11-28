@@ -96,6 +96,7 @@ Page({
             snTicket: res.result.snTicket,
             openId: res.result.OPENID,
           });
+
           wx.setStorage({
             key: 'snTicket',
             data: res.result.snTicket,

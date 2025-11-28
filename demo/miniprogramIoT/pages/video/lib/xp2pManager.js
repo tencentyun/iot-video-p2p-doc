@@ -80,8 +80,8 @@ export const getXp2pManager = () => {
     // 设置切换配置跟随
     if (xp2pPlugin.p2p.setUseDeliveryConfig) {
       const useDeliveryConfigKey = 'useDeliveryConfig';
-      const useDeliveryConfigTime = parseInt(wx.getStorageSync(useDeliveryConfigKey), 10);
-      const useDeliveryConfig = !!(useDeliveryConfigTime && Date.now() - useDeliveryConfigTime < 3600000 * 24); // 24小时内有效
+      // 默认是开启状态的，不设置时走设备跟随逻辑，default 值设置为 1
+      const useDeliveryConfig = Boolean(parseInt(wx.getStorageSync(useDeliveryConfigKey) ?? 1, 10));
       xp2pPlugin.p2p.setUseDeliveryConfig(useDeliveryConfig);
       app.useDeliveryConfig = useDeliveryConfig;
       app.toggleUseDeliveryConfig = async () => {
@@ -92,7 +92,7 @@ export const getXp2pManager = () => {
         if (!modalRes || !modalRes.confirm) {
           return;
         }
-        wx.setStorageSync(useDeliveryConfigKey, useDeliveryConfig ? '' : Date.now());
+        wx.setStorageSync(useDeliveryConfigKey, useDeliveryConfig ? 0 : 1);
         app.restart();
       };
     }

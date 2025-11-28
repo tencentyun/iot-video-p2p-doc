@@ -14,6 +14,7 @@ module.exports = {
   getXp2pConfig() {
     return {
       enableCrypto: true, // p2p传输是否加密，不传默认开启
+      // enableDeviceSig: true, // 是否开启设备签名
     };
   },
   getPlayerPlugin() {
